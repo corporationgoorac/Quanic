@@ -32,10 +32,10 @@ app.post('/send-push', (req, res) => {
         // Shows the sender's profile picture in the notification
         icon: icon,
         // Opens the specific chat page (e.g., chat.html?user=username) on click
-        deep_link: click_action || "https://www.goorac.biz"
-      },
-      // Hides notification if the user is currently looking at the chat
-      hide_notification_if_site_has_focus: true
+        deep_link: click_action || "https://www.goorac.biz",
+        // Hides notification if the user is currently looking at the chat
+        hide_notification_if_site_has_focus: true
+      }
     }
   })
   .then((publishResponse) => {
