@@ -21,17 +21,18 @@ const beamsClient = new PushNotifications({
 
 // The endpoint your chat app will call to trigger a notification
 app.post('/send-push', (req, res) => {
-  // Added 'icon' to the destructuring so we can receive the profile picture URL
-  const { targetUid, title, body, icon } = req.body;
+  // Added 'icon' and 'click_action' to receive the photo and the specific chat link
+  const { targetUid, title, body, icon, click_action } = req.body;
 
   beamsClient.publishToInterests([targetUid], {
     web: {
       notification: {
         title: title,
         body: body,
-        // Added 'icon' here to display the sender's PFP in the notification banner
+        // Shows the sender's profile picture in the notification
         icon: icon,
-        deep_link: "https://www.goorac.biz"
+        // Opens the specific chat page (e.g., chat.html?user=username) on click
+        deep_link: click_action || "https://www.goorac.biz"
       },
       // Hides notification if the user is currently looking at the chat
       hide_notification_if_site_has_focus: true
