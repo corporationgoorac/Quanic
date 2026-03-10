@@ -87,3 +87,4 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Goorac push server is live and listening on port ${port}`);
 });
+require('./server.js');
