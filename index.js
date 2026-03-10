@@ -27,8 +27,11 @@ const beamsClient = new PushNotifications({
 
 // The endpoint your chat app will call to trigger an ultra-fast notification
 app.post('/send-push', (req, res) => {
-  const { targetUid, title, body, icon, click_action } = req.body;
+  const { targetUid, senderUid, title, body, icon, click_action } = req.body;
   const deepLink = click_action || "https://www.goorac.biz";
+
+  // 🚀 SPEED HACK: Instantly respond to the frontend in ~5ms so the chat UI never hangs
+  res.status(200).json({ success: true, message: "Push request accepted, processing extremely fast in background" });
 
   beamsClient.publishToInterests([targetUid], {
     
@@ -54,7 +57,7 @@ app.post('/send-push', (req, res) => {
       data: {
         click_action: deepLink
       },
-      priority: "high" // <-- Wakes up Android immediately
+      priority: "high" // <-- Wakes up Android immediately. Note: Removed "tag" so it stacks normally instead of replacing!
     },
 
     // 3. iOS Payload (APNs) - FORCES ULTRA-FAST DELIVERY
@@ -63,7 +66,8 @@ app.post('/send-push', (req, res) => {
         alert: {
           title: title,
           body: body
-        }
+        },
+        "thread-id": senderUid // <-- iOS GROUPING: Stacks messages from the same sender cleanly
       },
       headers: {
         "apns-priority": "10", // <-- Wakes up iPhones immediately
@@ -73,12 +77,10 @@ app.post('/send-push', (req, res) => {
     
   })
   .then((publishResponse) => {
-    console.log('Successfully sent HIGH PRIORITY notification to:', targetUid);
-    res.json({ success: true, publishResponse });
+    console.log('Successfully sent HIGH PRIORITY notification to:', targetUid, '| ID:', publishResponse.publishId);
   })
   .catch((error) => {
-    console.error('Error sending notification:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Error sending notification in background:', error);
   });
 });
 
@@ -87,4 +89,5 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Goorac push server is live and listening on port ${port}`);
 });
+
 require('./server.js');
