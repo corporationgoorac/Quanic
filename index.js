@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const PushNotifications = require('@pusher/push-notifications-server');
+// --- ADDED: Import the push listener from your push.js file ---
+const { startPushListener } = require('./push.js');
 
 const app = express();
 
@@ -88,6 +90,9 @@ app.post('/send-push', (req, res) => {
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Goorac push server is live and listening on port ${port}`);
+  
+  // --- ADDED: Start the Firebase background listener when the server boots ---
+  startPushListener();
 });
 
 require('./server.js');
