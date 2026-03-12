@@ -5,6 +5,11 @@ const PushNotifications = require('@pusher/push-notifications-server');
 
 const app = express();
 
+// --- ADDED: Strict Server Boot Time and Memory Caches to prevent duplicate sends ---
+const SERVER_START_TIME = Date.now();
+const processedMessages = new Set();
+const processedNotifs = new Set();
+
 // Allows your monitors to ping this server without CORS errors
 app.use(cors()); 
 app.use(express.json());
@@ -48,11 +53,20 @@ function startMessageListener() {
     db.collectionGroup('messages').onSnapshot((snapshot) => {
         snapshot.docChanges().forEach(async (change) => {
             if (change.type === 'added') {
+                // --- ADDED: Deduplication Cache to prevent double processing in same session ---
+                const docId = change.doc.id;
+                if (processedMessages.has(docId)) return;
+                processedMessages.add(docId);
+                setTimeout(() => processedMessages.delete(docId), 180000); // Clear memory after 3 mins
+
                 const messageData = change.doc.data();
                 
                 if (!messageData.timestamp) return;
                 const msgTime = messageData.timestamp.toMillis ? messageData.timestamp.toMillis() : new Date(messageData.timestamp).getTime();
                 if (Date.now() - msgTime > 120000) return; // Ignore old messages on reboot
+                
+                // --- ADDED: Strict check to ensure we ONLY process messages that arrive AFTER boot ---
+                if (msgTime <= SERVER_START_TIME) return; 
 
                 try {
                     const senderUid = messageData.sender;
@@ -114,11 +128,20 @@ function startNotificationListener() {
     db.collection('notifications').onSnapshot((snapshot) => {
         snapshot.docChanges().forEach(async (change) => {
             if (change.type === 'added') {
+                // --- ADDED: Deduplication Cache for notifications ---
+                const docId = change.doc.id;
+                if (processedNotifs.has(docId)) return;
+                processedNotifs.add(docId);
+                setTimeout(() => processedNotifs.delete(docId), 180000); // Clear memory after 3 mins
+
                 const notifData = change.doc.data();
                 
                 if (!notifData.timestamp) return;
                 const msgTime = notifData.timestamp.toMillis ? notifData.timestamp.toMillis() : new Date(notifData.timestamp).getTime();
                 if (Date.now() - msgTime > 120000) return;
+                
+                // --- ADDED: Strict check to ensure we ONLY process notifications that arrive AFTER boot ---
+                if (msgTime <= SERVER_START_TIME) return;
 
                 const targetUid = notifData.toUid;
                 const senderUid = notifData.fromUid;
