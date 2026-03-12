@@ -5,10 +5,11 @@ const PushNotifications = require('@pusher/push-notifications-server');
 
 const app = express();
 
-// --- ADDED: Strict Server Boot Time and Memory Caches to prevent duplicate sends ---
+// --- STRICT CACHES to prevent duplicate sends and reaction spam ---
 const SERVER_START_TIME = Date.now();
 const processedMessages = new Set();
 const processedNotifs = new Set();
+const reactionThrottle = new Set(); // Specifically limits reaction spam
 
 // Allows your monitors to ping this server without CORS errors
 app.use(cors()); 
@@ -45,6 +46,23 @@ const beamsClient = new PushNotifications({
 });
 
 // ============================================================================
+// SAFETY NET: RESTORED FETCH ENDPOINT
+// Just in case any frontend code still uses fetch('/send-push')
+// ============================================================================
+app.post('/send-push', (req, res) => {
+    const { targetUid, senderUid, title, body, icon, click_action } = req.body;
+    const deepLink = click_action || "https://www.goorac.biz";
+  
+    res.status(200).json({ success: true, message: "Push accepted via API route" });
+  
+    beamsClient.publishToInterests([targetUid], {
+      web: { notification: { title, body, icon, deep_link: deepLink, hide_notification_if_site_has_focus: true }, time_to_live: 3600 },
+      fcm: { notification: { title, body, icon }, data: { click_action: deepLink }, priority: "high" },
+      apns: { aps: { alert: { title, body }, "thread-id": senderUid || "api-push" }, headers: { "apns-priority": "10", "apns-push-type": "alert" } }
+    }).catch(e => console.error('API Push Error:', e));
+});
+
+// ============================================================================
 // LISTENER 1: CHATS, GROUP CHATS, DIRECT REPLIES, AND REACTIONS
 // ============================================================================
 function startMessageListener() {
@@ -53,139 +71,126 @@ function startMessageListener() {
     db.collectionGroup('messages').onSnapshot((snapshot) => {
         snapshot.docChanges().forEach(async (change) => {
             
-            // Handle both new messages AND modified messages (for reactions)
-            if (change.type === 'added' || change.type === 'modified') {
-                const messageData = change.doc.data();
-                const docId = change.doc.id;
-                
-                if (!messageData.timestamp) return;
-                const msgTime = messageData.timestamp.toMillis ? messageData.timestamp.toMillis() : new Date(messageData.timestamp).getTime();
+            const messageData = change.doc.data();
+            const docId = change.doc.id;
+            
+            // RELIABLE TIMESTAMP: Uses Firestore's un-hackable create/update time
+            let msgTime = SERVER_START_TIME;
+            if (change.doc.createTime) msgTime = change.doc.createTime.toMillis();
+            if (change.doc.updateTime && change.type === 'modified') msgTime = change.doc.updateTime.toMillis();
 
-                // -----------------------------------------------------------------
-                // A. HANDLE BRAND NEW MESSAGES
-                // -----------------------------------------------------------------
-                if (change.type === 'added') {
-                    if (processedMessages.has(docId)) return;
-                    processedMessages.add(docId);
-                    setTimeout(() => processedMessages.delete(docId), 180000); // Clear memory after 3 mins
+            // Ignore historical data floods on server reboot
+            if (Date.now() - msgTime > 120000) return;
+            if (msgTime <= SERVER_START_TIME) return; 
 
-                    if (Date.now() - msgTime > 120000) return; // Ignore old messages on reboot
-                    if (msgTime <= SERVER_START_TIME) return; // Ignore anything saved before server woke up
+            // -----------------------------------------------------------------
+            // A. HANDLE BRAND NEW MESSAGES
+            // -----------------------------------------------------------------
+            if (change.type === 'added') {
+                if (processedMessages.has(docId)) return;
+                processedMessages.add(docId);
+                setTimeout(() => processedMessages.delete(docId), 180000); 
 
-                    try {
-                        const senderUid = messageData.sender;
+                try {
+                    const senderUid = messageData.sender;
+                    const chatRef = change.doc.ref.parent.parent;
+                    const chatDoc = await chatRef.get();
+                    if (!chatDoc.exists) return;
+                    
+                    const chatData = chatDoc.data();
+                    const participants = chatData.participants || [];
+                    
+                    const senderDoc = await db.collection('users').doc(senderUid).get();
+                    const senderData = senderDoc.data() || {};
+                    let senderName = senderData.name || senderData.username || "Someone";
+                    const senderPhoto = senderData.photoURL || "https://www.goorac.biz/icon.png";
+                    const senderUsername = senderData.username || senderUid;
+
+                    if (chatData.isGroup) senderName = `${senderName} in ${chatData.groupName || 'Group'}`;
+
+                    let bodyText = messageData.text || "New message";
+                    if (messageData.isHtml || messageData.isDropReply || messageData.replyToNote) bodyText = "💬 Replied to your post";
+                    else if (messageData.isBite) bodyText = "🎬 Sent a Bite video";
+                    else if (messageData.isGif) bodyText = "🎞️ Sent a GIF";
+                    else if (messageData.imageUrl) bodyText = "📷 Sent an image";
+                    else if (messageData.fileMeta?.type?.includes('audio')) bodyText = "🎵 Sent a voice message";
+                    else if (messageData.fileUrl) bodyText = "📎 Sent an attachment";
+
+                    const deepLink = chatData.isGroup 
+                        ? `https://www.goorac.biz/groupChat.html?id=${chatDoc.id}` 
+                        : `https://www.goorac.biz/chat.html?user=${senderUsername}`;
+
+                    participants.forEach(async (targetUid) => {
+                        if (targetUid === senderUid) return;
+
+                        await beamsClient.publishToInterests([targetUid], {
+                            web: { notification: { title: senderName, body: bodyText, icon: senderPhoto, deep_link: deepLink, hide_notification_if_site_has_focus: true }, time_to_live: 3600 },
+                            fcm: { notification: { title: senderName, body: bodyText, icon: senderPhoto }, data: { click_action: deepLink }, priority: "high" },
+                            apns: { aps: { alert: { title: senderName, body: bodyText }, "thread-id": chatDoc.id }, headers: { "apns-priority": "10", "apns-push-type": "alert" } }
+                        });
+                    });
+                } catch (error) { console.error("❌ Message Push Error:", error); }
+            }
+
+            // -----------------------------------------------------------------
+            // B. HANDLE MESSAGE REACTIONS (THROTTLED TO PREVENT SPAM)
+            // -----------------------------------------------------------------
+            if (change.type === 'modified' && messageData.reactions) {
+                try {
+                    const messageOwner = messageData.sender; 
+                    
+                    for (const [reactorUid, reactionData] of Object.entries(messageData.reactions)) {
+                        
+                        if (reactorUid === messageOwner) continue; // Don't notify self
+
+                        // STRICT THROTTLE: Prevents the "multiple notifications" bug
+                        // Only allows 1 reaction notification per user, per message, every 10 seconds
+                        const throttleKey = `throttle_${docId}_${reactorUid}`;
+                        if (reactionThrottle.has(throttleKey)) continue;
+                        
+                        reactionThrottle.add(throttleKey);
+                        setTimeout(() => reactionThrottle.delete(throttleKey), 10000); 
+
+                        // Cache key to permanently log this specific emoji reaction in memory
+                        const reactionCacheKey = `reaction_${docId}_${reactorUid}_${reactionData.emoji}`;
+                        if (processedMessages.has(reactionCacheKey)) continue;
+                        processedMessages.add(reactionCacheKey);
+                        setTimeout(() => processedMessages.delete(reactionCacheKey), 180000);
+
                         const chatRef = change.doc.ref.parent.parent;
                         const chatDoc = await chatRef.get();
-                        if (!chatDoc.exists) return;
-                        
+                        if (!chatDoc.exists) continue;
                         const chatData = chatDoc.data();
-                        const participants = chatData.participants || [];
-                        
-                        // Get Sender Info
-                        const senderDoc = await db.collection('users').doc(senderUid).get();
-                        const senderData = senderDoc.data() || {};
-                        let senderName = senderData.name || senderData.username || "Someone";
-                        const senderPhoto = senderData.photoURL || "https://www.goorac.biz/icon.png";
-                        const senderUsername = senderData.username || senderUid;
 
-                        // Group Chat logic: Add group name to title
-                        if (chatData.isGroup) {
-                            senderName = `${senderName} in ${chatData.groupName || 'Group'}`;
-                        }
+                        const reactorDoc = await db.collection('users').doc(reactorUid).get();
+                        const reactorInfo = reactorDoc.data() || {};
+                        let reactorName = reactorInfo.name || reactorInfo.username || "Someone";
+                        const reactorPhoto = reactorInfo.photoURL || "https://www.goorac.biz/icon.png";
+                        const reactorUsername = reactorInfo.username || reactorUid;
 
-                        // Format Text
-                        let bodyText = messageData.text || "New message";
-                        if (messageData.isHtml || messageData.isDropReply || messageData.replyToNote) bodyText = "💬 Replied to your post";
-                        else if (messageData.isBite) bodyText = "🎬 Sent a Bite video";
-                        else if (messageData.isGif) bodyText = "🎞️ Sent a GIF";
-                        else if (messageData.imageUrl) bodyText = "📷 Sent an image";
-                        else if (messageData.fileMeta?.type?.includes('audio')) bodyText = "🎵 Sent a voice message";
-                        else if (messageData.fileUrl) bodyText = "📎 Sent an attachment";
+                        if (chatData.isGroup) reactorName = `${reactorName} in ${chatData.groupName || 'Group'}`;
+
+                        const title = chatData.isGroup ? reactorName : `New Reaction`;
+                        const body = `${chatData.isGroup ? reactorName.split(' ')[0] : reactorName} reacted ${reactionData.emoji} to your message.`;
 
                         const deepLink = chatData.isGroup 
                             ? `https://www.goorac.biz/groupChat.html?id=${chatDoc.id}` 
-                            : `https://www.goorac.biz/chat.html?user=${senderUsername}`;
+                            : `https://www.goorac.biz/chat.html?user=${reactorUsername}`;
 
-                        // Send to all participants EXCEPT the sender
-                        participants.forEach(async (targetUid) => {
-                            if (targetUid === senderUid) return;
-
-                            await beamsClient.publishToInterests([targetUid], {
-                                web: { notification: { title: senderName, body: bodyText, icon: senderPhoto, deep_link: deepLink, hide_notification_if_site_has_focus: true }, time_to_live: 3600 },
-                                fcm: { notification: { title: senderName, body: bodyText, icon: senderPhoto }, data: { click_action: deepLink }, priority: "high" },
-                                apns: { aps: { alert: { title: senderName, body: bodyText }, "thread-id": chatDoc.id }, headers: { "apns-priority": "10", "apns-push-type": "alert" } }
-                            });
-                            console.log(`✅ Message Push sent to ${targetUid}`);
+                        await beamsClient.publishToInterests([messageOwner], {
+                            web: { notification: { title: title, body: body, icon: reactorPhoto, deep_link: deepLink, hide_notification_if_site_has_focus: true }, time_to_live: 3600 },
+                            fcm: { notification: { title: title, body: body, icon: reactorPhoto }, data: { click_action: deepLink }, priority: "high" },
+                            apns: { aps: { alert: { title: title, body: body }, "thread-id": chatDoc.id }, headers: { "apns-priority": "10", "apns-push-type": "alert" } }
                         });
-                    } catch (error) { console.error("❌ Message Push Error:", error); }
-                }
-
-                // -----------------------------------------------------------------
-                // B. HANDLE MESSAGE REACTIONS
-                // -----------------------------------------------------------------
-                if (change.type === 'modified' && messageData.reactions) {
-                    try {
-                        const messageOwner = messageData.sender; // The person whose message was reacted to
-                        
-                        // We check every reaction in the message to see if any are brand new
-                        for (const [reactorUid, reactionData] of Object.entries(messageData.reactions)) {
-                            
-                            // Reactions save timestamp as Date.now() integer directly
-                            if (!reactionData.timestamp) continue;
-                            
-                            // Check if this reaction just happened
-                            if (Date.now() - reactionData.timestamp > 120000) continue;
-                            if (reactionData.timestamp <= SERVER_START_TIME) continue;
-
-                            // Do not notify if the user reacted to their own message
-                            if (reactorUid === messageOwner) continue;
-
-                            // Create a highly unique cache ID for this specific reaction
-                            const reactionCacheKey = `reaction_${docId}_${reactorUid}_${reactionData.timestamp}`;
-                            if (processedMessages.has(reactionCacheKey)) continue;
-                            processedMessages.add(reactionCacheKey);
-                            setTimeout(() => processedMessages.delete(reactionCacheKey), 180000);
-
-                            const chatRef = change.doc.ref.parent.parent;
-                            const chatDoc = await chatRef.get();
-                            if (!chatDoc.exists) continue;
-                            const chatData = chatDoc.data();
-
-                            // Fetch Reactor Info
-                            const reactorDoc = await db.collection('users').doc(reactorUid).get();
-                            const reactorInfo = reactorDoc.data() || {};
-                            let reactorName = reactorInfo.name || reactorInfo.username || "Someone";
-                            const reactorPhoto = reactorInfo.photoURL || "https://www.goorac.biz/icon.png";
-                            const reactorUsername = reactorInfo.username || reactorUid;
-
-                            // Title logic for Groups
-                            if (chatData.isGroup) {
-                                reactorName = `${reactorName} in ${chatData.groupName || 'Group'}`;
-                            }
-
-                            const title = chatData.isGroup ? reactorName : `New Reaction`;
-                            const body = `${chatData.isGroup ? reactorName.split(' ')[0] : reactorName} reacted ${reactionData.emoji} to your message.`;
-
-                            const deepLink = chatData.isGroup 
-                                ? `https://www.goorac.biz/groupChat.html?id=${chatDoc.id}` 
-                                : `https://www.goorac.biz/chat.html?user=${reactorUsername}`;
-
-                            await beamsClient.publishToInterests([messageOwner], {
-                                web: { notification: { title: title, body: body, icon: reactorPhoto, deep_link: deepLink, hide_notification_if_site_has_focus: true }, time_to_live: 3600 },
-                                fcm: { notification: { title: title, body: body, icon: reactorPhoto }, data: { click_action: deepLink }, priority: "high" },
-                                apns: { aps: { alert: { title: title, body: body }, "thread-id": chatDoc.id }, headers: { "apns-priority": "10", "apns-push-type": "alert" } }
-                            });
-                            console.log(`✅ Reaction Push sent to ${messageOwner}`);
-                        }
-                    } catch (err) { console.error("❌ Reaction Push Error:", err); }
-                }
+                    }
+                } catch (err) { console.error("❌ Reaction Push Error:", err); }
             }
         });
     }, (error) => { console.error("❌ Messages listener error:", error); });
 }
 
 // ============================================================================
-// LISTENER 2: LIKES, COMMENTS, AND DROPS (Notifications Collection)
+// LISTENER 2: LIKES, COMMENTS, DROPS, AND NOTES (Notifications Collection)
 // ============================================================================
 function startNotificationListener() {
     console.log("🎧 Listening for Likes, Comments, Drops, and Notes...");
@@ -196,50 +201,49 @@ function startNotificationListener() {
                 const docId = change.doc.id;
                 if (processedNotifs.has(docId)) return;
                 processedNotifs.add(docId);
-                setTimeout(() => processedNotifs.delete(docId), 180000); // Clear memory after 3 mins
+                setTimeout(() => processedNotifs.delete(docId), 180000); 
 
                 const notifData = change.doc.data();
                 
-                if (!notifData.timestamp) return;
-                const msgTime = notifData.timestamp.toMillis ? notifData.timestamp.toMillis() : new Date(notifData.timestamp).getTime();
+                // BULLETPROOF TIMESTAMP: Uses Firestore creation time if payload timestamp is missing/broken
+                let msgTime = SERVER_START_TIME;
+                if (change.doc.createTime) msgTime = change.doc.createTime.toMillis();
+                else if (notifData.timestamp && notifData.timestamp.toMillis) msgTime = notifData.timestamp.toMillis();
+                else if (notifData.timestamp) msgTime = new Date(notifData.timestamp).getTime();
+
                 if (Date.now() - msgTime > 120000) return;
-                
                 if (msgTime <= SERVER_START_TIME) return;
 
-                const targetUid = notifData.toUid;
-                const senderUid = notifData.fromUid;
-                if (!targetUid || targetUid === senderUid) return; // Don't notify yourself
+                // BULLETPROOF ID CHECKER: Catch fields no matter what they are named
+                const targetUid = notifData.toUid || notifData.targetUid || notifData.receiverId || notifData.ownerId;
+                const senderUid = notifData.fromUid || notifData.senderUid || notifData.userId || notifData.sender;
+                
+                if (!targetUid || targetUid === senderUid) return; 
 
                 try {
                     const senderName = notifData.senderName || "Someone";
                     const senderPhoto = notifData.senderPfp || "https://www.goorac.biz/icon.png";
-                    const deepLink = notifData.link || `https://www.goorac.biz/notifications.html`;
+                    const deepLink = notifData.link || notifData.targetUrl || `https://www.goorac.biz/notifications.html`;
 
-                    // Smart Title Formatting based on the exact event type from your frontend
                     let title = "New Notification";
-                    let body = notifData.text || notifData.body || "Check your activity feed.";
+                    let body = notifData.text || notifData.body; 
 
-                    // Fix for EXACT wording of Notes and Drops
-                    if (notifData.type === 'note_like') {
+                    // SMART WORDING: Detects exact feature based on type or URL
+                    const linkString = deepLink.toLowerCase();
+
+                    if (notifData.type === 'like' || notifData.type === 'note_like' || notifData.type === 'drop_like' || notifData.type === 'like_moment') {
                         title = `New Like ❤️`;
-                        if (!notifData.body && !notifData.text) body = `${senderName} liked your Note.`;
-                    } else if (notifData.type === 'drop_like') {
-                        title = `New Like ❤️`;
-                        if (!notifData.body && !notifData.text) body = `${senderName} liked your Drop.`;
-                    } else if (notifData.type === 'like_moment') {
-                        title = `New Like ❤️`;
-                        if (!notifData.body && !notifData.text) body = `${senderName} liked your Moment.`;
-                    } else if (notifData.type === 'like') {
-                        title = `New Like ❤️`;
-                        if (!notifData.body && !notifData.text) body = `${senderName} liked your post.`;
-                    } else if (notifData.type === 'note_reply') {
+                        if (!body) {
+                            if (linkString.includes('note')) body = `${senderName} liked your Note.`;
+                            else if (linkString.includes('drop')) body = `${senderName} liked your Drop.`;
+                            else if (linkString.includes('moment')) body = `${senderName} liked your Moment.`;
+                            else body = `${senderName} liked your post.`;
+                        }
+                    } else if (notifData.type?.includes('comment') || notifData.type?.includes('reply')) {
                         title = `New Reply 💬`;
-                    } else if (notifData.type === 'drop_reply') {
-                        title = `New Reply 💬`;
-                    } else if (notifData.type === 'comment_moment') {
-                        title = `New Comment 💬`;
-                    } else if (notifData.type === 'reply_moment') {
-                        title = `New Reply 💬`;
+                        if (!body) body = `${senderName} replied to you.`;
+                    } else {
+                        if (!body) body = "Check your activity feed.";
                     }
 
                     await beamsClient.publishToInterests([targetUid], {
@@ -247,7 +251,7 @@ function startNotificationListener() {
                         fcm: { notification: { title: title, body: body, icon: senderPhoto }, data: { click_action: deepLink }, priority: "high" },
                         apns: { aps: { alert: { title: title, body: body }, "thread-id": "notifications" }, headers: { "apns-priority": "10", "apns-push-type": "alert" } }
                     });
-                    console.log(`✅ Event Push (${notifData.type}) sent to ${targetUid}`);
+                    console.log(`✅ Event Push sent to ${targetUid}`);
 
                 } catch (error) { console.error("❌ Notification Push Error:", error); }
             }
