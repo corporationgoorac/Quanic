@@ -55,23 +55,6 @@ const beamsClient = new PushNotifications({
 });
 
 // ============================================================================
-// SAFETY NET: RESTORED FETCH ENDPOINT
-// Just in case any frontend code still uses fetch('/send-push')
-// ============================================================================
-app.post('/send-push', (req, res) => {
-    const { targetUid, senderUid, title, body, icon, click_action } = req.body;
-    const deepLink = click_action || "https://www.goorac.biz";
-  
-    res.status(200).json({ success: true, message: "Push accepted via API route" });
-  
-    beamsClient.publishToInterests([targetUid], {
-      web: { notification: { title, body, icon, deep_link: deepLink, hide_notification_if_site_has_focus: true }, time_to_live: 3600 },
-      fcm: { notification: { title, body, icon }, data: { click_action: deepLink }, priority: "high" },
-      apns: { aps: { alert: { title, body }, "thread-id": senderUid || "api-push" }, headers: { "apns-priority": "10", "apns-push-type": "alert" } }
-    }).catch(e => console.error('API Push Error:', e));
-});
-
-// ============================================================================
 // LISTENER 1: CHATS, GROUP CHATS, DIRECT REPLIES, AND REACTIONS
 // ============================================================================
 function startMessageListener() {
