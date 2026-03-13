@@ -16,7 +16,7 @@ app.use(express.json());
 // 1. IMPORT YOUR 5 SEPARATE MODULES
 // ============================================================================
 const aiRoutes = require('./ai');
-const visionRoutes = require('./VisionScrapper');
+const visionRoutes = require('./visionScrapper');
 const bitesScrapper = require('./bitesScrapper');
 const pushNotifications = require('./pushNotifications');
 const startScheduledPushes = require('./shedulePush');
