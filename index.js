@@ -1,8 +1,8 @@
-const express = require('express'); // <-- FIXED: changed "Const" to lowercase "const"
+const express = require('express'); 
 const cors = require('cors');
 const dotenv = require('dotenv');
 
-// Load environment variables (like GEMINI_API_KEY)
+// Load environment variables
 dotenv.config();
 
 // Initialize the Master App
@@ -16,31 +16,21 @@ app.use(express.json());
 // 1. IMPORT YOUR 5 SEPARATE MODULES
 // ============================================================================
 const aiRoutes = require('./ai');
-const visionRoutes = require('./visionScrapper'); // Routing for the new vision page
+const visionRoutes = require('./visionScrapper'); 
 const bitesScrapper = require('./bitesScrapper');
 const pushNotifications = require('./pushNotifications');
-
-// WARNING: Double-check the spelling of this file in your folder! 
-// If the file is named "schedulePush.js", you must add the 'c' here. 
-// Linux servers on Render are strictly case-sensitive and spelling-sensitive.
 const startScheduledPushes = require('./scheduledPush'); 
 
 // ============================================================================
 // 2. MOUNT YOUR ROUTERS
 // ============================================================================
-// ai.js has '/chat', this makes it accessible at yoursite.com/api/chat
 app.use('/api', aiRoutes); 
-
-// visionScrapper.js has '/feed', this makes it accessible at yoursite.com/api/feed
 app.use('/api', visionRoutes);
 
 // ============================================================================
 // 3. ATTACH YOUR DIRECT PLUGINS
 // ============================================================================
-// bitesScrapper automatically handles the /api/reels route
 bitesScrapper(app); 
-
-// pushNotifications attaches the /ping route and starts the Firebase Listeners
 pushNotifications(app); 
 
 // ============================================================================
