@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * 🚀 GOORAC QUANTUM BITES - ENTERPRISE BACKEND ENGINE
- * Version: 9.5.0 (Ultimate NLP, Parallel Search Fetch, & 7-Day Memory)
+ * Version: 9.6.0 (Ultimate NLP, Sequential Search Fetch, & 7-Day Memory)
  * Architecture: Pool-Based SWR Caching, Staggered Anti-Ban Scraping, Global ML
  * ============================================================================
  */
@@ -26,8 +26,8 @@ const CONFIG = {
     SCRAPER: {
         MAX_RETRIES: 3,                  
         TIMEOUT_MS: 8500,                
-        STAGGER_DELAY_MS: 350,           // 🚀 ANTI-BAN: 350ms delay between concurrent YT scrapes
-        CIRCUIT_BREAKER_FAILURES: 5,     
+        STAGGER_DELAY_MS: 2500,          // 🚀 ANTI-BAN: Increased to 2.5s to completely avoid YT IP Bans
+        CIRCUIT_BREAKER_FAILURES: 10,    // 🔥 More tolerant before locking down
         CIRCUIT_BREAKER_COOLDOWN: 45000, 
     },
     FEED: {
@@ -36,7 +36,7 @@ const CONFIG = {
         SEARCH_BATCH_SIZE: 24,           // 🔥 Increased for denser Discover grid
     },
     ML: {
-        REFILL_INTERVAL: 30 * 60 * 1000, 
+        REFILL_INTERVAL: 12 * 60 * 60 * 1000, // 🕒 Changed from 30 mins to 12 hours per request
         DECAY_RATE: 0.85                 
     }
 };
@@ -401,7 +401,7 @@ class GlobalMachineLearningEngine {
             for (const interest of topGlobalInterests) {
                 const cacheKey = GlobalCache.generateKey(interest, 'ALGO_POOL');
                 BackgroundEventBus.emit('refresh_algo_pool', { baseTopic: interest, cacheKey });
-                await new Promise(r => setTimeout(r, 2000)); 
+                await new Promise(r => setTimeout(r, 5000)); // Increased ML stagger delay to be extra safe
             }
 
         } catch (error) {}
@@ -442,18 +442,19 @@ BackgroundEventBus.on('refresh_algo_pool', async ({ baseTopic, cacheKey }) => {
     } catch (e) {}
 });
 
-// 🔥 NEW UPGRADE: Background Search Cache now fetches Parallel Queries for massive results
+// 🔥 NEW UPGRADE: Background Search Cache now fetches SEQUENTIAL Queries to prevent IP Bans
 BackgroundEventBus.on('refresh_search_cache', async ({ exactQuery, cacheKey }) => {
     try {
         const query1 = `${exactQuery} #shorts`;
         const query2 = `${exactQuery}`;
         const query3 = `${exactQuery} viral`;
 
-        const [res1, res2, res3] = await Promise.all([
-            CoreScraper.safeSearch(query1),
-            CoreScraper.safeSearch(query2),
-            CoreScraper.safeSearch(query3)
-        ]);
+        // Switched from Promise.all to sequential fetching to stop Circuit Breaker trips
+        const res1 = await CoreScraper.safeSearch(query1);
+        await new Promise(r => setTimeout(r, CONFIG.SCRAPER.STAGGER_DELAY_MS));
+        const res2 = await CoreScraper.safeSearch(query2);
+        await new Promise(r => setTimeout(r, CONFIG.SCRAPER.STAGGER_DELAY_MS));
+        const res3 = await CoreScraper.safeSearch(query3);
 
         const rawVideos = [...res1, ...res2, ...res3];
         const uniqueVideos = AlgorithmEngine.enforceUniqueness(rawVideos);
@@ -482,7 +483,7 @@ module.exports = function(app) {
 
             if (isSearchMode) {
                 // ================================================================
-                // 🔍 MODE A: DIRECT DISCOVER SEARCH (Parallel Fetch & Strict Rank)
+                // 🔍 MODE A: DIRECT DISCOVER SEARCH (Sequential Fetch & Strict Rank)
                 // ================================================================
                 let exactQuery = rawTopics.trim().toLowerCase();
                 const cacheKey = GlobalCache.generateKey(exactQuery, 'SEARCH');
@@ -495,16 +496,16 @@ module.exports = function(app) {
                         BackgroundEventBus.emit('refresh_search_cache', { exactQuery, cacheKey });
                     }
                 } else {
-                    // 🔥 NEW: Parallel Fetching for massive immediate result pool
+                    // 🔥 NEW: Sequential Fetching to prevent instant IP Bans
                     const query1 = `${exactQuery} #shorts`;
                     const query2 = `${exactQuery}`;
                     const query3 = `${exactQuery} viral`;
 
-                    const [res1, res2, res3] = await Promise.all([
-                        CoreScraper.safeSearch(query1),
-                        CoreScraper.safeSearch(query2),
-                        CoreScraper.safeSearch(query3)
-                    ]);
+                    const res1 = await CoreScraper.safeSearch(query1);
+                    await new Promise(r => setTimeout(r, CONFIG.SCRAPER.STAGGER_DELAY_MS));
+                    const res2 = await CoreScraper.safeSearch(query2);
+                    await new Promise(r => setTimeout(r, CONFIG.SCRAPER.STAGGER_DELAY_MS));
+                    const res3 = await CoreScraper.safeSearch(query3);
 
                     const rawVideos = [...res1, ...res2, ...res3];
                     const uniqueVideos = AlgorithmEngine.enforceUniqueness(rawVideos);
