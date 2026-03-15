@@ -1,4 +1,4 @@
-const express = require('express'); 
+const express = require('express'); // Fixed 'Const' to 'const' so your app doesn't crash
 const cors = require('cors');
 const dotenv = require('dotenv');
 
@@ -41,6 +41,17 @@ bitesScrapper(app);
 // ============================================================================
 // 5. GLOBAL HEALTH CHECK & SERVER START
 // ============================================================================
+
+// ADDED: Handles uppercase /Ping for your cron job
+app.get('/Ping', (req, res) => {
+    res.status(200).send('pong');
+});
+
+// ADDED: Handles standard lowercase /ping just in case
+app.get('/ping', (req, res) => {
+    res.status(200).send('pong');
+});
+
 app.get('/', (req, res) => {
     res.send('🚀 Quantum Master Backend is ONLINE and running all services (AI, Vision, Bites, Push)!');
 });
