@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * 🚀 GOORAC QUANTUM BITES - ENTERPRISE BACKEND ENGINE
- * Version: 9.6.0 (Ultimate NLP, Sequential Search Fetch, & 7-Day Memory)
+ * Version: 9.7.0 (Ultimate NLP, SSE Data Streaming, & 7-Day Memory)
  * Architecture: Pool-Based SWR Caching, Staggered Anti-Ban Scraping, Global ML
  * ============================================================================
  */
@@ -442,14 +442,12 @@ BackgroundEventBus.on('refresh_algo_pool', async ({ baseTopic, cacheKey }) => {
     } catch (e) {}
 });
 
-// 🔥 NEW UPGRADE: Background Search Cache now fetches SEQUENTIAL Queries to prevent IP Bans
 BackgroundEventBus.on('refresh_search_cache', async ({ exactQuery, cacheKey }) => {
     try {
-        const query1 = `${exactQuery} #shorts`;
-        const query2 = `${exactQuery}`;
+        const query1 = `${exactQuery}`; 
+        const query2 = `${exactQuery} #shorts`;
         const query3 = `${exactQuery} viral`;
 
-        // Switched from Promise.all to sequential fetching to stop Circuit Breaker trips
         const res1 = await CoreScraper.safeSearch(query1);
         await new Promise(r => setTimeout(r, CONFIG.SCRAPER.STAGGER_DELAY_MS));
         const res2 = await CoreScraper.safeSearch(query2);
@@ -469,21 +467,59 @@ BackgroundEventBus.on('refresh_search_cache', async ({ exactQuery, cacheKey }) =
 });
 
 // ============================================================================
-// 🚀 11. MAIN EXPRESS ROUTER CONTROLLER
+// 🚀 11. MAIN EXPRESS ROUTER CONTROLLER (NOW WITH SSE STREAMING)
 // ============================================================================
+
+// 📦 Helper function to compile payload identical to previous format
+const compilePayload = (videos, queriedCategory) => {
+    return videos.map(video => {
+        const metrics = EngagementEngine.simulate(video.views);
+        const extractedHashtags = NLPProcessor.extractHashtags(video.title + " " + (video.author ? video.author.name : "") + " " + (video.description || ""));
+        return {
+            id: `bite_${video.videoId}_${crypto.randomBytes(4).toString('hex')}`, 
+            category: queriedCategory || video.queriedCategory || "trending", 
+            author: video.author ? video.author.name : "Creator",
+            title: NLPProcessor.sanitizeTitle(video.title),
+            hashtags: extractedHashtags, 
+            imgUrl: video.thumbnail || video.image,
+            videoId: video.videoId, 
+            views: metrics.views,
+            likes: metrics.likes, 
+            comments: metrics.comments,
+            shares: metrics.shares,
+            lengthSeconds: video.seconds || 0
+        };
+    });
+};
+
 module.exports = function(app) {
 
     app.get('/api/reels', async (req, res) => {
         const requestStartTime = Date.now();
         const isSearchMode = req.query.search === 'true';
         const rawTopics = req.query.topic || "tamil"; 
-        
-        try {
-            let finalFeed = [];
+        let isClientConnected = true;
 
+        // 📡 Setup SSE Headers for Instant Streaming
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+        });
+
+        req.on('close', () => { isClientConnected = false; });
+
+        // Helper to push chunks to client
+        const streamChunk = (videos) => {
+            if (!isClientConnected || videos.length === 0) return;
+            const payload = compilePayload(videos, rawTopics);
+            res.write(`data: ${JSON.stringify({ success: true, bites: payload })}\n\n`);
+        };
+
+        try {
             if (isSearchMode) {
                 // ================================================================
-                // 🔍 MODE A: DIRECT DISCOVER SEARCH (Sequential Fetch & Strict Rank)
+                // 🔍 MODE A: DIRECT DISCOVER SEARCH (Streaming Top Videos First)
                 // ================================================================
                 let exactQuery = rawTopics.trim().toLowerCase();
                 const cacheKey = GlobalCache.generateKey(exactQuery, 'SEARCH');
@@ -491,39 +527,58 @@ module.exports = function(app) {
                 const { data: cachedData, isStale } = GlobalCache.get(cacheKey);
 
                 if (cachedData && cachedData.length > 0) {
-                    finalFeed = cachedData;
+                    // Stream from cache immediately
+                    streamChunk(cachedData.slice(0, CONFIG.FEED.SEARCH_BATCH_SIZE));
                     if (isStale && !CoreScraper.isBreakerOpen()) {
                         BackgroundEventBus.emit('refresh_search_cache', { exactQuery, cacheKey });
                     }
+                    res.end();
                 } else {
-                    // 🔥 NEW: Sequential Fetching to prevent instant IP Bans
-                    const query1 = `${exactQuery} #shorts`;
-                    const query2 = `${exactQuery}`;
-                    const query3 = `${exactQuery} viral`;
-
+                    // 🔥 FETCH 1: Exact Query (Gets Top Pages/Videos first)
+                    const query1 = `${exactQuery}`;
                     const res1 = await CoreScraper.safeSearch(query1);
-                    await new Promise(r => setTimeout(r, CONFIG.SCRAPER.STAGGER_DELAY_MS));
-                    const res2 = await CoreScraper.safeSearch(query2);
-                    await new Promise(r => setTimeout(r, CONFIG.SCRAPER.STAGGER_DELAY_MS));
-                    const res3 = await CoreScraper.safeSearch(query3);
-
-                    const rawVideos = [...res1, ...res2, ...res3];
-                    const uniqueVideos = AlgorithmEngine.enforceUniqueness(rawVideos);
-                    const validShorts = uniqueVideos.filter(v => (v.seconds || 0) <= CONFIG.FEED.MAX_DURATION_SEC);
+                    if (!isClientConnected) return res.end();
                     
-                    finalFeed = AlgorithmEngine.rankSearchRelevancy(validShorts, exactQuery)
-                        .map(v => ({ ...v, queriedCategory: rawTopics }));
+                    let valid1 = res1.filter(v => (v.seconds || 0) <= CONFIG.FEED.MAX_DURATION_SEC);
+                    let ranked1 = AlgorithmEngine.rankSearchRelevancy(valid1, exactQuery).map(v => ({ ...v, queriedCategory: rawTopics }));
+                    streamChunk(ranked1); 
+                    
+                    let combinedPool = [...ranked1];
 
-                    if (finalFeed.length > 0) GlobalCache.set(cacheKey, finalFeed);
+                    // 🔥 FETCH 2: Shorts Specific
+                    await new Promise(r => setTimeout(r, CONFIG.SCRAPER.STAGGER_DELAY_MS));
+                    if (!isClientConnected) return res.end();
+                    
+                    const query2 = `${exactQuery} #shorts`;
+                    const res2 = await CoreScraper.safeSearch(query2);
+                    let valid2 = res2.filter(v => (v.seconds || 0) <= CONFIG.FEED.MAX_DURATION_SEC);
+                    let unique2 = valid2.filter(v => !combinedPool.some(existing => existing.videoId === v.videoId));
+                    let ranked2 = AlgorithmEngine.rankSearchRelevancy(unique2, exactQuery).map(v => ({ ...v, queriedCategory: rawTopics }));
+                    streamChunk(ranked2);
+                    
+                    combinedPool = [...combinedPool, ...ranked2];
+
+                    // 🔥 FETCH 3: Viral Specific
+                    await new Promise(r => setTimeout(r, CONFIG.SCRAPER.STAGGER_DELAY_MS));
+                    if (!isClientConnected) return res.end();
+
+                    const query3 = `${exactQuery} viral`;
+                    const res3 = await CoreScraper.safeSearch(query3);
+                    let valid3 = res3.filter(v => (v.seconds || 0) <= CONFIG.FEED.MAX_DURATION_SEC);
+                    let unique3 = valid3.filter(v => !combinedPool.some(existing => existing.videoId === v.videoId));
+                    let ranked3 = AlgorithmEngine.rankSearchRelevancy(unique3, exactQuery).map(v => ({ ...v, queriedCategory: rawTopics }));
+                    streamChunk(ranked3);
+
+                    combinedPool = [...combinedPool, ...ranked3];
+                    if (combinedPool.length > 0) GlobalCache.set(cacheKey, combinedPool);
+
+                    Logger.performance(`API Streamed Search`, Date.now() - requestStartTime);
+                    res.end();
                 }
-
-                // 🚨 FIX: We DO NOT shuffle search results anymore! 
-                // We keep the highest ranked Exact Matches strictly at the top.
-                finalFeed = finalFeed.slice(0, CONFIG.FEED.SEARCH_BATCH_SIZE);
 
             } else {
                 // ================================================================
-                // 🧠 MODE B: MASSIVE POOL ALGORITHM FEED
+                // 🧠 MODE B: MASSIVE POOL ALGORITHM FEED (Streaming Feed)
                 // ================================================================
                 const baseTopicString = rawTopics.split(',').map(t => t.trim()).join('_');
                 const cacheKey = GlobalCache.generateKey(baseTopicString, 'ALGO_POOL');
@@ -531,73 +586,46 @@ module.exports = function(app) {
                 const { data: poolData, isStale } = GlobalCache.get(cacheKey);
 
                 if (poolData && poolData.length >= CONFIG.FEED.ALGO_BATCH_SIZE) {
-                    // We DO shuffle the Algo Feed so the user gets fresh content every swipe session
-                    finalFeed = AlgorithmEngine.cryptoShuffle(poolData).slice(0, CONFIG.FEED.ALGO_BATCH_SIZE);
+                    let shuffled = AlgorithmEngine.cryptoShuffle(poolData).slice(0, CONFIG.FEED.ALGO_BATCH_SIZE);
+                    streamChunk(shuffled);
                     if (isStale && !CoreScraper.isBreakerOpen()) {
                         BackgroundEventBus.emit('refresh_algo_pool', { baseTopic: rawTopics, cacheKey });
                     }
+                    res.end();
                 } else {
-                    Logger.warn(`Cold Boot: Building initial Algo Pool for ${baseTopicString}`);
+                    Logger.warn(`Cold Boot: Streaming initial Algo Pool for ${baseTopicString}`);
                     const queries = AlgorithmEngine.buildDynamicQueries(rawTopics);
-                    let newVideos = [];
+                    let fullPool = [];
                     
                     for (const query of queries.slice(0, 3)) {
+                        if (!isClientConnected) break;
                         const vids = await CoreScraper.safeSearch(query);
-                        newVideos.push(...vids.map(v => ({ ...v, queriedCategory: rawTopics })));
+                        let validShorts = vids.filter(v => 
+                            (v.seconds || 0) <= CONFIG.FEED.MAX_DURATION_SEC && 
+                            !GlobalCache.globalSeenHistory.has(v.videoId) &&
+                            !GlobalCache.longTermSeenHistory.has(v.videoId) &&
+                            !fullPool.some(existing => existing.videoId === v.videoId)
+                        ).map(v => ({ ...v, queriedCategory: rawTopics }));
+
+                        if (validShorts.length > 0) {
+                            streamChunk(AlgorithmEngine.cryptoShuffle(validShorts));
+                            fullPool.push(...validShorts);
+                        }
                         await new Promise(r => setTimeout(r, CONFIG.SCRAPER.STAGGER_DELAY_MS));
                     }
-
-                    const validShorts = newVideos.filter(v => 
-                        (v.seconds || 0) <= CONFIG.FEED.MAX_DURATION_SEC && 
-                        !GlobalCache.globalSeenHistory.has(v.videoId) &&
-                        !GlobalCache.longTermSeenHistory.has(v.videoId)
-                    );
-                    const uniquePool = AlgorithmEngine.enforceUniqueness(validShorts);
                     
-                    if (uniquePool.length > 0) GlobalCache.set(cacheKey, uniquePool);
-                    finalFeed = AlgorithmEngine.cryptoShuffle(uniquePool).slice(0, CONFIG.FEED.ALGO_BATCH_SIZE);
+                    if (fullPool.length > 0) GlobalCache.set(cacheKey, fullPool);
+                    Logger.performance(`API Streamed Algo`, Date.now() - requestStartTime);
+                    res.end();
                 }
             }
 
-            // ================================================================
-            // 📦 PAYLOAD COMPILER & DATA ENRICHMENT
-            // ================================================================
-            if (!finalFeed || finalFeed.length === 0) {
-                return res.json({ success: true, bites: [], _sys: { ms: Date.now() - requestStartTime }});
-            }
-
-            const clientPayload = finalFeed.map(video => {
-                const metrics = EngagementEngine.simulate(video.views);
-                const extractedHashtags = NLPProcessor.extractHashtags(video.title + " " + (video.author ? video.author.name : "") + " " + (video.description || ""));
-                
-                return {
-                    id: `bite_${video.videoId}_${crypto.randomBytes(4).toString('hex')}`, 
-                    category: video.queriedCategory || "trending", 
-                    author: video.author ? video.author.name : "Creator",
-                    title: NLPProcessor.sanitizeTitle(video.title),
-                    hashtags: extractedHashtags, 
-                    imgUrl: video.thumbnail || video.image,
-                    videoId: video.videoId, 
-                    views: metrics.views,
-                    likes: metrics.likes, 
-                    comments: metrics.comments,
-                    shares: metrics.shares,
-                    lengthSeconds: video.seconds || 0
-                };
-            });
-
-            const executionTimeMs = Date.now() - requestStartTime;
-            Logger.performance(`API Responded (${isSearchMode ? 'Search' : 'Algo'})`, executionTimeMs);
-
-            res.json({ 
-                success: true, 
-                bites: clientPayload, 
-                _sys: { ms: executionTimeMs, mode: isSearchMode ? 'search' : 'algo' } 
-            });
-
         } catch (error) {
             Logger.error("CRITICAL ROUTE ERROR:", error);
-            res.status(500).json({ success: false, bites: [], error: "Engine Failure" });
+            if (isClientConnected) {
+                res.write(`data: ${JSON.stringify({ success: false, bites: [], error: "Engine Failure" })}\n\n`);
+                res.end();
+            }
         }
     });
 };
