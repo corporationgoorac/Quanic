@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * 🚀 GOORAC QUANTUM BITES - ENTERPRISE BACKEND ENGINE
- * Version: 9.7.0 (Ultimate NLP, SSE Data Streaming, & 7-Day Memory)
+ * Version: 9.8.0 (Ultimate NLP, SSE Data Streaming, & Ghost Proxy Network)
  * Architecture: Pool-Based SWR Caching, Staggered Anti-Ban Scraping, Global ML
  * ============================================================================
  */
@@ -307,112 +307,104 @@ class EnterpriseCache {
 const GlobalCache = new EnterpriseCache();
 
 // ============================================================================
-// 🛡️ 8. CIRCUIT BREAKER & ANTI-BAN SCRAPER (OLD - COMMENTED OUT)
-// ============================================================================
-/*
-class ScraperService {
-    constructor() { this.failures = 0; this.breakerTrippedUntil = 0; }
-
-    isBreakerOpen() {
-        if (this.failures >= CONFIG.SCRAPER.CIRCUIT_BREAKER_FAILURES) {
-            if (Date.now() > this.breakerTrippedUntil) { this.failures = 0; return false; }
-            return true;
-        }
-        return false;
-    }
-
-    recordFailure() {
-        this.failures++;
-        if (this.failures >= CONFIG.SCRAPER.CIRCUIT_BREAKER_FAILURES) {
-            this.breakerTrippedUntil = Date.now() + CONFIG.SCRAPER.CIRCUIT_BREAKER_COOLDOWN;
-            Logger.error(`⚡ YT BLOCKED IP! Circuit Breaker active for ${CONFIG.SCRAPER.CIRCUIT_BREAKER_COOLDOWN}ms`);
-        }
-    }
-
-    async safeSearch(query, attempt = 1) {
-        if (this.isBreakerOpen()) throw new Error("CIRCUIT_BREAKER_OPEN");
-        try {
-            const result = await Promise.race([
-                ytSearch(query),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), CONFIG.SCRAPER.TIMEOUT_MS))
-            ]);
-            this.failures = 0; 
-            return result.videos || [];
-        } catch (error) {
-            if (error.message === 'TIMEOUT' && attempt <= CONFIG.SCRAPER.MAX_RETRIES) {
-                await new Promise(res => setTimeout(res, 600 * attempt)); 
-                return this.safeSearch(query, attempt + 1);
-            }
-            this.recordFailure();
-            return []; 
-        }
-    }
-}
-*/
-
-// ============================================================================
-// 🛡️ 8. THE "MASTER WAY" - OPEN-SOURCE PROXY AGGREGATOR (NEW)
+// 🛡️ 8. GHOST PROXY NETWORK (CLOUDFLARE BYPASS + HYBRID ARCHITECTURE)
 // ============================================================================
 class ScraperService {
     constructor() {
-        // An army of free, public open-source proxy servers (No API limits, no IP bans)
-        this.instances = [
-            'https://pipedapi.kavin.rocks',
-            'https://pipedapi.tokhmi.xyz',
-            'https://pipedapi.syncpundit.io'
+        // We use a hybrid of Piped AND Invidious networks for maximum redundancy
+        this.servers = [
+            { url: 'https://vid.puffyan.us/api/v1', type: 'invidious' },
+            { url: 'https://pipedapi.kavin.rocks', type: 'piped' },
+            { url: 'https://invidious.flokinet.to/api/v1', type: 'invidious' },
+            { url: 'https://api.piped.projectsegfau.lt', type: 'piped' },
+            { url: 'https://invidious.nerdvpn.de/api/v1', type: 'invidious' },
+            { url: 'https://pipedapi.tokhmi.xyz', type: 'piped' },
+            { url: 'https://invidious.slipfox.xyz/api/v1', type: 'invidious' },
+            { url: 'https://pipedapi.smnz.de', type: 'piped' }
         ];
-        this.currentIndex = 0; // Start with the first server
-        this.failures = 0; // Keeping old properties so your other code doesn't error out
-        this.breakerTrippedUntil = 0; 
+        // Start randomly so you don't burn out the first server
+        this.currentIndex = Math.floor(Math.random() * this.servers.length); 
     }
 
-    // Keep this so your Cache/Background workers don't break
     isBreakerOpen() { return false; } 
-    recordFailure() { Logger.warn("Proxy bypass attempted. No breaker tripped."); }
+    recordFailure() { Logger.warn("Ghost proxy intercepted a block."); }
 
-    // The Failover Mechanism: If a server dies, switch to the next one instantly
     rotateServer() {
-        this.currentIndex = (this.currentIndex + 1) % this.instances.length;
-        Logger.warn(`🔄 Switched to backup scraping server: ${this.instances[this.currentIndex]}`);
+        this.currentIndex = (this.currentIndex + 1) % this.servers.length;
+        Logger.info(`🔄 Rotating to backup network: ${this.servers[this.currentIndex].url}`);
     }
 
     async safeSearch(query, attempt = 1) {
-        // If we tried 3 different servers and they all failed, gracefully return empty
-        if (attempt > 3) {
-            Logger.error("🚨 All backup proxy servers failed.");
+        if (attempt > 4) {
+            Logger.error("🚨 All Ghost Proxy routes exhausted.");
             return [];
         }
 
+        const server = this.servers[this.currentIndex];
+
         try {
-            const baseUrl = this.instances[this.currentIndex];
-            // Call the Piped API to do the dirty work for us
-            const url = `${baseUrl}/search?q=${encodeURIComponent(query)}&filter=videos`;
-            
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("Server rejected request");
+            // 🛡️ THE SECRET WEAPON: Disguise Render as a real iPhone user
+            const headers = {
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+                'Accept': 'application/json, text/plain, */*',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Origin': 'https://www.youtube.com',
+                'Referer': 'https://www.youtube.com/'
+            };
+
+            // Build correct URL depending on the network type
+            const endpoint = server.type === 'piped' 
+                ? `${server.url}/search?q=${encodeURIComponent(query)}&filter=videos`
+                : `${server.url}/search?q=${encodeURIComponent(query)}`;
+
+            // Create a strict 6.5-second timeout so a dead server doesn't hang your app
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6500);
+
+            const response = await fetch(endpoint, { headers, signal: controller.signal });
+            clearTimeout(timeoutId);
+
+            if (!response.ok) throw new Error(`Cloudflare or Server Block (HTTP ${response.status})`);
             
             const data = await response.json();
+            let mappedVideos = [];
 
-            // Piped returns videos under 'items'
-            if (!data.items || data.items.length === 0) return [];
+            // Parse data perfectly depending on which network we used
+            if (server.type === 'piped') {
+                if (!data.items) throw new Error("Empty Piped Payload");
+                mappedVideos = data.items
+                    .filter(i => i.type === 'stream')
+                    .map(item => ({
+                        videoId: item.url.replace('/watch?v=', ''),
+                        title: item.title,
+                        author: { name: item.uploaderName },
+                        thumbnail: item.thumbnail,
+                        seconds: item.duration || Math.floor(Math.random() * 45) + 15,
+                        views: item.views || Math.floor(Math.random() * 50000) + 10000,
+                        ago: item.uploadedDate || "Recently"
+                    }));
+            } else if (server.type === 'invidious') {
+                if (!Array.isArray(data)) throw new Error("Empty Invidious Payload");
+                mappedVideos = data
+                    .filter(i => i.type === 'video')
+                    .map(item => ({
+                        videoId: item.videoId,
+                        title: item.title,
+                        author: { name: item.author },
+                        thumbnail: item.videoThumbnails ? item.videoThumbnails[0]?.url : "",
+                        seconds: item.lengthSeconds || Math.floor(Math.random() * 45) + 15,
+                        views: item.viewCount || Math.floor(Math.random() * 50000) + 10000,
+                        ago: item.publishedText || "Recently"
+                    }));
+            }
 
-            // 🪄 Map Piped's data to perfectly match your Quantum logic!
-            return data.items
-                .filter(item => item.type === 'stream') // Only get actual videos
-                .map(item => ({
-                    videoId: item.url.replace('/watch?v=', ''), // Extract exact ID
-                    title: item.title,
-                    author: { name: item.uploaderName },
-                    thumbnail: item.thumbnail,
-                    seconds: item.duration || 45, // Piped provides exact duration!
-                    views: item.views || Math.floor(Math.random() * 50000) + 10000, 
-                    ago: item.uploadedDate || "Recently"
-                }));
+            if (mappedVideos.length === 0) throw new Error("Zero shorts found");
+            return mappedVideos;
 
         } catch (error) {
-            Logger.warn(`⚠️ Server ${this.instances[this.currentIndex]} failed. Initiating failover...`);
+            Logger.warn(`⚠️ Proxy ${server.url} failed. Initiating instant failover...`);
             this.rotateServer();
-            // Recursively try again instantly with the new server
+            // Retry instantly on the next server
             return this.safeSearch(query, attempt + 1);
         }
     }
