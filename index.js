@@ -15,28 +15,28 @@ app.use(express.json());
 // ============================================================================
 // 1. IMPORT YOUR 5 SEPARATE MODULES
 // ============================================================================
-const aiRoutes = require('./ai');
+// const aiRoutes = require('./ai');
 const visionRoutes = require('./visionScrapper'); 
 const bitesScrapper = require('./bitesScrapper');
-const pushNotifications = require('./pushNotifications');
-const startScheduledPushes = require('./scheduledPush'); 
+// const pushNotifications = require('./pushNotifications');
+// const startScheduledPushes = require('./scheduledPush'); 
 
 // ============================================================================
 // 2. MOUNT YOUR ROUTERS
 // ============================================================================
-app.use('/api', aiRoutes); 
+// app.use('/api', aiRoutes); 
 app.use('/api', visionRoutes);
 
 // ============================================================================
 // 3. ATTACH YOUR DIRECT PLUGINS
 // ============================================================================
 bitesScrapper(app); 
-pushNotifications(app); 
+// pushNotifications(app); 
 
 // ============================================================================
 // 4. START YOUR BACKGROUND CRON JOBS
 // ============================================================================
-startScheduledPushes(); 
+// startScheduledPushes(); 
 
 // ============================================================================
 // 5. GLOBAL HEALTH CHECK & SERVER START
