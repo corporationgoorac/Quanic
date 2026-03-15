@@ -17,7 +17,7 @@ app.use(express.json());
 // ============================================================================
 // const aiRoutes = require('./ai');
 const visionRoutes = require('./visionScrapper'); 
-const bitesScrapper = require('./bitesScrapper');
+// const bitesScrapper = require('./bitesScrapper');
 // const pushNotifications = require('./pushNotifications');
 // const startScheduledPushes = require('./scheduledPush'); 
 
@@ -30,7 +30,7 @@ app.use('/api', visionRoutes);
 // ============================================================================
 // 3. ATTACH YOUR DIRECT PLUGINS
 // ============================================================================
-bitesScrapper(app); 
+// bitesScrapper(app); 
 // pushNotifications(app); 
 
 // ============================================================================
