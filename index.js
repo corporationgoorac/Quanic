@@ -1,6 +1,7 @@
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
+import http from 'http'; // ADDED: Built-in Node module for the dummy server
 
 dotenv.config();
 
@@ -121,4 +122,13 @@ Quan: [/INST]`;
         }
       }
     }
+});
+
+// 3. ADDED: Dummy Web Server to satisfy Render's port scanner
+const port = process.env.PORT || 3000;
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Quan AI Worker is healthy and listening to Firebase.');
+}).listen(port, '0.0.0.0', () => {
+    console.log(`[Quan AI] Dummy server listening on port ${port} to keep Render happy.`);
 });
