@@ -14,9 +14,9 @@ initializeApp({
 
 const db = getFirestore();
 
-// Groq API settings - REPLACING HUGGING FACE
+// Groq API settings
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_MODEL = "mixtral-8x7b-32768"; // The exact model you wanted, hosted on lightning-fast hardware
+const GROQ_MODEL = "llama-3.3-70b-versatile"; // ACTIVE, HIGH-SPEED, FREE MODEL
 
 console.log("[Quan AI Backend] Worker started. Listening for incoming messages...");
 
@@ -57,7 +57,7 @@ db.collectionGroup('messages')
             let messagesPayload = [
                 {
                     role: "system",
-                    content: `You are Quan AI, an infinite intelligence built by Goorac Corporation. You are talking to ${userName}. User's Core Memory/Background: ${memory}. Always be concise, highly professional, and deeply helpful. Do not mention you are an AI model created by Mistral or Groq. You belong to Goorac Corporation.`
+                    content: `You are Quan AI, an infinite intelligence built by Goorac Corporation. You are talking to ${userName}. User's Core Memory/Background: ${memory}. Always be concise, highly professional, and deeply helpful. Do not mention you are an AI model created by Meta or Groq. You belong to Goorac Corporation.`
                 }
             ];
 
@@ -70,7 +70,7 @@ db.collectionGroup('messages')
                 });
             });
 
-            // Step E: Call GROQ API (Lightning fast, highly reliable)
+            // Step E: Call GROQ API 
             const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
                 headers: {
                     "Authorization": `Bearer ${GROQ_API_KEY}`,
