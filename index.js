@@ -1,7 +1,7 @@
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
-import http from 'http'; // ADDED: Built-in Node module for the dummy server
+import http from 'http';
 
 dotenv.config();
 
@@ -14,10 +14,9 @@ initializeApp({
 
 const db = getFirestore();
 
-// Hugging Face API settings
-// UPDATED: Using Hugging Face's own in-house model. Highly stable on the free tier, no gates, no deletions.
-const HF_API_KEY = process.env.HF_API_KEY;
-const HF_MODEL = "HuggingFaceH4/zephyr-7b-beta"; 
+// Groq API settings - REPLACING HUGGING FACE
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODEL = "mixtral-8x7b-32768"; // The exact model you wanted, hosted on lightning-fast hardware
 
 console.log("[Quan AI Backend] Worker started. Listening for incoming messages...");
 
@@ -33,7 +32,6 @@ db.collectionGroup('messages')
         const messageRef = messageDoc.ref;
         
         // Extract routing data from the document reference path
-        // Path structure: users/{uid}/chats/{chatId}/messages/{messageId}
         const uid = messageRef.path.split('/')[1];
         const chatId = messageRef.path.split('/')[3];
 
@@ -55,45 +53,45 @@ db.collectionGroup('messages')
                 .limit(5)
                 .get();
             
-            let conversationHistory = "";
+            // Step D: Construct the Modern Messages Array
+            let messagesPayload = [
+                {
+                    role: "system",
+                    content: `You are Quan AI, an infinite intelligence built by Goorac Corporation. You are talking to ${userName}. User's Core Memory/Background: ${memory}. Always be concise, highly professional, and deeply helpful. Do not mention you are an AI model created by Mistral or Groq. You belong to Goorac Corporation.`
+                }
+            ];
+
             // Reverse so they are in chronological order
             chatHistorySnap.docs.reverse().forEach(doc => {
                 const data = doc.data();
-                conversationHistory += `${data.role === 'user' ? userName : 'Quan'}: ${data.text}\n`;
+                messagesPayload.push({
+                    role: data.role === 'user' ? 'user' : 'assistant',
+                    content: data.text
+                });
             });
 
-            // Step D: Construct the System Prompt
-            const prompt = `<s>[INST] You are Quan AI, an infinite intelligence built by Goorac Corporation.
-You are talking to ${userName}.
-User's Core Memory/Background: ${memory}
-
-Always be concise, highly professional, and deeply helpful. Do not mention you are an AI model created by Mistral or Hugging Face. You belong to Goorac Corporation.
-
-Conversation Context:
-${conversationHistory}
-Quan: [/INST]`;
-
-            // Step E: Call Hugging Face API
-            const response = await fetch(`https://api-inference.huggingface.co/models/${HF_MODEL}`, {
+            // Step E: Call GROQ API (Lightning fast, highly reliable)
+            const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
                 headers: {
-                    "Authorization": `Bearer ${HF_API_KEY}`,
+                    "Authorization": `Bearer ${GROQ_API_KEY}`,
                     "Content-Type": "application/json"
                 },
                 method: "POST",
                 body: JSON.stringify({
-                    inputs: prompt,
-                    parameters: {
-                        max_new_tokens: 500,
-                        temperature: 0.7,
-                        return_full_text: false
-                    }
+                    model: GROQ_MODEL,
+                    messages: messagesPayload,
+                    max_tokens: 500,
+                    temperature: 0.7
                 })
             });
 
-            if (!response.ok) throw new Error(`Hugging Face API Error: ${response.statusText}`);
+            if (!response.ok) {
+                const errorDetails = await response.text();
+                throw new Error(`Groq API Error: ${response.status} - ${errorDetails}`);
+            }
             
             const result = await response.json();
-            const aiReply = result[0].generated_text.trim();
+            const aiReply = result.choices[0].message.content.trim();
 
             // Step F: Write the AI's response back to the chat room
             await db.collection(`users/${uid}/chats/${chatId}/messages`).add({
@@ -125,7 +123,7 @@ Quan: [/INST]`;
     }
 });
 
-// 3. ADDED: Dummy Web Server to satisfy Render's port scanner
+// 3. Dummy Web Server to satisfy Render's port scanner
 const port = process.env.PORT || 3000;
 http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
