@@ -73,7 +73,7 @@ ${conversationHistory}
 Quan: [/INST]`;
 
             // Step E: Call Hugging Face API
-            const response = await fetch(`https://api.huggingface.co/models/${HF_MODEL}`, {
+            const response = await fetch(`https://api-inference.huggingface.co/models/${HF_MODEL}`, {
                 headers: {
                     "Authorization": `Bearer ${HF_API_KEY}`,
                     "Content-Type": "application/json"
