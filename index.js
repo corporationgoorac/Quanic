@@ -15,8 +15,9 @@ initializeApp({
 const db = getFirestore();
 
 // Hugging Face API settings
+// UPDATED: Using Hugging Face's own in-house model. Highly stable on the free tier, no gates, no deletions.
 const HF_API_KEY = process.env.HF_API_KEY;
-const HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.1"; // 100% open, free-tier model. No gating.
+const HF_MODEL = "HuggingFaceH4/zephyr-7b-beta"; 
 
 console.log("[Quan AI Backend] Worker started. Listening for incoming messages...");
 
