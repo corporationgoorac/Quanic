@@ -16,7 +16,7 @@ const db = getFirestore();
 
 // Hugging Face API settings
 const HF_API_KEY = process.env.HF_API_KEY;
-const HF_MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1"; // Highly capable, fast model
+const HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"; // UPDATED: Changed to an active free-tier model
 
 console.log("[Quan AI Backend] Worker started. Listening for incoming messages...");
 
