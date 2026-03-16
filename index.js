@@ -16,7 +16,7 @@ const db = getFirestore();
 
 // Groq API settings
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_MODEL = "llama-3.3-70b-versatile"; // ACTIVE, HIGH-SPEED, FREE MODEL
+const GROQ_MODEL = "llama-3.3-70b-versatile"; // ACTIVE, HIGH-SPEED, FREE TEXT MODEL
 
 console.log("[Quan AI Backend] Worker started. Listening for incoming messages...");
 
@@ -61,14 +61,33 @@ db.collectionGroup('messages')
                 }
             ];
 
+            let hasImageInHistory = false;
+
             // Reverse so they are in chronological order
             chatHistorySnap.docs.reverse().forEach(doc => {
                 const data = doc.data();
+                
+                let messageContent = data.text; // Default to standard text
+                
+                // NEW: If the user uploaded an image, change the format for Groq's Vision API!
+                if (data.role === 'user' && data.imageUrl) {
+                    hasImageInHistory = true;
+                    messageContent = [
+                        { type: "text", text: data.text || "Please analyze this image." },
+                        { type: "image_url", image_url: { url: data.imageUrl } } 
+                    ];
+                }
+
                 messagesPayload.push({
                     role: data.role === 'user' ? 'user' : 'assistant',
-                    content: data.text
+                    content: messageContent
                 });
             });
+
+            // NEW: Dynamically pick the model!
+            // If ANY message in the recent history has an image, use the Llama 4 Scout Vision model. 
+            // Otherwise, use the smart 70B text model.
+            const ACTIVE_MODEL = hasImageInHistory ? "meta-llama/llama-4-scout-17b-16e-instruct" : GROQ_MODEL;
 
             // Step E: Call GROQ API 
             const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
@@ -78,7 +97,7 @@ db.collectionGroup('messages')
                 },
                 method: "POST",
                 body: JSON.stringify({
-                    model: GROQ_MODEL,
+                    model: ACTIVE_MODEL,
                     messages: messagesPayload,
                     max_tokens: 500,
                     temperature: 0.7
