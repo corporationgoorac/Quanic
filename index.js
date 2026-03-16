@@ -16,7 +16,7 @@ const db = getFirestore();
 
 // Hugging Face API settings
 const HF_API_KEY = process.env.HF_API_KEY;
-const HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"; // UPDATED: Changed to an active free-tier model
+const HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"; // Highly capable, fast model
 
 console.log("[Quan AI Backend] Worker started. Listening for incoming messages...");
 
@@ -72,8 +72,8 @@ Conversation Context:
 ${conversationHistory}
 Quan: [/INST]`;
 
-            // Step E: Call Hugging Face API
-            const response = await fetch(`https://api-inference.huggingface.co/models/${HF_MODEL}`, {
+            // Step E: Call Hugging Face API (UPDATED TO THE NEW ROUTER ENDPOINT)
+            const response = await fetch(`https://router.huggingface.co/hf-inference/models/${HF_MODEL}`, {
                 headers: {
                     "Authorization": `Bearer ${HF_API_KEY}`,
                     "Content-Type": "application/json"
