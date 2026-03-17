@@ -18,7 +18,7 @@ const db = getFirestore();
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = "llama-3.3-70b-versatile"; 
 
-console.log("[Quan AI Backend] Worker started. Listening for incoming messages...");
+console.log("[Quan AI Backend] Advanced Worker started. Listening for incoming messages...");
 
 // 2. Global Listener for new messages requiring AI response
 db.collectionGroup('messages')
@@ -37,26 +37,26 @@ db.collectionGroup('messages')
         console.log(`[Quan AI] Intercepted new request in chat: ${chatId} from user: ${uid}`);
 
         try {
-            // Step A: Immediately lock the message
+            // Step A: Immediately lock the message to prevent race conditions
             await messageRef.update({ needs_ai_reply: false });
 
-            // Step B: Fetch User's Core Memory
+            // Step B: Fetch User's Core Memory & Profile
             const userRef = db.collection('users').doc(uid);
             const userSnap = await userRef.get();
             const memory = userSnap.exists ? (userSnap.data().memory || "") : "";
             const userName = userSnap.exists ? (userSnap.data().name || "User") : "User";
 
-            // Step C: Fetch chat history
+            // Step C: Fetch chat history (Bumped to 8 to give the AI better context for summarizing)
             const chatHistorySnap = await db.collection(`users/${uid}/chats/${chatId}/messages`)
                 .orderBy('timestamp', 'desc')
-                .limit(5)
+                .limit(8)
                 .get();
             
-            // Step D: Construct Payload with the AUTO-MEMORY DIRECTIVE
+            // Step D: Construct Payload with the ADVANCED SELF-HEALING DIRECTIVE
             let messagesPayload = [
                 {
                     role: "system",
-                    content: `You are Quan AI, an infinite intelligence built by Goorac Corporation. You are talking to ${userName}. 
+                    content: `You are Quan AI, an advanced intelligence built by Goorac Corporation. You are talking to ${userName}. 
                     
 CURRENT MEMORY FILE: 
 """
@@ -64,15 +64,18 @@ ${memory}
 """
 You MUST use this memory to personalize your responses. Always be concise, highly professional, and deeply helpful. Do not mention you are an AI model created by Meta or Groq. You belong to Goorac Corporation.
 
-CRITICAL DIRECTIVE - AUTO-MEMORY:
-If the user tells you a new, permanent personal fact (e.g., "I like red", "I am a developer", "I have a dog named Max"), you MUST append this exact tag to the VERY END of your response:
-<UPDATE_MEMORY>User likes red.</UPDATE_MEMORY>
-Do not use this tag for normal conversation, only for permanent facts.`
+CRITICAL DIRECTIVE - SELF-HEALING AUTO-MEMORY:
+If the user tells you a new, permanent personal fact (e.g., preferences, history, relationships, occupation), you MUST update the CURRENT MEMORY FILE.
+Do NOT just append facts. You must completely rewrite the memory to include the new fact, remove any contradictory old facts, and keep the total summary concise (under 200 words).
+Append the newly written, comprehensive summary to the VERY END of your response inside tags like this:
+<UPDATE_MEMORY>User is a software developer. They prefer dark mode. They recently bought a red car.</UPDATE_MEMORY>
+Do not use this tag for normal conversation. ONLY use it when you learn a new permanent fact about the user.`
                 }
             ];
 
             let hasImageInHistory = false;
 
+            // Step D.2: Format history chronologically and check for Vision API requirements
             chatHistorySnap.docs.reverse().forEach(doc => {
                 const data = doc.data();
                 let messageContent = data.text; 
@@ -80,7 +83,7 @@ Do not use this tag for normal conversation, only for permanent facts.`
                 if (data.role === 'user' && data.imageUrl) {
                     hasImageInHistory = true;
                     messageContent = [
-                        { type: "text", text: data.text || "Please analyze this image." },
+                        { type: "text", text: data.text || "Please analyze this image carefully." },
                         { type: "image_url", image_url: { url: data.imageUrl } } 
                     ];
                 }
@@ -93,7 +96,7 @@ Do not use this tag for normal conversation, only for permanent facts.`
 
             const ACTIVE_MODEL = hasImageInHistory ? "meta-llama/llama-4-scout-17b-16e-instruct" : GROQ_MODEL;
 
-            // Step E: Call GROQ API 
+            // Step E: Call GROQ API (Max tokens increased to 800 to allow room for memory rewriting)
             const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
                 headers: {
                     "Authorization": `Bearer ${GROQ_API_KEY}`,
@@ -103,7 +106,7 @@ Do not use this tag for normal conversation, only for permanent facts.`
                 body: JSON.stringify({
                     model: ACTIVE_MODEL,
                     messages: messagesPayload,
-                    max_tokens: 500,
+                    max_tokens: 800, 
                     temperature: 0.7
                 })
             });
@@ -117,8 +120,8 @@ Do not use this tag for normal conversation, only for permanent facts.`
             let aiReply = result.choices[0].message.content.trim();
             let newFactToSave = null;
 
-            // NEW: Intercept the Auto-Memory Tag!
-            const memoryRegex = /<UPDATE_MEMORY>(.*?)<\/UPDATE_MEMORY>/is;
+            // NEW: Advanced Regex that handles multi-line memory summaries safely ([\s\S]*?)
+            const memoryRegex = /<UPDATE_MEMORY>([\s\S]*?)<\/UPDATE_MEMORY>/i;
             const memoryMatch = aiReply.match(memoryRegex);
 
             if (memoryMatch) {
@@ -135,15 +138,12 @@ Do not use this tag for normal conversation, only for permanent facts.`
                 needs_ai_reply: false
             });
 
-            // NEW Step F.2: Save the extracted memory to the user's profile
-            if (newFactToSave) {
-                console.log(`[Quan AI] 🧠 Learned a new fact: ${newFactToSave}`);
-                
-                // Append the new fact to the old memory, separated by a pipe or newline
-                const updatedMemory = memory ? `${memory} | ${newFactToSave}` : newFactToSave;
+            // NEW Step F.2: OVERWRITE the user's profile with the new self-healed summary
+            if (newFactToSave && newFactToSave.length > 5) {
+                console.log(`[Quan AI] 🧠 Self-Healing Memory Triggered. Overwriting with new summary.`);
                 
                 await db.collection('users').doc(uid).set({
-                    memory: updatedMemory
+                    memory: newFactToSave // This completely replaces the old messy string!
                 }, { merge: true });
             }
 
@@ -155,10 +155,11 @@ Do not use this tag for normal conversation, only for permanent facts.`
             console.log(`[Quan AI] Successfully replied to chat: ${chatId}`);
 
         } catch (error) {
-            console.error(`[Quan AI] Error processing message ${messageDoc.id}:`, error);
+            console.error(`[Quan AI] CRITICAL ERROR processing message ${messageDoc.id}:`, error);
             
+            // Fallback error message
             await db.collection(`users/${uid}/chats/${chatId}/messages`).add({
-                text: "I am experiencing a temporary connection issue with the Goorac servers. Please try again in a moment.",
+                text: "I am experiencing a temporary connection issue with the Goorac Corporation servers. Please try again in a moment.",
                 role: "ai",
                 timestamp: FieldValue.serverTimestamp(),
                 needs_ai_reply: false
