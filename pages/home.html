@@ -479,7 +479,7 @@
 
     <header>
         <h1 class="brand-title">Quanic</h1>
-        <img id="header-profile-pic" class="profile-pic" src="" alt="Profile" onclick="window.location.href='settings.html'">
+        <img id="header-profile-pic" class="profile-pic" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Profile" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';" onclick="window.location.href='settings.html'">
     </header>
 
     <div id="install-banner" style="display: none; background: linear-gradient(90deg, #E1306C, #FF7A00); padding: 12px 20px; justify-content: space-between; align-items: center; position: fixed; top: 70px; width: 100%; z-index: 79; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
@@ -896,10 +896,10 @@
         // Native Haptic Engine
         window.haptic = () => { if(navigator.vibrate) navigator.vibrate(50); };
 
-        // 0ms Profile Photo Cache Setup
+        // FIXED 0ms Profile Photo Cache Setup (Prevents Broken Image Icon)
         try {
             const cachedPhoto = localStorage.getItem('quanic_user_photo');
-            if (cachedPhoto && document.getElementById('header-profile-pic')) {
+            if (cachedPhoto && cachedPhoto.length > 5 && document.getElementById('header-profile-pic')) {
                 document.getElementById('header-profile-pic').src = cachedPhoto;
             }
         } catch(e) {}
@@ -1180,8 +1180,8 @@
             if(queueIndex === -1) queueIndex = 0;
         }
 
-        // NEW FEATURE: SPOTIFY LYRICS FETCHER ENGINE
-        async function fetchLyrics(songId) {
+        // NEW FEATURE: MULTI-ENGINE LYRICS FETCHER (SAAVN -> LYRIST -> LRCLIB)
+        async function fetchLyrics(songId, title, artist) {
             const contentEl = document.getElementById('lyrics-content');
             const hintEl = document.getElementById('lyrics-scroll-hint');
             if(!contentEl) return;
@@ -1191,16 +1191,63 @@
             if(hintEl) hintEl.style.display = 'none';
 
             try {
-                const res = await fetch(`${API_SERVER}/songs/${songId}/lyrics`);
-                const data = await res.json();
-                if(data.status === 'SUCCESS' && data.data && data.data.lyrics) {
-                    contentEl.innerHTML = data.data.lyrics.replace(/\n/g, '<br>');
-                    contentEl.classList.add('loaded');
-                    if(hintEl) hintEl.style.display = 'flex';
-                } else {
-                    contentEl.innerText = "Lyrics not available for this track.";
+                // Aggressive Title Cleaning (Crucial for Tamil/Indian Songs to hit the APIs correctly)
+                let cleanTitle = title ? title.replace(/\(From.*?\)/gi, '').replace(/\[.*?\]/g, '').replace(/\(Tamil.*?\)/gi, '').replace(/- Original.*/gi, '').split('-')[0].trim() : '';
+                let cleanArtist = artist ? artist.split(',')[0].trim() : '';
+
+                // 1. Try JioSaavn FIRST (Best database for Tamil & Indian Music)
+                if (songId) {
+                    try {
+                        const saavnRes = await fetch(`${API_SERVER}/songs/${songId}/lyrics`);
+                        const saavnData = await saavnRes.json();
+                        
+                        if (saavnData.status === 'SUCCESS' && saavnData.data && saavnData.data.lyrics) {
+                            contentEl.innerHTML = saavnData.data.lyrics.replace(/\n/g, '<br>');
+                            contentEl.classList.add('loaded');
+                            if(hintEl) hintEl.style.display = 'flex';
+                            return; // Success! Exit the function.
+                        }
+                    } catch(e) {
+                        console.log("Saavn lyrics fetch failed, trying fallback...");
+                    }
                 }
+
+                // 2. Fallback to Lyrist (Musixmatch Wrapper - Massive global/regional library)
+                try {
+                    const mxRes = await fetch(`https://lyrist.vercel.app/api/${encodeURIComponent(cleanTitle)}/${encodeURIComponent(cleanArtist)}`);
+                    const mxData = await mxRes.json();
+                    
+                    if (mxData && mxData.lyrics) {
+                        contentEl.innerHTML = mxData.lyrics.replace(/\n/g, '<br>');
+                        contentEl.classList.add('loaded');
+                        if(hintEl) hintEl.style.display = 'flex';
+                        return; // Success! Exit the function.
+                    }
+                } catch(e) {
+                    console.log("Lyrist fallback failed, trying LRCLIB...");
+                }
+
+                // 3. Fallback to LRCLIB (Open source - Best for English, Global, and massive viral hits)
+                try {
+                    const lrcRes = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(cleanArtist)}&track_name=${encodeURIComponent(cleanTitle)}`);
+                    if (lrcRes.ok) {
+                        const lrcData = await lrcRes.json();
+                        if (lrcData && lrcData.plainLyrics) {
+                            contentEl.innerHTML = lrcData.plainLyrics.replace(/\n/g, '<br>');
+                            contentEl.classList.add('loaded');
+                            if(hintEl) hintEl.style.display = 'flex';
+                            return; // Success! Exit the function.
+                        }
+                    }
+                } catch(e) {
+                    console.log("LRCLIB fallback failed...");
+                }
+
+                // 4. If all three databases come up completely empty
+                contentEl.innerText = "Lyrics not available for this track yet.";
+
             } catch(e) {
+                console.error("Lyrics fetch error:", e);
                 contentEl.innerText = "Lyrics could not be loaded.";
             }
         }
@@ -1223,8 +1270,8 @@
             // RESET SCROLL TO TOP WHEN NEW SONG LOADS
             if(playerScrollBox) playerScrollBox.scrollTo(0, 0);
             
-            // Trigger Lyrics Fetch
-            if(trackObj.id) fetchLyrics(trackObj.id);
+            // Trigger Advanced Multi-Engine Lyrics Fetch
+            fetchLyrics(trackObj.id, trackObj.title, trackObj.artist);
             
             // MODIFIED FOR FEATURE: Dynamic Color sync!
             const activeColor = generateDarkHexColor(trackObj.title);
