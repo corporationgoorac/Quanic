@@ -2,7 +2,7 @@
   "name": "Quanic Music",
   "short_name": "Quanic",
   "description": "Stream Infinite Tamil and Indian Music by Goorac Corporation.",
-  "start_url": "./index.html",
+  "start_url": "./pages/home.html",
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#121212",
