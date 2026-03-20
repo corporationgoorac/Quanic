@@ -171,7 +171,7 @@
         .player-header span { font-size: 0.85rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.7); }
         
         .artwork-container { width: 100%; aspect-ratio: 1/1; margin-bottom: 40px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6); position: relative; }
-        .artwork-container img { width: 100%; height: 100%; object-fit: cover; }
+        .artwork-container img { width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 2; }
 
         .player-info { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
         .player-text { flex: 1; overflow: hidden; display: flex; align-items: center; }
@@ -247,7 +247,7 @@
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
         /* ==========================================================================
-           9. QUANIC ENHANCEMENTS & BUG FIXES (ADDED FEATURES)
+           9. QUANIC ENHANCEMENTS & BUG FIXES
            ========================================================================== */
         
         /* Overriding overlapping logic without deleting lines */
@@ -272,6 +272,54 @@
             font-size: 110px; color: #fff; filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
             z-index: 10; pointer-events: none; animation: pop-heart-anim 0.8s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards;
         }
+
+        /* ==========================================================================
+           10. NEW ENHANCEMENTS: GPU ACCELERATION & SPOTIFY PLAYLIST UI
+           ========================================================================== */
+        
+        /* HARDWARE ACCELERATION ENGINE: Offloads Audio/Visual rendering to Device GPU */
+        audio, canvas, img, .progress-fill, .mini-progress-fill, .vis-bar, .pop-heart-icon, #ambient-glow, .pl-big-play {
+            will-change: transform, opacity, width, background-color;
+            transform: translateZ(0);
+            -webkit-transform: translate3d(0, 0, 0); /* Forces GPU compositing */
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+
+        /* SPOTIFY-STYLE PLAYLIST BANNER */
+        .pl-spotify-banner {
+            display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end;
+            padding: 10px 20px 30px 20px; background: linear-gradient(transparent, rgba(18,18,18,1));
+            position: relative; z-index: 1;
+        }
+        #pl-view-title-large {
+            font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 20px; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
+        }
+        .pl-action-row {
+            display: flex; align-items: center; justify-content: space-between; width: 100%;
+        }
+        .pl-big-play {
+            width: 56px; height: 56px; border-radius: 50%; background-color: #E1306C; border: none;
+            display: flex; justify-content: center; align-items: center; box-shadow: 0 8px 20px rgba(225, 48, 108, 0.4);
+            cursor: pointer; transition: transform 0.2s, background-color 0.2s; color: white; margin-left: auto;
+        }
+        .pl-big-play:active { transform: scale(0.9) translateZ(0); background-color: #c9245a; }
+        .pl-big-play span { font-size: 36px; margin-left: 2px; } /* Optical alignment */
+
+        /* AMBIENT GPU GLOW FEATURE */
+        #ambient-glow {
+            position: absolute; top: 15%; left: 15%; width: 70%; height: 70%;
+            border-radius: 50%; background-color: rgba(225, 48, 108, 0.5); /* Fallback */
+            filter: blur(60px); z-index: 1; opacity: 0.8;
+            animation: breathe-glow 4s infinite alternate ease-in-out;
+            pointer-events: none;
+        }
+        @keyframes breathe-glow {
+            0% { transform: scale(1) translateZ(0); opacity: 0.5; }
+            100% { transform: scale(1.3) translateZ(0); opacity: 1; }
+        }
+
     </style>
 </head>
 <body>
@@ -362,6 +410,7 @@
             </div>
             
             <div class="artwork-container" ondblclick="toggleLike()">
+                <div id="ambient-glow"></div>
                 <img id="full-img" src="" alt="Album Art">
             </div>
 
@@ -420,9 +469,19 @@
     <div id="playlist-view-modal">
         <div class="pl-header">
             <span class="material-symbols-rounded" onclick="closePlaylistView()" style="font-size: 30px; cursor: pointer;">arrow_back</span>
-            <h2 id="pl-view-title">Playlist</h2>
-            <span class="material-symbols-rounded" id="pl-delete-btn" style="font-size: 26px; cursor: pointer; color: #ff4444; margin-left: auto; display: none;" onclick="deleteActivePlaylist()">delete</span>
+            <h2 id="pl-view-title" style="display:none;">Playlist</h2> <span class="material-symbols-rounded" id="pl-delete-btn" style="font-size: 26px; cursor: pointer; color: #ff4444; margin-left: auto; display: none;" onclick="deleteActivePlaylist()">delete</span>
         </div>
+        
+        <div class="pl-spotify-banner">
+            <h1 id="pl-view-title-large">Playlist</h1>
+            <div class="pl-action-row">
+                <span style="color:#A7A7A7; font-size:0.9rem; font-weight:600;" id="pl-song-count">Loading tracks...</span>
+                <button class="pl-big-play" id="pl-universal-play" onclick="playCurrentPlaylistContext()">
+                    <span class="material-symbols-rounded">play_arrow</span>
+                </button>
+            </div>
+        </div>
+
         <div id="pl-song-list">
             <div id="scroll-anchor"></div>
         </div>
@@ -493,7 +552,7 @@
         }
 
         // ==========================================================================
-        // NEW FEATURE: ASYNC IMAGE DOMINANT COLOR EXTRACTION
+        // NEW FEATURE: ASYNC IMAGE DOMINANT COLOR EXTRACTION + GPU AMBIENT GLOW
         // ==========================================================================
         function getDominantColor(imgSrc, callback) {
             const canvas = document.createElement('canvas');
@@ -516,6 +575,11 @@
                     r = Math.floor(r / count);
                     g = Math.floor(g / count);
                     b = Math.floor(b / count);
+                    
+                    // Trigger New GPU Ambient Glow Feature!
+                    const rawHex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+                    if(document.getElementById('ambient-glow')) document.getElementById('ambient-glow').style.backgroundColor = rawHex;
+
                     // Darken slightly for the theme background aesthetic
                     r = Math.floor(r * 0.4); g = Math.floor(g * 0.4); b = Math.floor(b * 0.4);
                     let hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
@@ -530,6 +594,19 @@
             img.src = imgSrc;
         }
 
+        // ==========================================================================
+        // NEW FEATURE: UNIVERSAL PLAYLIST PLAY (SPOTIFY STYLE)
+        // ==========================================================================
+        window.playCurrentPlaylistContext = function() {
+            if (window.haptic) window.haptic();
+            if (playQueue && playQueue.length > 0) {
+                queueIndex = 0;
+                openFullPlayer();
+                loadAndPlay(playQueue[0]);
+            } else {
+                showToast('Playlist is empty', 'error');
+            }
+        };
 
         // ==========================================================================
         // FEATURE: SWIPE DOWN TO DISMISS PLAYER
@@ -571,7 +648,7 @@
         }
 
         // Native Haptic Engine
-        const haptic = () => { if(navigator.vibrate) navigator.vibrate(50); };
+        window.haptic = () => { if(navigator.vibrate) navigator.vibrate(50); };
 
         // 0ms Profile Photo Cache Setup
         try {
@@ -657,7 +734,7 @@
         // 3. UI TABS NAVIGATOR
         // ==========================================================================
         window.switchTab = function(tabName) {
-            haptic();
+            window.haptic();
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             if(event && event.currentTarget) event.currentTarget.classList.add('active');
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -859,7 +936,7 @@
 
         window.togglePlay = function() {
             if(!audio) return;
-            haptic();
+            window.haptic();
             if (audio.src) {
                 if (audio.paused) { audio.play(); updatePlayIcons(true); } 
                 else { audio.pause(); updatePlayIcons(false); }
@@ -914,7 +991,7 @@
 
         window.toggleLoop = function() {
             if(!audio) return;
-            haptic();
+            window.haptic();
             audio.loop = !audio.loop;
             const btn = document.getElementById('btn-loop');
             if(btn) btn.classList.toggle('active');
@@ -922,7 +999,7 @@
         };
 
         window.toggleShuffle = function() {
-            haptic();
+            window.haptic();
             isShuffle = !isShuffle;
             const btn = document.getElementById('btn-shuffle');
             if(btn) btn.classList.toggle('active');
@@ -930,7 +1007,7 @@
         };
 
         window.nextTrack = function() {
-            haptic();
+            window.haptic();
             if (playQueue && playQueue.length > 0) {
                 if (isShuffle) {
                     queueIndex = Math.floor(Math.random() * playQueue.length);
@@ -949,7 +1026,7 @@
 
         window.prevTrack = function() {
             if(!audio) return;
-            haptic();
+            window.haptic();
             if(audio.currentTime > 3) { audio.currentTime = 0; return; }
             if (playQueue && playQueue.length > 0 && queueIndex > 0) {
                 queueIndex--;
@@ -977,7 +1054,7 @@
         }
 
         window.toggleLike = async function() {
-            haptic();
+            window.haptic();
             if(!currentUserUid || !currentTrackData || !currentTrackData.title) return;
             const likeBtn = document.getElementById('btn-like');
             if(!likeBtn) return;
@@ -1133,6 +1210,10 @@
 
         window.openPlaylistView = function(playlistId, playlistName) {
             if(document.getElementById('pl-view-title')) document.getElementById('pl-view-title').innerText = playlistName;
+            
+            // INJECTED FOR NEW SPOTIFY BANNER FEATURE
+            if(document.getElementById('pl-view-title-large')) document.getElementById('pl-view-title-large').innerText = playlistName;
+
             const modal = document.getElementById('playlist-view-modal');
             if(modal) modal.classList.add('open');
             
@@ -1143,6 +1224,10 @@
             }
 
             history.pushState({ modal: 'playlist_view' }, '', `#playlist_${playlistId}`);
+            
+            // Reset Song Count UI
+            if(document.getElementById('pl-song-count')) document.getElementById('pl-song-count').innerText = "Loading tracks...";
+            
             loadPlaylistSongs(playlistId);
         };
 
@@ -1313,7 +1398,14 @@
                     
                     if(currentQueueContext === playlistId && indexOffset > 0 && playQueue) {
                         snap.forEach(d => playQueue.push(d.data()));
+                    } else if (currentQueueContext === playlistId && indexOffset === 0) {
+                        // Populate initial array for "Universal Play All" button logic
+                        playQueue = [];
+                        snap.forEach(d => playQueue.push(d.data()));
                     }
+
+                    // Update UI Count
+                    if(document.getElementById('pl-song-count')) document.getElementById('pl-song-count').innerText = `${indexOffset + snap.docs.length} tracks`;
 
                     snap.forEach((docSnap, idx) => {
                         const track = docSnap.data();
@@ -1349,6 +1441,9 @@
                     });
                 } else {
                     lastVisibleDoc = 'END';
+                    if(document.querySelectorAll('.pl-track-item').length === 0) {
+                        if(document.getElementById('pl-song-count')) document.getElementById('pl-song-count').innerText = "0 tracks";
+                    }
                 }
             } catch(e) { console.error(e); }
             isFetchingPlaylist = false;
@@ -1373,62 +1468,4 @@
             const historyArr = safeStorageGet('quanic_history', []);
             const historyList = document.getElementById('history-list');
             const recentGrid = document.getElementById('recent-grid');
-            const historyTitle = document.getElementById('history-title');
-            
-            if(historyTitle) {
-                historyTitle.style.display = historyArr.length > 6 ? 'block' : 'none';
-            }
-            
-            if (historyArr.length === 0) return;
-            
-            if(historyList) historyList.innerHTML = '';
-            if(recentGrid) recentGrid.innerHTML = '';
-            
-            historyArr.forEach((track, index) => {
-                if(!track) return;
-                let activeClass = (currentTrackData && currentTrackData.title === track.title) ? 'active-playing' : '';
-                
-                if (index < 6 && recentGrid) {
-                    const gridItem = document.createElement('div');
-                    gridItem.className = 'recent-grid-item';
-                    gridItem.innerHTML = `<img src="${track.imgUrl}" alt="cover"><span class="${activeClass}">${track.title}</span>`;
-                    gridItem.onclick = () => {
-                        currentQueueContext = 'history';
-                        playQueue = historyArr;
-                        queueIndex = index;
-                        openFullPlayer();
-                        loadAndPlay(track, false);
-                    };
-                    recentGrid.appendChild(gridItem);
-                } else if (historyList) {
-                    const div = document.createElement('div');
-                    div.className = 'track-item';
-                    
-                    div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
-                    
-                    div.onclick = () => {
-                        currentQueueContext = 'history';
-                        playQueue = historyArr;
-                        queueIndex = index;
-                        openFullPlayer();
-                        loadAndPlay(track, false); 
-                    };
-
-                    const menuBtn = div.querySelector('.track-menu');
-                    if(menuBtn) {
-                        menuBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            openOptionsModal(track, null);
-                        };
-                    }
-
-                    historyList.appendChild(div);
-                }
-            });
-        }
-        
-        // Initial 0ms call to render History safely
-        renderHistory();
-    </script>
-</body>
-</html>
+            const historyTitle = document.
