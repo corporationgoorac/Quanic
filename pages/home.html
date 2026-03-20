@@ -688,6 +688,8 @@
         // ==========================================================================
         window.showAppError = function(msg) {
             try {
+                let errStr = typeof msg === 'object' ? (msg.message || JSON.stringify(msg)) : String(msg);
+                if(errStr.includes("The play() request was interrupted") || errStr.includes("play() failed because the user didn't interact")) return; // PRODUCTION FIX: Ignore benign browser audio warnings
                 let errBox = document.getElementById('app-error-log');
                 if(!errBox) {
                     errBox = document.createElement('div');
@@ -701,7 +703,7 @@
                 const p = document.createElement('p');
                 p.className = 'err-msg';
                 p.style.cssText = 'margin-bottom:6px; font-family:monospace; line-height:1.4; word-break:break-all;';
-                p.innerText = typeof msg === 'object' ? (msg.message || JSON.stringify(msg)) : String(msg);
+                p.innerText = errStr;
                 errBox.appendChild(p);
             } catch(e) {} // Fixed infinite loop vector
         };
@@ -826,7 +828,7 @@
             if (audioCtx.state === 'suspended') audioCtx.resume();
 
             isBassBoosted = !isBassBoosted;
-            bassFilter.gain.value = isBassBoosted ? 15 : 0; // +15dB punch
+            bassFilter.gain.value = isBassBoosted ? 9 : 0; // Changed from 15 to 9 (60%) for production clarity
             
             const btn = document.getElementById('btn-bass');
             if(btn) btn.classList.toggle('active');
@@ -1248,7 +1250,9 @@
             }
 
             audio.src = trackObj.audioUrl;
-            audio.play().catch(e => console.log("Auto-play prevented", e));
+            let playProm = audio.play();
+            if(playProm !== undefined) playProm.catch(e => console.log("Auto-play prevented", e));
+            if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); // Ensure Bass Boost Context stays awake
             updatePlayIcons(true);
             highlightActiveTrack(trackObj.title);
 
@@ -1304,8 +1308,12 @@
         window.togglePlay = function() {
             if(!audio) return;
             window.haptic();
+            if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); // Sync Audio API
             if (audio.src) {
-                if (audio.paused) { audio.play(); updatePlayIcons(true); } 
+                if (audio.paused) { 
+                    let playPromise = audio.play(); 
+                    if (playPromise !== undefined) { playPromise.then(() => updatePlayIcons(true)).catch(e => console.log("Play interrupted", e)); } else { updatePlayIcons(true); } 
+                } 
                 else { audio.pause(); updatePlayIcons(false); }
             }
         };
@@ -1351,6 +1359,7 @@
             if(!audio || !audio.duration) return;
             isScrubbing = true;
             wasPlayingBeforeScrub = !audio.paused;
+            let p = audio.playPromise; 
             audio.pause(); // Pause smoothly to prevent timeupdate jitter like YouTube
             updateScrubVisuals(e);
         }
@@ -1370,8 +1379,9 @@
                 
                 audio.currentTime = percentage * audio.duration;
                 if(wasPlayingBeforeScrub) {
-                    audio.play();
-                    updatePlayIcons(true);
+                    let playPromise = audio.play();
+                    if (playPromise !== undefined) { playPromise.then(() => updatePlayIcons(true)).catch(e => console.log("Scrub play interrupted", e)); } else { updatePlayIcons(true); }
+                    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); // Re-sync Web Audio API
                 }
             }
         }
@@ -1665,22 +1675,26 @@
             const state = e.state ? e.state.modal : 'home';
             
             const overlay = document.getElementById('modal-overlay');
-            if (overlay) overlay.style.display = (state === 'options' || state === 'create_playlist') ? 'block' : 'none';
+            if (overlay) overlay.style.display = (state === 'options' || state === 'create_playlist' || state === 'queue') ? 'block' : 'none';
             
             if(state === 'home') {
                 if(document.getElementById('full-player')) document.getElementById('full-player').style.transform = 'translateY(100%)';
                 if(document.getElementById('options-modal')) document.getElementById('options-modal').classList.remove('open');
                 if(document.getElementById('create-playlist-modal')) document.getElementById('create-playlist-modal').classList.remove('open');
+                if(document.getElementById('queue-modal')) document.getElementById('queue-modal').classList.remove('open'); // ADDED
                 if(document.getElementById('playlist-view-modal')) document.getElementById('playlist-view-modal').classList.remove('open');
                 if(metaThemeColor) metaThemeColor.setAttribute('content', '#121212');
             } else if (state === 'playlist_view') {
                 if(document.getElementById('options-modal')) document.getElementById('options-modal').classList.remove('open');
                 if(document.getElementById('create-playlist-modal')) document.getElementById('create-playlist-modal').classList.remove('open');
+                if(document.getElementById('queue-modal')) document.getElementById('queue-modal').classList.remove('open'); // ADDED
                 if(document.getElementById('full-player')) document.getElementById('full-player').style.transform = 'translateY(100%)';
                 if(metaThemeColor) metaThemeColor.setAttribute('content', '#121212');
             } else if (state === 'full-player') {
                 if(document.getElementById('options-modal')) document.getElementById('options-modal').classList.remove('open');
                 if(document.getElementById('create-playlist-modal')) document.getElementById('create-playlist-modal').classList.remove('open');
+                if(document.getElementById('queue-modal')) document.getElementById('queue-modal').classList.remove('open'); // ADDED
+                if(document.getElementById('modal-overlay')) document.getElementById('modal-overlay').style.display = 'none'; // PRODUCTION FIX: Force kill ghost overlay
             }
         });
 
@@ -2084,17 +2098,25 @@
         window.addEventListener('popstate', (e) => {
             const state = e.state ? e.state.modal : 'home';
             setTimeout(() => {
+                // MOVE THIS UP: Fix nested queue modal bug BEFORE checking openSheets!
+                if (state !== 'queue') {
+                    const qm = document.getElementById('queue-modal');
+                    if (qm) qm.classList.remove('open');
+                }
+                if (state !== 'options') {
+                    const om = document.getElementById('options-modal');
+                    if (om) om.classList.remove('open');
+                }
+                if (state !== 'create_playlist') {
+                    const cm = document.getElementById('create-playlist-modal');
+                    if (cm) cm.classList.remove('open');
+                }
+
                 const openSheets = document.querySelectorAll('.bottom-sheet.open');
                 const overlay = document.getElementById('modal-overlay');
                 
                 // 1. Fix sticky overlay bug
                 if(overlay) overlay.style.display = openSheets.length > 0 ? 'block' : 'none';
-                
-                // 2. Fix nested queue modal bug
-                if (state !== 'queue') {
-                    const qm = document.getElementById('queue-modal');
-                    if (qm) qm.classList.remove('open');
-                }
                 
                 // 3. Fix scroll lock bug if full player force closed
                 if (state === 'home' || state === 'playlist_view') {
