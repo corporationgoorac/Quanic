@@ -174,9 +174,18 @@
         .artwork-container img { width: 100%; height: 100%; object-fit: cover; }
 
         .player-info { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
-        .player-text { flex: 1; overflow: hidden; }
+        .player-text { flex: 1; overflow: hidden; display: flex; align-items: center; }
         .player-info h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .player-info p { font-size: 1.1rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* PREMIUM FEATURE: Audio Visualizer Bars */
+        .visualizer { display: inline-flex; align-items: flex-end; gap: 3px; height: 18px; margin-left: 12px; visibility: hidden; }
+        .visualizer.active { visibility: visible; }
+        .vis-bar { width: 4px; background: #E1306C; border-radius: 2px; animation: bounce 0.5s ease alternate infinite; }
+        .vis-bar:nth-child(1) { animation-delay: 0.1s; height: 40%; }
+        .vis-bar:nth-child(2) { animation-delay: 0.3s; height: 100%; }
+        .vis-bar:nth-child(3) { animation-delay: 0s; height: 70%; }
+        @keyframes bounce { 0% { transform: scaleY(0.5); } 100% { transform: scaleY(1.2); } }
 
         .progress-container { width: 100%; margin-bottom: 40px; padding: 15px 0 5px 0; cursor: pointer; }
         .progress-bar { width: 100%; height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; position: relative; pointer-events: none; }
@@ -199,7 +208,6 @@
         /* ==========================================================================
            8. SLEEK BOTTOM SHEET MODALS
            ========================================================================== */
-        /* Increased to 115 so it covers the full player modal */
         .bottom-sheet {
             position: fixed; bottom: 0; left: 0; width: 100%; background: #181818;
             border-radius: 24px 24px 0 0; padding: 20px 20px calc(env(safe-area-inset-bottom) + 20px) 20px;
@@ -225,7 +233,6 @@
         }
         .save-btn { background: #E1306C; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 600; font-size: 1rem; cursor: pointer; }
 
-        /* Z-index 105 sits below mini-player (106) but above nav (90) */
         #playlist-view-modal {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: #121212;
             z-index: 105; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -333,7 +340,12 @@
 
             <div class="player-info">
                 <div class="player-text">
-                    <h1 id="full-title">Track Name</h1>
+                    <div style="display:flex; align-items:center; width:100%;">
+                        <h1 id="full-title">Track Name</h1>
+                        <div class="visualizer" id="now-playing-vis">
+                            <div class="vis-bar"></div><div class="vis-bar"></div><div class="vis-bar"></div>
+                        </div>
+                    </div>
                     <p id="full-artist">Artist</p>
                 </div>
                 <span class="material-symbols-rounded" id="btn-like" onclick="toggleLike()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s;">favorite_border</span>
@@ -475,9 +487,13 @@
                 if (!userSnap.exists() || !userSnap.data().is_profile_complete) {
                     window.location.replace("setup.html");
                 } else {
+                    // PREMIUM FEATURE: 0ms Profile Sync back to localStorage
+                    const fetchedPhoto = userSnap.data().photoURL || localStorage.getItem('quanic_user_photo') || '';
                     if(document.getElementById('header-profile-pic')) {
-                        document.getElementById('header-profile-pic').src = userSnap.data().photoURL || localStorage.getItem('quanic_user_photo') || '';
+                        document.getElementById('header-profile-pic').src = fetchedPhoto;
                     }
+                    localStorage.setItem('quanic_user_photo', fetchedPhoto);
+                    
                     fetchUserPlaylists(); // Live sync from Firebase
                 }
             } catch(e) {
@@ -539,6 +555,7 @@
         let queueIndex = 0;
         let currentQueueContext = 'history'; // 'history' or playlistId
         let isShuffle = false;
+        let sleepTimerId = null;
 
         if(searchInput) {
             searchInput.addEventListener('input', () => {
@@ -691,6 +708,7 @@
             const miniPlay = document.getElementById('mini-playpause');
             const fullPlay = document.getElementById('full-playpause');
             const miniImg = document.getElementById('mini-img');
+            const vis = document.getElementById('now-playing-vis');
             
             if(miniPlay) miniPlay.innerText = isPlaying ? 'pause' : 'play_arrow';
             if(fullPlay) fullPlay.innerText = isPlaying ? 'pause_circle' : 'play_circle';
@@ -698,6 +716,10 @@
             if(miniImg) {
                 if(isPlaying) miniImg.classList.add('playing'); 
                 else miniImg.classList.remove('playing');
+            }
+            if(vis) {
+                if(isPlaying) vis.classList.add('active');
+                else vis.classList.remove('active');
             }
         }
 
@@ -852,6 +874,21 @@
                 history.back();
             };
             content.appendChild(queueBtn);
+
+            // PREMIUM FEATURE: Sleep Timer Injection
+            const sleepBtn = document.createElement('button');
+            sleepBtn.className = 'modal-btn';
+            sleepBtn.style.width = '100%';
+            sleepBtn.innerHTML = `<span class="material-symbols-rounded">timer</span> Sleep Timer (30m)`;
+            sleepBtn.onclick = () => {
+                if(sleepTimerId) clearTimeout(sleepTimerId);
+                showToast('Sleep timer set for 30 minutes', 'timer');
+                sleepTimerId = setTimeout(() => {
+                    if(audio && !audio.paused) { audio.pause(); updatePlayIcons(false); showToast('Sleep timer ended', 'snooze'); }
+                }, 30 * 60 * 1000);
+                history.back();
+            };
+            content.appendChild(sleepBtn);
 
             const shareBtn = document.createElement('button');
             shareBtn.className = 'modal-btn';
