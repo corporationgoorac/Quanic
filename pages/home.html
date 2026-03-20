@@ -198,6 +198,12 @@
         /* Time Info Container for Audio Timers */
         .time-info { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.5); margin-top: 10px; }
 
+        /* STUDIO AUDIO CONTROLS CSS ROW */
+        .extra-audio-controls { display: flex; justify-content: space-evenly; align-items: center; margin-bottom: 20px; }
+        .extra-audio-controls .secondary-btn { font-size: 24px; color: rgba(255,255,255,0.5); cursor: pointer; transition: color 0.2s, transform 0.1s; }
+        .extra-audio-controls .secondary-btn:active { transform: scale(0.9); }
+        .extra-audio-controls .secondary-btn.active { color: #E1306C; }
+
         .main-controls { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
         .main-controls span { font-size: 38px; cursor: pointer; transition: transform 0.1s; }
         .main-controls span:active { transform: scale(0.85); }
@@ -321,6 +327,37 @@
             100% { transform: scale(1.3) translateZ(0); opacity: 1; }
         }
 
+        /* ==========================================================================
+           11. NEW MASSIVE FEATURES: BASS BOOST PREMIUM UI & SHARE LINKS
+           ========================================================================== */
+        
+        /* Silently hide the old Bass button from the UI without removing the line */
+        #btn-bass { display: none !important; }
+
+        /* Premium Tap-to-Bass Artwork Styling */
+        .artwork-container { cursor: pointer; }
+        .artwork-container img { transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.5s, filter 0.5s; }
+        
+        .artwork-container.bass-boost-active img { 
+            transform: scale(1.06); filter: contrast(1.1) saturate(1.1); box-shadow: 0 30px 60px rgba(0,0,0,0.8); 
+        }
+        .artwork-container.bass-boost-active { 
+            box-shadow: 0 0 0 4px rgba(225, 48, 108, 0.8); /* Premium edge glow */
+        }
+        
+        /* Premium Bass Badge */
+        .premium-bass-badge {
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%) translateY(-20px);
+            background: rgba(18, 18, 18, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            padding: 6px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 800; letter-spacing: 1px;
+            color: #E1306C; z-index: 20; opacity: 0; pointer-events: none; border: 1px solid rgba(225, 48, 108, 0.5);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-transform: uppercase;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .artwork-container.bass-boost-active .premium-bass-badge { 
+            opacity: 1; transform: translateX(-50%) translateY(0); 
+        }
+
     </style>
 </head>
 <body>
@@ -411,6 +448,7 @@
             </div>
             
             <div class="artwork-container" ondblclick="toggleLike()">
+                <div class="premium-bass-badge">Max Bass Active</div>
                 <div id="ambient-glow"></div>
                 <img id="full-img" src="" alt="Album Art">
             </div>
@@ -426,6 +464,12 @@
                     <p id="full-artist">Artist</p>
                 </div>
                 <span class="material-symbols-rounded" id="btn-like" onclick="toggleLike()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s;">favorite_border</span>
+            </div>
+
+            <div class="extra-audio-controls">
+                <span class="material-symbols-rounded secondary-btn" id="btn-bass" onclick="toggleBassBoost()">speaker</span>
+                <span class="material-symbols-rounded secondary-btn" onclick="showToast('Lyrics feature coming soon!', 'lyrics')">lyrics</span>
+                <span class="material-symbols-rounded secondary-btn" onclick="showToast('High Quality Streaming Active', 'high_quality')">hq</span>
             </div>
 
             <div class="progress-container" id="progress-container" onclick="seekAudio(event)">
@@ -602,6 +646,56 @@
         }
 
         // ==========================================================================
+        // NEW MASSIVE FEATURE: STUDIO AUDIO ENGINE (WEB AUDIO API BASS BOOST)
+        // ==========================================================================
+        let audioCtx = null;
+        let bassFilter = null;
+        let isBassBoosted = false;
+
+        window.toggleBassBoost = function() {
+            if(window.haptic) window.haptic();
+            
+            if (!audioCtx) {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+                    const audioEl = document.getElementById('audio-core');
+                    
+                    // Required for cross-origin audio processing without blocking
+                    audioEl.crossOrigin = "anonymous"; 
+                    
+                    const source = audioCtx.createMediaElementSource(audioEl);
+                    bassFilter = audioCtx.createBiquadFilter();
+                    bassFilter.type = 'lowshelf';
+                    bassFilter.frequency.value = 150;
+                    bassFilter.gain.value = 0; // Default
+                    
+                    source.connect(bassFilter);
+                    bassFilter.connect(audioCtx.destination);
+                } catch(e) {
+                    console.error("Audio Context failed", e);
+                    showToast("Bass boost not supported on this track stream.", "error");
+                    return;
+                }
+            }
+            
+            // Resume context if suspended by browser autoplay policy
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            isBassBoosted = !isBassBoosted;
+            bassFilter.gain.value = isBassBoosted ? 15 : 0; // +15dB punch
+            
+            const btn = document.getElementById('btn-bass');
+            if(btn) btn.classList.toggle('active');
+            
+            // NEW INJECTED PREMIUM UI FEEDBACK FOR BASS BOOST
+            const artworkCont = document.querySelector('.artwork-container');
+            if(artworkCont) artworkCont.classList.toggle('bass-boost-active', isBassBoosted);
+
+            showToast(isBassBoosted ? 'MAX BASS BOOST ON 🔊' : 'Bass Boost OFF', 'speaker');
+        };
+
+        // ==========================================================================
         // NEW FEATURE: UNIVERSAL PLAYLIST PLAY (SPOTIFY STYLE)
         // ==========================================================================
         window.playCurrentPlaylistContext = function() {
@@ -681,6 +775,18 @@
         }
         renderCachedPlaylists();
 
+        // NEW FEATURE: SEND OFFLINE STATUS TO CLOUD WHEN CLOSING APP
+        window.addEventListener('beforeunload', () => {
+            if (typeof currentUserUid !== 'undefined' && currentUserUid) {
+                try {
+                    setDoc(doc(db, 'users', currentUserUid), {
+                        isOnline: false,
+                        lastActive: new Date()
+                    }, {merge: true});
+                } catch(e){}
+            }
+        });
+
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.replace("login.html"); return; }
             currentUserUid = user.uid;
@@ -698,6 +804,28 @@
                     localStorage.setItem('quanic_user_photo', fetchedPhoto);
                     
                     fetchUserPlaylists(); // Live sync from Firebase
+
+                    // NEW FEATURE: CLOUD HISTORY RESTORE ON LOGIN
+                    try {
+                        const histRef = doc(db, 'users', user.uid, 'playerData', 'history');
+                        const histSnap = await getDoc(histRef);
+                        if (histSnap.exists() && histSnap.data().tracks) {
+                            const cloudHistory = histSnap.data().tracks;
+                            if (cloudHistory && cloudHistory.length > 0) {
+                                // Overwrite local array with cloud state across devices
+                                localStorage.setItem('quanic_history', JSON.stringify(cloudHistory));
+                                renderHistory();
+                            }
+                        }
+                        
+                        // Set Realtime Admin initial presence to Online
+                        setDoc(doc(db, 'users', user.uid), {
+                            isOnline: true,
+                            lastActive: new Date(),
+                            userAgent: navigator.userAgent
+                        }, {merge: true});
+
+                    } catch (err) { console.error("Cloud sync init error:", err); }
                 }
             } catch(e) {
                 console.error("Firebase Sync Error", e);
@@ -917,6 +1045,22 @@
             audio.play().catch(e => console.log("Auto-play prevented", e));
             updatePlayIcons(true);
             highlightActiveTrack(trackObj.title);
+
+            // NEW FEATURE: REALTIME ADMIN TRACKER (NOW PLAYING)
+            if (typeof currentUserUid !== 'undefined' && currentUserUid) {
+                try {
+                    setDoc(doc(db, 'users', currentUserUid), {
+                        isOnline: true,
+                        lastActive: new Date(),
+                        nowPlaying: {
+                            title: trackObj.title,
+                            artist: trackObj.artist,
+                            imgUrl: trackObj.imgUrl,
+                            timestamp: new Date()
+                        }
+                    }, {merge: true});
+                } catch(e) { console.error("Status update error", e); }
+            }
             
             if(document.getElementById('current-time')) document.getElementById('current-time').innerText = "0:00";
             if(document.getElementById('total-time')) document.getElementById('total-time').innerText = "0:00";
@@ -1160,10 +1304,13 @@
             shareBtn.onclick = async () => {
                 if (navigator.share) {
                     try {
+                        // NEW FEATURE: APP DEEP LINK GENERATOR
+                        const deepLinkData = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(optionTrackTarget)))));
+                        const shareLinkUrl = window.location.origin + window.location.pathname + '?play=' + deepLinkData;
                         await navigator.share({
                             title: `Listen to ${optionTrackTarget.title}`,
                             text: `Check out ${optionTrackTarget.title} by ${optionTrackTarget.artist} on Quanic!`,
-                            url: optionTrackTarget.audioUrl 
+                            url: shareLinkUrl 
                         });
                     } catch(e){}
                 } else { showToast('Sharing not supported', 'error'); }
@@ -1451,7 +1598,7 @@
         }
 
         // ==========================================================================
-        // 8. LOCAL STORAGE HISTORY RENDER & SPOTIFY GRID
+        // 8. LOCAL STORAGE HISTORY RENDER & CLOUD SYNC
         // ==========================================================================
         function saveToHistory(trackObj) {
             if(!trackObj) return;
@@ -1463,6 +1610,16 @@
             
             try { localStorage.setItem('quanic_history', JSON.stringify(filteredArr)); } catch(e){}
             renderHistory();
+
+            // NEW FEATURE: CLOUD HISTORY PUSH (MAX 20)
+            if (typeof currentUserUid !== 'undefined' && currentUserUid) {
+                try {
+                    setDoc(doc(db, 'users', currentUserUid, 'playerData', 'history'), {
+                        tracks: filteredArr,
+                        lastUpdated: new Date()
+                    }, {merge: true});
+                } catch(e) { console.error("Failed to sync history to cloud", e); }
+            }
         }
 
         function renderHistory() {
@@ -1525,6 +1682,56 @@
         
         // Initial 0ms call to render History safely
         renderHistory();
+
+        // ==========================================================================
+        // MASSIVE FEATURE: SMART TAP BASS BOOST & DEEP LINK HANDLER
+        // ==========================================================================
+        
+        // 1. Smart-Tap Discrimination Engine (Allows Single Click for Bass, Double Click for Like on Cover Art)
+        let artworkClickTimer = null;
+        const artContainer = document.querySelector('.artwork-container');
+        if(artContainer) {
+            artContainer.addEventListener('click', (e) => {
+                if(artworkClickTimer) {
+                    clearTimeout(artworkClickTimer);
+                    artworkClickTimer = null;
+                    // Double click will natively be handled by the existing ondblclick="toggleLike()" attribute!
+                } else {
+                    artworkClickTimer = setTimeout(() => {
+                        toggleBassBoost();
+                        artworkClickTimer = null;
+                    }, 250); // 250ms is perfect for distinguishing double tap natively
+                }
+            });
+        }
+
+        // 2. App Boot Deep Link Interceptor (Restores audio from Share link)
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('play')) {
+                try {
+                    // Decodes the nested base64 URI payload
+                    const trackStr = decodeURIComponent(escape(atob(decodeURIComponent(params.get('play')))));
+                    const sharedTrack = JSON.parse(trackStr);
+                    
+                    if(sharedTrack && sharedTrack.audioUrl) {
+                        setTimeout(() => {
+                            currentQueueContext = 'shared';
+                            playQueue = [sharedTrack];
+                            queueIndex = 0;
+                            openFullPlayer();
+                            loadAndPlay(sharedTrack);
+                            showToast("Playing Shared Track", "audiotrack");
+                            
+                            // Clean up the URL instantly so refresh doesn't trigger it again!
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }, 1500); // 1.5s delay to ensure Firebase and UI are fully loaded first
+                    }
+                } catch(e) {
+                    console.error("Failed to load shared track", e);
+                }
+            }
+        });
     </script>
 </body>
 </html>
