@@ -222,13 +222,13 @@
                 <span class="material-symbols-rounded">chevron_left</span> Back
             </button>
         </div>
-        
+        <br>
         <div class="modal-body">
             <div class="profile-hero">
                 <img src="" alt="Avatar" class="hero-avatar" id="modal-avatar">
                 <div class="hero-name" id="modal-name">User Name</div>
                 <div class="hero-uid" id="modal-uid">uid_placeholder</div>
-                
+                <br>
                 <div class="status-pill" id="modal-status-pill">
                     <div class="dot"></div> <span id="modal-status-text">Offline</span>
                 </div>
@@ -262,9 +262,9 @@
 
     <script type="module">
         import { auth, db } from '../config.js'; // Firestore & Auth
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-        import { collection, query, limit, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { collection, query, limit, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         // Initialize RTDB natively 
         let rtdb;
