@@ -70,7 +70,7 @@
             overflow: hidden; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         .recent-grid-item:active { background: rgba(255,255,255,0.15); }
-        .recent-grid-item img { width: 56px; height: 56px; object-fit: cover; flex-shrink: 0; }
+        .recent-grid-item img { width: 56px; height: 56px; object-fit: cover; }
         .recent-grid-item span { 
             font-size: 0.85rem; font-weight: 600; padding: 0 10px; white-space: nowrap; 
             overflow: hidden; text-overflow: ellipsis; flex: 1; color: #fff; transition: color 0.3s;
@@ -90,16 +90,16 @@
             display: flex; align-items: center; padding: 10px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s;
         }
         .track-item:active { background: rgba(255,255,255,0.1); }
-        .track-item img { width: 48px; height: 48px; border-radius: 8px; margin-right: 15px; object-fit: cover; flex-shrink: 0; }
-        .track-info { display: flex; flex-direction: column; overflow: hidden; flex: 1; min-width: 0; }
+        .track-item img { width: 48px; height: 48px; border-radius: 8px; margin-right: 15px; object-fit: cover; }
+        .track-info { display: flex; flex-direction: column; overflow: hidden; flex: 1; }
         .track-title { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; transition: color 0.3s; }
-        .track-artist { color: #888; font-size: 0.85rem; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .track-artist { color: #888; font-size: 0.85rem; margin-top: 4px; }
         
         /* PREMIUM FEATURE: Active Track Highlighting */
         .track-title.active-playing { color: #E1306C; }
 
         /* 3-Dot Menu */
-        .track-menu { padding: 10px; color: rgba(255,255,255,0.4); margin-left: auto; transition: color 0.2s; flex-shrink: 0; }
+        .track-menu { padding: 10px; color: rgba(255,255,255,0.4); margin-left: auto; transition: color 0.2s; }
         .track-menu:active { color: #fff; }
 
         /* Playlist Grid Items */
@@ -108,7 +108,7 @@
             display: flex; align-items: center; cursor: pointer; transition: background 0.2s;
         }
         .playlist-card:active { background: rgba(255,255,255,0.1); }
-        .playlist-card .material-symbols-rounded { font-size: 40px; color: #E1306C; margin-right: 15px; flex-shrink: 0; }
+        .playlist-card .material-symbols-rounded { font-size: 40px; color: #E1306C; margin-right: 15px; }
 
         /* ==========================================================================
            5. BOTTOM NAVIGATION
@@ -128,7 +128,7 @@
         /* Increased Z-Index to 106 so it sits ABOVE the playlist view modal (105) */
         #mini-player {
             position: fixed; bottom: calc(env(safe-area-inset-bottom) + 85px); left: 15px; right: 15px;
-            background: rgba(40, 40, 40, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            background: rgba(40, 40, 40, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-radius: 16px; padding: 8px 12px 8px 8px; display: flex; align-items: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 106; border: 1px solid rgba(255,255,255,0.05);
             transform: translateY(200%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer;
@@ -138,13 +138,13 @@
         
         /* Premium Pulse animation when playing */
         @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(225, 48, 108, 0.4); } 100% { box-shadow: 0 0 0 8px rgba(225, 48, 108, 0); } }
-        #mini-img { width: 42px; height: 42px; border-radius: 10px; margin-right: 12px; object-fit: cover; transition: box-shadow 0.3s; flex-shrink: 0; }
+        #mini-img { width: 42px; height: 42px; border-radius: 10px; margin-right: 12px; object-fit: cover; transition: box-shadow 0.3s; }
         #mini-img.playing { animation: pulse-ring 2s infinite; }
         
-        .mini-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+        .mini-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
         .mini-title { font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
-        .mini-artist { font-size: 0.8rem; color: #A7A7A7; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .mini-controls { display: flex; align-items: center; padding-left: 10px; flex-shrink: 0; }
+        .mini-artist { font-size: 0.8rem; color: #A7A7A7; margin-top: 2px; }
+        .mini-controls { display: flex; align-items: center; padding-left: 10px; }
         .mini-btn { font-size: 32px !important; color: #fff; }
 
         /* PREMIUM FEATURE: Mini Player Bottom Progress Bar */
@@ -152,40 +152,34 @@
         .mini-progress-fill { height: 100%; background: #E1306C; width: 0%; transition: width 0.1s linear; }
 
         /* ==========================================================================
-           7. SLEEK BOTTOM-UP PLAYER MODAL (SPOTIFY STYLE HEX)
+           7. SLEEK BOTTOM-UP PLAYER MODAL
            ========================================================================== */
         /* Increased Z-Index to 110 so it covers absolutely everything when open */
         #full-player {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
-            background-color: #0A0A0A !important; /* PREMIUM SOLID HEX */
-            z-index: 110; transform: translateY(100%); 
+            background: #000000; z-index: 110; transform: translateY(100%); 
             transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); display: flex; flex-direction: column; overflow: hidden;
         }
-        
-        /* Blurred image removed from view using opacity:0 to preserve original code line */
         .player-bg {
             position: absolute; top: -10%; left: -10%; width: 120%; height: 120%;
             background-size: cover; background-position: center; filter: blur(50px) brightness(0.3); z-index: 1; transition: background-image 0.5s ease;
-            opacity: 0 !important; /* HIDES THE BLURRED IMAGE FOREVER */
         }
-        
         .player-content {
             position: relative; z-index: 2; display: flex; flex-direction: column; height: 100%; padding: 20px 20px calc(env(safe-area-inset-bottom) + 20px) 20px;
         }
         .player-header { display: flex; justify-content: space-between; align-items: center; margin-top: env(safe-area-inset-top); margin-bottom: 40px; }
         .player-header span { font-size: 0.85rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.7); }
         
-        .artwork-container { width: 100%; max-width: 360px; aspect-ratio: 1/1; margin: 0 auto 40px auto; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+        .artwork-container { width: 100%; aspect-ratio: 1/1; margin-bottom: 40px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6); position: relative; }
         .artwork-container img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* CRITICAL OVERLAP FIX: Added min-width: 0 and flex-shrink constraints */
-        .player-info { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .player-text { flex: 1; display: flex; flex-direction: column; min-width: 0; padding-right: 15px; }
-        .player-info h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; width: 100%; }
-        .player-info p { font-size: 1.1rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        .player-info { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+        .player-text { flex: 1; overflow: hidden; display: flex; align-items: center; }
+        .player-info h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .player-info p { font-size: 1.1rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* PREMIUM FEATURE: Audio Visualizer Bars */
-        .visualizer { display: inline-flex; align-items: flex-end; gap: 3px; height: 18px; margin-left: 12px; visibility: hidden; flex-shrink: 0; }
+        .visualizer { display: inline-flex; align-items: flex-end; gap: 3px; height: 18px; margin-left: 12px; visibility: hidden; }
         .visualizer.active { visibility: visible; }
         .vis-bar { width: 4px; background: #E1306C; border-radius: 2px; animation: bounce 0.5s ease alternate infinite; }
         .vis-bar:nth-child(1) { animation-delay: 0.1s; height: 40%; }
@@ -204,17 +198,12 @@
         /* Time Info Container for Audio Timers */
         .time-info { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.5); margin-top: 10px; }
 
-        .main-controls { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; margin-bottom: 30px; }
+        .main-controls { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
         .main-controls span { font-size: 38px; cursor: pointer; transition: transform 0.1s; }
         .main-controls span:active { transform: scale(0.85); }
         .main-controls .play-btn { font-size: 72px; }
         .main-controls .secondary-btn { font-size: 28px; color: rgba(255,255,255,0.5); }
         .main-controls .secondary-btn.active { color: #E1306C; }
-
-        /* Premium Bottom Action Bar (Spotify style) */
-        .bottom-actions { display: flex; justify-content: space-between; align-items: center; padding: 0 20px; color: rgba(255,255,255,0.5); }
-        .bottom-actions span { font-size: 22px; cursor: pointer; transition: color 0.2s; }
-        .bottom-actions span:active { color: #fff; }
 
         /* ==========================================================================
            8. SLEEK BOTTOM SHEET MODALS
@@ -256,6 +245,33 @@
         #scroll-anchor { height: 20px; }
 
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ==========================================================================
+           9. QUANIC ENHANCEMENTS & BUG FIXES (ADDED FEATURES)
+           ========================================================================== */
+        
+        /* Overriding overlapping logic without deleting lines */
+        .player-text { min-width: 0; align-items: flex-start !important; flex-direction: column !important; }
+        .player-text > div { max-width: 100%; white-space: nowrap; overflow: hidden; display: flex; align-items: center; }
+        .player-info h1 { display: inline-block; max-width: 85%; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; vertical-align: middle; }
+        .visualizer { display: inline-flex; vertical-align: middle; margin-bottom: 5px; }
+        #full-artist { display: block; width: 100%; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+
+        /* Override the blurred background image for the solid hex color gradient */
+        .player-bg { filter: none !important; transition: background 0.5s ease; opacity: 1; background-size: auto !important; }
+
+        /* Animation for Double Tap Like Popup Heart */
+        @keyframes pop-heart-anim {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            30% { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+            70% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+        .pop-heart-icon {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 110px; color: #fff; filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
+            z-index: 10; pointer-events: none; animation: pop-heart-anim 0.8s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards;
+        }
     </style>
 </head>
 <body>
@@ -351,7 +367,7 @@
 
             <div class="player-info">
                 <div class="player-text">
-                    <div style="display:flex; align-items:center; width:100%; min-width: 0;">
+                    <div style="display:flex; align-items:center; width:100%;">
                         <h1 id="full-title">Track Name</h1>
                         <div class="visualizer" id="now-playing-vis">
                             <div class="vis-bar"></div><div class="vis-bar"></div><div class="vis-bar"></div>
@@ -359,7 +375,7 @@
                     </div>
                     <p id="full-artist">Artist</p>
                 </div>
-                <span class="material-symbols-rounded" id="btn-like" onclick="toggleLike()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s; flex-shrink: 0;">favorite_border</span>
+                <span class="material-symbols-rounded" id="btn-like" onclick="toggleLike()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s;">favorite_border</span>
             </div>
 
             <div class="progress-container" id="progress-container" onclick="seekAudio(event)">
@@ -376,12 +392,6 @@
                 <span class="material-symbols-rounded play-btn" id="full-playpause" onclick="togglePlay()">play_circle</span>
                 <span class="material-symbols-rounded" onclick="nextTrack()">skip_next</span>
                 <span class="material-symbols-rounded secondary-btn" id="btn-loop" onclick="toggleLoop()">repeat</span>
-            </div>
-            
-            <div class="bottom-actions">
-                <span class="material-symbols-rounded">devices</span>
-                <span class="material-symbols-rounded" onclick="shareCurrentSong()">share</span>
-                <span class="material-symbols-rounded">lyrics</span>
             </div>
         </div>
     </div>
@@ -436,6 +446,33 @@
         }
 
         // ==========================================================================
+        // FEATURE: HASH STRING TO HEX COLOR ENGINE
+        // ==========================================================================
+        function generateDarkHexColor(str) {
+            if (!str) return '#1e1e1e';
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            let color = '#';
+            for (let i = 0; i < 3; i++) {
+                let value = (hash >> (i * 8)) & 0x55; // Dark limit 0x55 limits the brightness to look sleek
+                color += ('00' + value.toString(16)).substr(-2);
+            }
+            return color;
+        }
+
+        // ==========================================================================
+        // FEATURE: SWIPE DOWN TO DISMISS PLAYER
+        // ==========================================================================
+        let swipeStartY = 0;
+        const playerModal = document.getElementById('full-player');
+        playerModal.addEventListener('touchstart', e => swipeStartY = e.touches[0].clientY);
+        playerModal.addEventListener('touchend', e => {
+            if (e.changedTouches[0].clientY - swipeStartY > 100) closeFullPlayer();
+        });
+
+        // ==========================================================================
         // 1. FIREBASE SETUP & ROUTING
         // ==========================================================================
         import { auth, db } from '../config.js';
@@ -444,6 +481,7 @@
 
         let currentUserUid = null;
 
+        // Dynamic Time-of-Day Greeting
         const currentHour = new Date().getHours();
         let greetingText = 'Good evening';
         if (currentHour < 12) greetingText = 'Good morning';
@@ -451,17 +489,22 @@
         const greetingEl = document.getElementById('dynamic-greeting');
         if(greetingEl) greetingEl.innerText = greetingText;
 
+        // Custom Toast Engine (BUG FIXED: Prevents timeouts from overwriting incorrectly)
+        let toastTimeoutId = null;
         window.showToast = function(msg, icon = 'check_circle') {
             const toast = document.getElementById('toast');
             if(!toast) return;
+            if (toastTimeoutId) clearTimeout(toastTimeoutId); // Fixed bug here!
             document.getElementById('toast-msg').innerText = msg;
             document.getElementById('toast-icon').innerText = icon;
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2500);
+            toastTimeoutId = setTimeout(() => toast.classList.remove('show'), 2500);
         }
 
+        // Native Haptic Engine
         const haptic = () => { if(navigator.vibrate) navigator.vibrate(50); };
 
+        // 0ms Profile Photo Cache Setup
         try {
             const cachedPhoto = localStorage.getItem('quanic_user_photo');
             if (cachedPhoto && document.getElementById('header-profile-pic')) {
@@ -469,6 +512,7 @@
             }
         } catch(e) {}
 
+        // 0ms Playlist Cache Engine
         function renderCachedPlaylists() {
             const cached = safeStorageGet('quanic_playlists', null);
             if (cached) {
@@ -499,14 +543,18 @@
                 if (!userSnap.exists() || !userSnap.data().is_profile_complete) {
                     window.location.replace("setup.html");
                 } else {
+                    // PREMIUM FEATURE: 0ms Profile Sync back to localStorage
                     const fetchedPhoto = userSnap.data().photoURL || localStorage.getItem('quanic_user_photo') || '';
                     if(document.getElementById('header-profile-pic')) {
                         document.getElementById('header-profile-pic').src = fetchedPhoto;
                     }
                     localStorage.setItem('quanic_user_photo', fetchedPhoto);
-                    fetchUserPlaylists(); 
+                    
+                    fetchUserPlaylists(); // Live sync from Firebase
                 }
-            } catch(e) { console.error("Firebase Sync Error", e); }
+            } catch(e) {
+                console.error("Firebase Sync Error", e);
+            }
         });
 
         // ==========================================================================
@@ -557,10 +605,11 @@
         const resultsDiv = document.getElementById('search-results');
         let searchTimeout;
 
+        // The Queue Engine
         let currentTrackData = null;
         let playQueue = [];
         let queueIndex = 0;
-        let currentQueueContext = 'history'; 
+        let currentQueueContext = 'history'; // 'history' or playlistId
         let isShuffle = false;
         let sleepTimerId = null;
 
@@ -641,6 +690,7 @@
         const audio = document.getElementById('audio-core');
         const metaThemeColor = document.getElementById('theme-color-meta');
 
+        // 0ms Last Played Song Restorer (CRASH PROOFED)
         const lastPlayedCache = safeStorageGet('quanic_last_played', null);
         if (lastPlayedCache && lastPlayedCache.title) {
             currentTrackData = lastPlayedCache;
@@ -653,8 +703,16 @@
             if(document.getElementById('full-artist')) document.getElementById('full-artist').innerText = lastPlayedCache.artist;
             if(document.getElementById('full-img')) document.getElementById('full-img').src = lastPlayedCache.imgUrl;
             
+            // MODIFIED FOR FEATURE: Dynamic Theme colors!
+            const cacheColor = generateDarkHexColor(lastPlayedCache.title);
+            if(document.getElementById('player-bg')) {
+                document.getElementById('player-bg').style.background = `linear-gradient(to bottom, ${cacheColor} 0%, #000000 100%)`;
+                document.getElementById('player-bg').style.backgroundImage = 'none'; // Replaces the old blurred image override
+            }
+            
             if(audio) audio.src = lastPlayedCache.audioUrl;
             
+            // Rebuild queue
             currentQueueContext = 'history';
             playQueue = safeStorageGet('quanic_history', []);
             queueIndex = playQueue.findIndex(t => t.title === lastPlayedCache.title);
@@ -675,6 +733,17 @@
             if(document.getElementById('full-title')) document.getElementById('full-title').innerText = trackObj.title;
             if(document.getElementById('full-artist')) document.getElementById('full-artist').innerText = trackObj.artist;
             if(document.getElementById('full-img')) document.getElementById('full-img').src = trackObj.imgUrl;
+            
+            // MODIFIED FOR FEATURE: Dynamic Color sync!
+            const activeColor = generateDarkHexColor(trackObj.title);
+            if(document.getElementById('player-bg')) {
+                document.getElementById('player-bg').style.background = `linear-gradient(to bottom, ${activeColor} 0%, #000000 100%)`;
+                document.getElementById('player-bg').style.backgroundImage = 'none'; // Ensure background image doesn't return
+            }
+            // Update device mobile toolbar dynamically!
+            if (metaThemeColor && document.getElementById('full-player').style.transform === 'translateY(0px)') {
+                 metaThemeColor.setAttribute('content', activeColor);
+            }
 
             audio.src = trackObj.audioUrl;
             audio.play().catch(e => console.log("Auto-play prevented", e));
@@ -828,6 +897,18 @@
             
             likeBtn.style.transform = 'scale(0.8)'; 
             
+            // FEATURE: Double Tap Heart Popup Code injected
+            if(!isLiked) {
+                const artworkArea = document.querySelector('.artwork-container');
+                if(artworkArea) {
+                    const heartPop = document.createElement('span');
+                    heartPop.className = 'material-symbols-rounded pop-heart-icon';
+                    heartPop.innerText = 'favorite';
+                    artworkArea.appendChild(heartPop);
+                    setTimeout(() => heartPop.remove(), 800);
+                }
+            }
+
             try {
                 const likedRef = doc(db, 'users', currentUserUid, 'playlists', 'Liked', 'songs', cleanId);
                 if(isLiked) {
@@ -846,31 +927,20 @@
             setTimeout(() => likeBtn.style.transform = 'scale(1)', 150);
         };
 
-        // Premium Feature: Native Share
-        window.shareCurrentSong = async function() {
-            if (!currentTrackData) return;
-            if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: `Listen to ${currentTrackData.title}`,
-                        text: `Check out ${currentTrackData.title} by ${currentTrackData.artist} on Quanic!`,
-                        url: currentTrackData.audioUrl 
-                    });
-                } catch(e){}
-            } else { showToast('Sharing not supported', 'error'); }
-        };
-
         // ==========================================================================
         // 6. MASTER MODAL ROUTING & HARDWARE BACK CONTROLS
         // ==========================================================================
         let optionTrackTarget = null;
         let activePlaylistViewId = null;
 
-        // Premium Feature: Theme Color Meta Tag Match
         window.openFullPlayer = function() {
             const player = document.getElementById('full-player');
             if(player) player.style.transform = 'translateY(0)';
-            if(metaThemeColor) metaThemeColor.setAttribute('content', '#0A0A0A'); 
+            
+            // UPDATED FIX: Update to dynamic hex color instead of just black
+            const dynamicColorToApply = currentTrackData ? generateDarkHexColor(currentTrackData.title) : '#121212';
+            if(metaThemeColor) metaThemeColor.setAttribute('content', dynamicColorToApply); 
+            
             history.pushState({ modal: 'full-player' }, '', '#nowplaying');
         };
 
@@ -893,6 +963,7 @@
             };
             content.appendChild(queueBtn);
 
+            // PREMIUM FEATURE: Sleep Timer Injection
             const sleepBtn = document.createElement('button');
             sleepBtn.className = 'modal-btn';
             sleepBtn.style.width = '100%';
@@ -906,6 +977,24 @@
                 history.back();
             };
             content.appendChild(sleepBtn);
+
+            const shareBtn = document.createElement('button');
+            shareBtn.className = 'modal-btn';
+            shareBtn.style.width = '100%';
+            shareBtn.innerHTML = `<span class="material-symbols-rounded">share</span> Share Song`;
+            shareBtn.onclick = async () => {
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: `Listen to ${optionTrackTarget.title}`,
+                            text: `Check out ${optionTrackTarget.title} by ${optionTrackTarget.artist} on Quanic!`,
+                            url: optionTrackTarget.audioUrl 
+                        });
+                    } catch(e){}
+                } else { showToast('Sharing not supported', 'error'); }
+                history.back();
+            };
+            content.appendChild(shareBtn);
 
             if (contextId && contextId !== 'history' && contextId !== 'search') {
                 const removeBtn = document.createElement('button');
@@ -1229,4 +1318,7 @@
                     };
 
                     const menuBtn = div.querySelector('.track-menu');
-                    if(menuBtn
+                    if(menuBtn) {
+                        menuBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            openOptionsModal(track,
