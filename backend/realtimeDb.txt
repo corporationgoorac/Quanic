@@ -1,0 +1,14 @@
+{
+  "rules": {
+    "users": {
+      // ANY logged-in user can read the live presence/now playing data.
+      // This allows your Admin panel to pull the data without needing a special RTDB admin flag.
+      ".read": "auth != null",
+      
+      "$uid": {
+        // STRICT SECURITY: A user can ONLY update their own online status and currently playing song.
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    }
+  }
+}
