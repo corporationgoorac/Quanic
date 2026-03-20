@@ -395,18 +395,13 @@
             padding: 30px 20px;
             min-height: 80%;
             border: 1px solid rgba(255,255,255,0.05);
-            
-            /* --- NEW PRODUCTION SCROLL & OVERFLOW FIXES ADDED BELOW --- */
+            /* NEW LINES: Fixes overflow by making the card a secure flex container */
+            flex: 1;
             display: flex;
             flex-direction: column;
-            max-height: calc(100dvh - 160px); /* Strictly limits height to viewable area */
-            overflow: hidden; /* Prevents bleed out of card */
+            overflow: hidden;
         }
-        .lyrics-title { 
-            font-size: 1.4rem; font-weight: 800; margin-bottom: 25px; color: #fff; 
-            /* --- NEW PRODUCTION SCROLL FIXES ADDED BELOW --- */
-            flex-shrink: 0; /* Prevents title from squishing or scrolling away */
-        }
+        .lyrics-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 25px; color: #fff; flex-shrink: 0; }
         #lyrics-content {
             font-size: 1.5rem;
             line-height: 1.6;
@@ -414,13 +409,12 @@
             color: rgba(255,255,255,0.6);
             white-space: pre-wrap;
             transition: all 0.3s;
-            
-            /* --- NEW PRODUCTION SCROLL FIXES ADDED BELOW --- */
-            overflow-y: auto; /* Enables inner scrolling */
-            flex: 1; /* Fills remaining height */
-            padding-bottom: 40px;
-            -webkit-overflow-scrolling: touch; /* Smooth iOS touch scrolling */
-            overscroll-behavior: contain; /* Prevents accidental app pull-to-refresh while scrolling lyrics */
+            /* NEW LINES: Makes the lyrics scrollable INSIDE the card */
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 5px;
+            word-wrap: break-word;
+            -webkit-overflow-scrolling: touch;
         }
         #lyrics-content.loaded { color: #fff; }
         
@@ -2257,3 +2251,53 @@
                                     timestamp: Date.now(),
                                     isPlaying: true
                                 });
+                            }
+                            set(ref(rtdb, `users/${currentUserUid}/status`), 'online');
+                            set(ref(rtdb, `users/${currentUserUid}/lastActive`), serverTimestamp());
+                        }
+                    } catch(e) { console.error("Heartbeat error", e); }
+                }
+            }
+        }, 15000); // 15-second hyper-accurate heartbeat
+
+        // Instantly mark offline ONLY if they minimize AND music is paused
+        document.addEventListener('visibilitychange', () => {
+            if (typeof currentUserUid !== 'undefined' && currentUserUid) {
+                if (document.visibilityState === 'hidden') {
+                    const isPlayingMusic = (audio && !audio.paused && audio.currentTime > 0);
+                    if (!isPlayingMusic) {
+                        try {
+                            /* --- ORIGINAL FIRESTORE CALL DISABLED TO SAVE COSTS ---
+                            setDoc(doc(db, 'users', currentUserUid), {
+                                isOnline: false,
+                                lastActive: new Date()
+                            }, {merge: true});
+                            ------------------------------------------------------ */
+                            // RTDB SYNC
+                            if(rtdb) {
+                                set(ref(rtdb, `users/${currentUserUid}/status`), 'offline');
+                                set(ref(rtdb, `users/${currentUserUid}/lastActive`), serverTimestamp());
+                            }
+                        } catch(e) {}
+                    }
+                } else {
+                    // Back to app = Online immediately
+                    try {
+                        /* --- ORIGINAL FIRESTORE CALL DISABLED TO SAVE COSTS ---
+                        setDoc(doc(db, 'users', currentUserUid), {
+                            isOnline: true,
+                            lastActive: new Date()
+                        }, {merge: true});
+                        ------------------------------------------------------ */
+                        // RTDB SYNC
+                        if(rtdb) {
+                            set(ref(rtdb, `users/${currentUserUid}/status`), 'online');
+                            set(ref(rtdb, `users/${currentUserUid}/lastActive`), serverTimestamp());
+                        }
+                    } catch(e) {}
+                }
+            }
+        });
+    </script>
+</body>
+</html>
