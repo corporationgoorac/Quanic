@@ -76,9 +76,12 @@
         .track-item:active { background: rgba(255,255,255,0.1); }
         .track-item img { width: 48px; height: 48px; border-radius: 8px; margin-right: 15px; object-fit: cover; }
         .track-info { display: flex; flex-direction: column; overflow: hidden; flex: 1; }
-        .track-title { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+        .track-title { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; transition: color 0.3s; }
         .track-artist { color: #888; font-size: 0.85rem; margin-top: 4px; }
         
+        /* PREMIUM FEATURE: Active Track Highlighting */
+        .track-title.active-playing { color: #E1306C; }
+
         /* 3-Dot Menu */
         .track-menu { padding: 10px; color: rgba(255,255,255,0.4); margin-left: auto; transition: color 0.2s; }
         .track-menu:active { color: #fff; }
@@ -106,14 +109,13 @@
         /* ==========================================================================
            6. ULTRA-SLEEK FLOATING MINI PLAYER
            ========================================================================== */
-        /* Increased Z-Index to 106 so it sits ABOVE the playlist view modal (105) */
         #mini-player {
             position: fixed; bottom: calc(env(safe-area-inset-bottom) + 85px); left: 15px; right: 15px;
             background: rgba(40, 40, 40, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-radius: 16px; padding: 8px 12px 8px 8px; display: flex; align-items: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 106; border: 1px solid rgba(255,255,255,0.05);
             transform: translateY(200%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer;
-            pointer-events: none; visibility: hidden; 
+            pointer-events: none; visibility: hidden; overflow: hidden; /* Added overflow hidden for progress bar */
         }
         #mini-player.visible { transform: translateY(0); pointer-events: auto; visibility: visible; }
         
@@ -128,10 +130,13 @@
         .mini-controls { display: flex; align-items: center; padding-left: 10px; }
         .mini-btn { font-size: 32px !important; color: #fff; }
 
+        /* PREMIUM FEATURE: Mini Player Bottom Progress Bar */
+        .mini-progress-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(255,255,255,0.1); }
+        .mini-progress-fill { height: 100%; background: #E1306C; width: 0%; transition: width 0.1s linear; }
+
         /* ==========================================================================
            7. SLEEK BOTTOM-UP PLAYER MODAL
            ========================================================================== */
-        /* Increased Z-Index to 110 so it covers absolutely everything when open */
         #full-player {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
             background: #000000; z-index: 110; transform: translateY(100%); 
@@ -173,7 +178,6 @@
         /* ==========================================================================
            8. SLEEK BOTTOM SHEET MODALS
            ========================================================================== */
-        /* Increased to 115 so it covers the full player modal */
         .bottom-sheet {
             position: fixed; bottom: 0; left: 0; width: 100%; background: #181818;
             border-radius: 24px 24px 0 0; padding: 20px 20px calc(env(safe-area-inset-bottom) + 20px) 20px;
@@ -199,7 +203,6 @@
         }
         .save-btn { background: #E1306C; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 600; font-size: 1rem; cursor: pointer; }
 
-        /* Z-index 105 sits below mini-player (106) but above nav (90) */
         #playlist-view-modal {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: #121212;
             z-index: 105; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -283,6 +286,9 @@
         <div class="mini-controls" onclick="event.stopPropagation()">
             <span class="material-symbols-rounded mini-btn" id="mini-playpause" onclick="togglePlay()">play_arrow</span>
         </div>
+        <div class="mini-progress-container">
+            <div class="mini-progress-fill" id="mini-progress-fill"></div>
+        </div>
     </div>
 
     <div id="full-player">
@@ -345,6 +351,7 @@
         <div class="pl-header">
             <span class="material-symbols-rounded" onclick="closePlaylistView()" style="font-size: 30px; cursor: pointer;">arrow_back</span>
             <h2 id="pl-view-title">Playlist</h2>
+            <span class="material-symbols-rounded" id="pl-delete-btn" style="font-size: 26px; cursor: pointer; color: #ff4444; margin-left: auto; display: none;" onclick="deleteActivePlaylist()">delete</span>
         </div>
         <div id="pl-song-list">
             <div id="scroll-anchor"></div>
@@ -486,6 +493,17 @@
             } catch (err) { resultsDiv.innerHTML = '<p style="color:red; text-align:center;">Network Error</p>'; }
         }
 
+        // Helper function for active track highlighting
+        function highlightActiveTrack(title) {
+            document.querySelectorAll('.track-title').forEach(el => {
+                if (el.innerText === title) {
+                    el.classList.add('active-playing');
+                } else {
+                    el.classList.remove('active-playing');
+                }
+            });
+        }
+
         // ==========================================================================
         // 5. SLEEK AUDIO ENGINE, QUEUE NEXT/PREV, & LIKE LOGIC
         // ==========================================================================
@@ -508,6 +526,7 @@
             audio.src = trackObj.audioUrl;
             audio.play();
             updatePlayIcons(true);
+            highlightActiveTrack(trackObj.title);
             
             if(updateHistory) saveToHistory(trackObj);
             checkIfLiked(trackObj.title, trackObj.firestoreId);
@@ -543,6 +562,8 @@
             if (audio.duration) {
                 const progress = (audio.currentTime / audio.duration) * 100;
                 document.getElementById('progress-fill').style.width = `${progress}%`;
+                // Premium Feature: Update mini player progress bar
+                document.getElementById('mini-progress-fill').style.width = `${progress}%`;
             }
         });
         
@@ -618,7 +639,6 @@
             const likeBtn = document.getElementById('btn-like');
             const isLiked = likeBtn.innerText === 'favorite';
             
-            // The absolute bulletproof ID extraction logic
             const cleanId = currentTrackData.firestoreId || (currentTrackData.title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(currentTrackData.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
             const likedRef = doc(db, 'users', currentUserUid, 'playlists', 'Liked', 'songs', cleanId);
 
@@ -656,7 +676,6 @@
             const content = document.getElementById('options-dynamic-content');
             content.innerHTML = '';
             
-            // Premium Feature: Add to Queue
             const queueBtn = document.createElement('button');
             queueBtn.className = 'modal-btn';
             queueBtn.style.width = '100%';
@@ -668,7 +687,6 @@
             };
             content.appendChild(queueBtn);
 
-            // Premium Feature: Web Share API
             const shareBtn = document.createElement('button');
             shareBtn.className = 'modal-btn';
             shareBtn.style.width = '100%';
@@ -685,31 +703,25 @@
             };
             content.appendChild(shareBtn);
 
-            // Context-Aware: Remove from active playlist
             if (contextId && contextId !== 'history' && contextId !== 'search') {
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'modal-btn';
                 removeBtn.style.width = '100%';
                 removeBtn.innerHTML = `<span class="material-symbols-rounded" style="color:#ff4444;">delete</span> Remove from this playlist`;
                 removeBtn.onclick = async () => {
-                    // CRITICAL FIX: The absolute true document ID
                     const cleanId = optionTrackTarget.firestoreId || (optionTrackTarget.title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(optionTrackTarget.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
                     
                     await deleteDoc(doc(db, 'users', currentUserUid, 'playlists', contextId, 'songs', cleanId));
                     showToast('Song removed', 'delete');
                     
-                    // Zero-Reload DOM Removal
                     const items = document.querySelectorAll('.pl-track-item');
                     items.forEach(el => {
-                        // Check against the true firestoreId to ensure perfect removal
                         if(el.trackData && el.trackData.firestoreId === cleanId) {
                             el.remove();
                         }
                     });
                     
-                    // Eject from active queue so it doesn't play next
                     playQueue = playQueue.filter(t => t.firestoreId !== cleanId);
-                    
                     history.back(); 
                 };
                 content.appendChild(removeBtn);
@@ -721,7 +733,7 @@
         };
 
         window.openCreatePlaylistModal = function() {
-            history.back(); // close options first
+            history.back(); 
             setTimeout(() => {
                 document.getElementById('create-playlist-modal').classList.add('open');
                 history.pushState({ modal: 'create_playlist' }, '', '#create');
@@ -731,23 +743,28 @@
         window.openPlaylistView = function(playlistId, playlistName) {
             document.getElementById('pl-view-title').innerText = playlistName;
             document.getElementById('playlist-view-modal').classList.add('open');
+            
+            // Show/Hide delete playlist button
+            const delBtn = document.getElementById('pl-delete-btn');
+            if (playlistId === 'Liked') {
+                delBtn.style.display = 'none';
+            } else {
+                delBtn.style.display = 'block';
+            }
+
             history.pushState({ modal: 'playlist_view' }, '', `#playlist_${playlistId}`);
             loadPlaylistSongs(playlistId);
         };
 
-        // UI Close triggers
         window.closeFullPlayer = () => { history.back(); };
         window.closePlaylistView = () => { history.back(); };
 
-        // Flawless State Router
         window.addEventListener('popstate', (e) => {
             const state = e.state ? e.state.modal : 'home';
             
-            // Handle Overlay
             const overlay = document.getElementById('modal-overlay');
             if (overlay) overlay.style.display = (state === 'options' || state === 'create_playlist') ? 'block' : 'none';
             
-            // Clean up UI safely
             if(state === 'home') {
                 document.getElementById('full-player').style.transform = 'translateY(100%)';
                 document.getElementById('options-modal').classList.remove('open');
@@ -805,7 +822,6 @@
                 btn.innerHTML = `<span class="material-symbols-rounded" style="color:#A7A7A7;">queue_music</span> Add to ${docSnap.data().name}`;
                 
                 btn.onclick = async () => {
-                    // Absolute true ID calculation for duplicate checking
                     const cleanId = optionTrackTarget.firestoreId || (optionTrackTarget.title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(optionTrackTarget.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
                     const songRef = doc(db, 'users', currentUserUid, 'playlists', docSnap.id, 'songs', cleanId);
                     
@@ -836,6 +852,17 @@
             input.value = '';
             fetchUserPlaylists(); 
             history.back(); 
+        };
+
+        // PREMIUM FEATURE: Delete Entire Playlist
+        window.deleteActivePlaylist = async function() {
+            if(!currentUserUid || !activePlaylistViewId || activePlaylistViewId === 'Liked') return;
+            if(confirm("Are you sure you want to delete this entire playlist?")) {
+                await deleteDoc(doc(db, 'users', currentUserUid, 'playlists', activePlaylistViewId));
+                showToast('Playlist deleted', 'delete_sweep');
+                fetchUserPlaylists();
+                history.back(); // close the playlist view
+            }
         };
 
         let lastVisibleDoc = null;
@@ -880,13 +907,16 @@
 
                 snap.forEach((docSnap, idx) => {
                     const track = docSnap.data();
-                    // CRITICAL FIX: Ensure the DOM element knows its exact Firestore ID
                     track.firestoreId = docSnap.id; 
                     const globalIdx = indexOffset + idx; 
                     
                     const div = document.createElement('div');
                     div.className = 'track-item pl-track-item';
-                    div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
+                    
+                    // Check if this is the currently playing track and highlight it
+                    let activeClass = (currentTrackData && currentTrackData.title === track.title) ? 'active-playing' : '';
+                    
+                    div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
                     
                     div.onclick = () => {
                         currentQueueContext = playlistId;
@@ -933,7 +963,10 @@
             historyArr.forEach((track, index) => {
                 const div = document.createElement('div');
                 div.className = 'track-item';
-                div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
+                
+                let activeClass = (currentTrackData && currentTrackData.title === track.title) ? 'active-playing' : '';
+                
+                div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
                 
                 div.onclick = () => {
                     currentQueueContext = 'history';
