@@ -510,7 +510,7 @@
             updatePlayIcons(true);
             
             if(updateHistory) saveToHistory(trackObj);
-            checkIfLiked(trackObj.title);
+            checkIfLiked(trackObj.title, trackObj.firestoreId);
 
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
@@ -597,9 +597,9 @@
             }
         };
 
-        async function checkIfLiked(title) {
+        async function checkIfLiked(title, explicitId) {
             if(!currentUserUid) return;
-            const cleanId = (title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
+            const cleanId = explicitId || (title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
             const docRef = doc(db, 'users', currentUserUid, 'playlists', 'Liked', 'songs', cleanId);
             const snap = await getDoc(docRef);
             const likeBtn = document.getElementById('btn-like');
@@ -617,7 +617,9 @@
             if(!currentUserUid || !currentTrackData) return;
             const likeBtn = document.getElementById('btn-like');
             const isLiked = likeBtn.innerText === 'favorite';
-            const cleanId = (currentTrackData.title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(currentTrackData.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
+            
+            // The absolute bulletproof ID extraction logic
+            const cleanId = currentTrackData.firestoreId || (currentTrackData.title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(currentTrackData.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
             const likedRef = doc(db, 'users', currentUserUid, 'playlists', 'Liked', 'songs', cleanId);
 
             likeBtn.style.transform = 'scale(0.8)'; 
@@ -629,7 +631,7 @@
                 showToast('Removed from Liked Songs', 'heart_broken');
             } else {
                 await setDoc(doc(db, 'users', currentUserUid, 'playlists', 'Liked'), { name: 'Liked Songs', createdAt: new Date() }, {merge:true});
-                await setDoc(likedRef, { ...currentTrackData, addedAt: new Date() });
+                await setDoc(likedRef, { ...currentTrackData, firestoreId: cleanId, addedAt: new Date() });
                 likeBtn.innerText = 'favorite';
                 likeBtn.style.color = '#E1306C';
                 showToast('Added to Liked Songs', 'favorite');
@@ -690,18 +692,23 @@
                 removeBtn.style.width = '100%';
                 removeBtn.innerHTML = `<span class="material-symbols-rounded" style="color:#ff4444;">delete</span> Remove from this playlist`;
                 removeBtn.onclick = async () => {
-                    const cleanId = (optionTrackTarget.title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(optionTrackTarget.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
+                    // CRITICAL FIX: The absolute true document ID
+                    const cleanId = optionTrackTarget.firestoreId || (optionTrackTarget.title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(optionTrackTarget.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
+                    
                     await deleteDoc(doc(db, 'users', currentUserUid, 'playlists', contextId, 'songs', cleanId));
                     showToast('Song removed', 'delete');
                     
                     // Zero-Reload DOM Removal
                     const items = document.querySelectorAll('.pl-track-item');
                     items.forEach(el => {
-                        if(el.trackData && el.trackData.title === optionTrackTarget.title) el.remove();
+                        // Check against the true firestoreId to ensure perfect removal
+                        if(el.trackData && el.trackData.firestoreId === cleanId) {
+                            el.remove();
+                        }
                     });
                     
-                    // Eject from active queue
-                    playQueue = playQueue.filter(t => t.title !== optionTrackTarget.title);
+                    // Eject from active queue so it doesn't play next
+                    playQueue = playQueue.filter(t => t.firestoreId !== cleanId);
                     
                     history.back(); 
                 };
@@ -798,12 +805,13 @@
                 btn.innerHTML = `<span class="material-symbols-rounded" style="color:#A7A7A7;">queue_music</span> Add to ${docSnap.data().name}`;
                 
                 btn.onclick = async () => {
-                    const cleanId = (optionTrackTarget.title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(optionTrackTarget.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
+                    // Absolute true ID calculation for duplicate checking
+                    const cleanId = optionTrackTarget.firestoreId || (optionTrackTarget.title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(optionTrackTarget.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
                     const songRef = doc(db, 'users', currentUserUid, 'playlists', docSnap.id, 'songs', cleanId);
                     
                     const check = await getDoc(songRef);
                     if(!check.exists()) {
-                        await setDoc(songRef, { ...optionTrackTarget, addedAt: new Date() });
+                        await setDoc(songRef, { ...optionTrackTarget, firestoreId: cleanId, addedAt: new Date() });
                         showToast('Added to ' + docSnap.data().name);
                     } else { showToast('Already in playlist', 'info'); }
                     setTimeout(() => { history.back(); }, 300);
@@ -820,8 +828,8 @@
             const plRef = await addDoc(collection(db, 'users', currentUserUid, 'playlists'), { name: name, createdAt: new Date() });
             
             if(optionTrackTarget) {
-                const cleanId = (optionTrackTarget.title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(optionTrackTarget.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
-                await setDoc(doc(db, 'users', currentUserUid, 'playlists', plRef.id, 'songs', cleanId), { ...optionTrackTarget, addedAt: new Date() });
+                const cleanId = optionTrackTarget.firestoreId || (optionTrackTarget.title || '').replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(optionTrackTarget.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
+                await setDoc(doc(db, 'users', currentUserUid, 'playlists', plRef.id, 'songs', cleanId), { ...optionTrackTarget, firestoreId: cleanId, addedAt: new Date() });
                 showToast('Playlist created & song added');
             } else { showToast('Playlist created'); }
             
@@ -872,6 +880,8 @@
 
                 snap.forEach((docSnap, idx) => {
                     const track = docSnap.data();
+                    // CRITICAL FIX: Ensure the DOM element knows its exact Firestore ID
+                    track.firestoreId = docSnap.id; 
                     const globalIdx = indexOffset + idx; 
                     
                     const div = document.createElement('div');
