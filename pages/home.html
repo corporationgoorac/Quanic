@@ -358,6 +358,70 @@
             opacity: 1; transform: translateX(-50%) translateY(0); 
         }
 
+        /* ==========================================================================
+           12. SPOTIFY LYRICS SCROLL & NEAT UI OVERRIDES
+           ========================================================================== */
+        
+        /* Clean UI: Hide the legacy dummy buttons while keeping lines in code */
+        .extra-audio-controls { display: none !important; }
+
+        /* The Spotify Scroll Engine */
+        #full-player { 
+            overflow-y: scroll !important; 
+            scroll-snap-type: y mandatory; 
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .player-scroll-child { 
+            height: 100vh; 
+            height: 100dvh; 
+            width: 100%; 
+            scroll-snap-align: start; 
+            position: relative; 
+            flex-shrink: 0;
+        }
+
+        /* Lyrics View Styling */
+        #lyrics-view {
+            padding: 40px 25px 120px 25px;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+        }
+        .lyrics-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 24px;
+            padding: 30px 20px;
+            min-height: 80%;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .lyrics-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 25px; color: #fff; }
+        #lyrics-content {
+            font-size: 1.5rem;
+            line-height: 1.6;
+            font-weight: 700;
+            color: rgba(255,255,255,0.6);
+            white-space: pre-wrap;
+            transition: all 0.3s;
+        }
+        #lyrics-content.loaded { color: #fff; }
+        
+        /* Visual cue for scrolling */
+        .scroll-hint {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; align-items: center; opacity: 0.5;
+            animation: bounce 2s infinite;
+        }
+        .scroll-hint span { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 5px; }
+
+        /* ==========================================================================
+           13. HIDE SCROLLBARS & SMOOTHING (NEW ENHANCEMENTS)
+           ========================================================================== */
+        ::-webkit-scrollbar { width: 0; height: 0; display: none; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
+        html { scroll-behavior: smooth; }
+
     </style>
 </head>
 <body>
@@ -440,54 +504,81 @@
 
     <div id="full-player">
         <div class="player-bg" id="player-bg"></div>
-        <div class="player-content">
-            <div class="player-header">
-                <span class="material-symbols-rounded" onclick="closeFullPlayer()" style="font-size: 30px; cursor: pointer;">keyboard_arrow_down</span>
-                <span>Now Playing</span>
-                <span class="material-symbols-rounded" style="font-size: 26px; cursor: pointer;" onclick="openOptionsModal()">more_horiz</span>
-            </div>
-            
-            <div class="artwork-container" ondblclick="toggleLike()">
-                <div class="premium-bass-badge">Max Bass Active</div>
-                <div id="ambient-glow"></div>
-                <img id="full-img" src="" alt="Album Art">
-            </div>
 
-            <div class="player-info">
-                <div class="player-text">
-                    <div style="display:flex; align-items:center; width:100%;">
-                        <h1 id="full-title">Track Name</h1>
-                        <div class="visualizer" id="now-playing-vis">
-                            <div class="vis-bar"></div><div class="vis-bar"></div><div class="vis-bar"></div>
+        <div class="player-scroll-child">
+            <div class="player-content">
+                <div class="player-header">
+                    <span class="material-symbols-rounded" onclick="closeFullPlayer()" style="font-size: 30px; cursor: pointer;">keyboard_arrow_down</span>
+                    <span>Now Playing</span>
+                    <span class="material-symbols-rounded" style="font-size: 26px; cursor: pointer;" onclick="openOptionsModal()">more_horiz</span>
+                </div>
+                
+                <div class="artwork-container" ondblclick="toggleLike()">
+                    <div class="premium-bass-badge">Max Bass Active</div>
+                    <div id="ambient-glow"></div>
+                    <img id="full-img" src="" alt="Album Art">
+                </div>
+
+                <div class="player-info">
+                    <div class="player-text">
+                        <div style="display:flex; align-items:center; width:100%;">
+                            <h1 id="full-title">Track Name</h1>
+                            <div class="visualizer" id="now-playing-vis">
+                                <div class="vis-bar"></div><div class="vis-bar"></div><div class="vis-bar"></div>
+                            </div>
                         </div>
+                        <p id="full-artist">Artist</p>
                     </div>
-                    <p id="full-artist">Artist</p>
+                    <span class="material-symbols-rounded" id="btn-like" onclick="toggleLike()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s;">favorite_border</span>
                 </div>
-                <span class="material-symbols-rounded" id="btn-like" onclick="toggleLike()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s;">favorite_border</span>
-            </div>
 
-            <div class="extra-audio-controls">
-                <span class="material-symbols-rounded secondary-btn" id="btn-bass" onclick="toggleBassBoost()">speaker</span>
-                <span class="material-symbols-rounded secondary-btn" onclick="showToast('Lyrics feature coming soon!', 'lyrics')" style="display: none !important;">lyrics</span>
-                <span class="material-symbols-rounded secondary-btn" onclick="showToast('High Quality Streaming Active', 'high_quality')" style="display: none !important;">hq</span>
-            </div>
-
-            <div class="progress-container" id="progress-container" onclick="seekAudio(event)">
-                <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-                <div class="time-info">
-                    <span id="current-time">0:00</span>
-                    <span id="total-time">0:00</span>
+                <div class="extra-audio-controls">
+                    <span class="material-symbols-rounded secondary-btn" id="btn-bass" onclick="toggleBassBoost()">speaker</span>
+                    <span class="material-symbols-rounded secondary-btn" onclick="showToast('Lyrics feature coming soon!', 'lyrics')" style="display: none !important;">lyrics</span>
+                    <span class="material-symbols-rounded secondary-btn" onclick="showToast('High Quality Streaming Active', 'high_quality')" style="display: none !important;">hq</span>
                 </div>
-            </div>
 
-            <div class="main-controls">
-                <span class="material-symbols-rounded secondary-btn" id="btn-shuffle" onclick="toggleShuffle()">shuffle</span>
-                <span class="material-symbols-rounded" onclick="prevTrack()">skip_previous</span>
-                <span class="material-symbols-rounded play-btn" id="full-playpause" onclick="togglePlay()">play_circle</span>
-                <span class="material-symbols-rounded" onclick="nextTrack()">skip_next</span>
-                <span class="material-symbols-rounded secondary-btn" id="btn-loop" onclick="toggleLoop()">repeat</span>
+                <div class="progress-container" id="progress-container" onclick="seekAudio(event)">
+                    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+                    <div class="time-info">
+                        <span id="current-time">0:00</span>
+                        <span id="total-time">0:00</span>
+                    </div>
+                </div>
+
+                <div class="main-controls">
+                    <span class="material-symbols-rounded secondary-btn" id="btn-shuffle" onclick="toggleShuffle()">shuffle</span>
+                    <span class="material-symbols-rounded" onclick="prevTrack()">skip_previous</span>
+                    <span class="material-symbols-rounded play-btn" id="full-playpause" onclick="togglePlay()">play_circle</span>
+                    <span class="material-symbols-rounded" onclick="nextTrack()">skip_next</span>
+                    <span class="material-symbols-rounded secondary-btn" id="btn-loop" onclick="toggleLoop()">repeat</span>
+                </div>
+
+                <div class="premium-bottom-actions" style="display:flex; justify-content:space-between; margin-top: 20px; padding: 0 15px; align-items: center;">
+                    <span class="secondary-btn" onclick="togglePlaybackSpeed()" id="btn-speed" style="color: rgba(255,255,255,0.5); font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.1s;">1x</span>
+                    <span class="material-symbols-rounded secondary-btn" onclick="openQueueModal()" style="color: rgba(255,255,255,0.5); font-size: 24px; cursor: pointer; transition: transform 0.1s;">queue_music</span>
+                </div>
+
+                <div class="scroll-hint" id="lyrics-scroll-hint" style="display:none;">
+                    <span class="material-symbols-rounded">keyboard_double_arrow_up</span>
+                    <span>Lyrics</span>
+                </div>
             </div>
         </div>
+
+        <div class="player-scroll-child" id="lyrics-view">
+             <div class="lyrics-card">
+                 <h3 class="lyrics-title">Lyrics</h3>
+                 <div id="lyrics-content">Lyrics not available for this track.</div>
+             </div>
+        </div>
+    </div>
+
+    <div id="queue-modal" class="bottom-sheet">
+        <span class="material-symbols-rounded" onclick="history.back()" style="position:absolute; right:20px; top:20px; cursor:pointer; color:#888;">close</span>
+        <div class="sheet-handle"></div>
+        <h3 class="sheet-title">Up Next</h3>
+        <div id="queue-list" class="modal-list"></div>
     </div>
 
     <div id="options-modal" class="bottom-sheet">
@@ -716,15 +807,15 @@
         };
 
         // ==========================================================================
-        // FEATURE: SWIPE DOWN TO DISMISS PLAYER
+        // FEATURE: SWIPE DOWN TO DISMISS PLAYER (DISABLED FOR VERTICAL SCROLL LYRICS)
         // ==========================================================================
+        // Overridden swipe gesture logic to support vertical lyrics scrolling
         let swipeStartY = 0;
-        const playerModal = document.getElementById('full-player');
-        playerModal.addEventListener('touchstart', e => swipeStartY = e.touches.clientY);
-        playerModal.addEventListener('touchend', e => {
-            if (e.changedTouches.clientY - swipeStartY > 100) closeFullPlayer();
-        });
-
+        const playerScrollBox = document.getElementById('full-player');
+        
+        // ==========================================================================
+        // 1. FIREBASE SETUP & ROUTING
+        // ==========================================================================
 
         let currentUserUid = null;
 
@@ -915,7 +1006,7 @@
                         const bestAudio = Array.isArray(song.downloadUrl) ? song.downloadUrl[song.downloadUrl.length - 1].url : song.downloadUrl;
                         const artist = song.artists?.primary?.map(a => a.name).join(', ') || song.primaryArtists;
                         const cleanTitle = song.name.replace(/&quot;/g, '"').replace(/&#039;/g, "'");
-                        const trackObj = { title: cleanTitle, artist: artist, imgUrl: bestImg, audioUrl: bestAudio };
+                        const trackObj = { title: cleanTitle, artist: artist, imgUrl: bestImg, audioUrl: bestAudio, id: song.id };
 
                         const div = document.createElement('div');
                         div.className = 'track-item';
@@ -1009,6 +1100,31 @@
             if(queueIndex === -1) queueIndex = 0;
         }
 
+        // NEW FEATURE: SPOTIFY LYRICS FETCHER ENGINE
+        async function fetchLyrics(songId) {
+            const contentEl = document.getElementById('lyrics-content');
+            const hintEl = document.getElementById('lyrics-scroll-hint');
+            if(!contentEl) return;
+            
+            contentEl.innerText = "Searching for lyrics...";
+            contentEl.classList.remove('loaded');
+            if(hintEl) hintEl.style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_SERVER}/songs/${songId}/lyrics`);
+                const data = await res.json();
+                if(data.status === 'SUCCESS' && data.data && data.data.lyrics) {
+                    contentEl.innerHTML = data.data.lyrics.replace(/\n/g, '<br>');
+                    contentEl.classList.add('loaded');
+                    if(hintEl) hintEl.style.display = 'flex';
+                } else {
+                    contentEl.innerText = "Lyrics not available for this track.";
+                }
+            } catch(e) {
+                contentEl.innerText = "Lyrics could not be loaded.";
+            }
+        }
+
         window.loadAndPlay = async function(trackObj, updateHistory = true) {
             if(!trackObj || !audio) return;
             currentTrackData = trackObj;
@@ -1023,6 +1139,12 @@
             if(document.getElementById('full-title')) document.getElementById('full-title').innerText = trackObj.title;
             if(document.getElementById('full-artist')) document.getElementById('full-artist').innerText = trackObj.artist;
             if(document.getElementById('full-img')) document.getElementById('full-img').src = trackObj.imgUrl;
+
+            // RESET SCROLL TO TOP WHEN NEW SONG LOADS
+            if(playerScrollBox) playerScrollBox.scrollTo(0, 0);
+            
+            // Trigger Lyrics Fetch
+            if(trackObj.id) fetchLyrics(trackObj.id);
             
             // MODIFIED FOR FEATURE: Dynamic Color sync!
             const activeColor = generateDarkHexColor(trackObj.title);
@@ -1076,7 +1198,10 @@
 
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
-                    title: trackObj.title, artist: trackObj.artist, artwork: [{ src: trackObj.imgUrl, sizes: '512x512', type: 'image/jpeg' }]
+                    title: trackObj.title, artist: trackObj.artist, artwork: [
+                        { src: trackObj.imgUrl, sizes: '512x512', type: 'image/jpeg' },
+                        { src: '../images/icon.png', sizes: '192x192', type: 'image/png' }
+                    ]
                 });
                 navigator.mediaSession.setActionHandler('play', () => togglePlay());
                 navigator.mediaSession.setActionHandler('pause', () => togglePlay());
@@ -1522,7 +1647,7 @@
             const anchor = document.getElementById('scroll-anchor');
             if(anchor) {
                 const observer = new IntersectionObserver((entries) => {
-                    if(entries.isIntersecting) fetchMorePlaylistSongs(activePlaylistViewId);
+                    if(entries[0].isIntersecting) fetchMorePlaylistSongs(activePlaylistViewId);
                 });
                 observer.observe(anchor);
             }
@@ -1738,6 +1863,111 @@
                 }
             }
         });
+
+        // ==========================================================================
+        // 13. MASSIVE BUG FIXES & SPOTIFY FEATURES INJECTION (QUEUE, SPEED, MODAL FIX)
+        // ==========================================================================
+        
+        // --- Playback Speed Feature ---
+        let playbackSpeeds = [1, 1.25, 1.5, 2];
+        let currentSpeedIdx = 0;
+        window.togglePlaybackSpeed = function() {
+            if(window.haptic) window.haptic();
+            currentSpeedIdx = (currentSpeedIdx + 1) % playbackSpeeds.length;
+            const speed = playbackSpeeds[currentSpeedIdx];
+            if(audio) audio.playbackRate = speed;
+            const btn = document.getElementById('btn-speed');
+            if(btn) {
+                btn.innerText = speed + 'x';
+                btn.style.color = speed === 1 ? 'rgba(255,255,255,0.5)' : '#E1306C';
+            }
+            showToast(`Playback speed set to ${speed}x`, 'speed');
+        };
+
+        // --- Up Next (Queue) Feature ---
+        window.openQueueModal = function() {
+            if(window.haptic) window.haptic();
+            const list = document.getElementById('queue-list');
+            list.innerHTML = '';
+            
+            // Add currently playing at the top
+            if(currentTrackData) {
+                const nowDiv = document.createElement('div');
+                nowDiv.style.cssText = "padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);";
+                nowDiv.innerHTML = `<p style="font-size:0.8rem; color:#E1306C; font-weight:800; margin-bottom:10px; text-transform:uppercase;">Now Playing</p>
+                <div style="display:flex; align-items:center;">
+                    <img src="${currentTrackData.imgUrl}" style="width:48px;height:48px;border-radius:8px;margin-right:15px;object-fit:cover;">
+                    <div style="display:flex; flex-direction:column; overflow:hidden;">
+                        <span style="font-weight:600; color:#E1306C; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${currentTrackData.title}</span>
+                        <span style="font-size:0.85rem; color:#888;">${currentTrackData.artist}</span>
+                    </div>
+                </div>`;
+                list.appendChild(nowDiv);
+            }
+
+            const nextTitle = document.createElement('p');
+            nextTitle.style.cssText = "font-size:0.8rem; color:#fff; font-weight:800; margin-bottom:10px; text-transform:uppercase;";
+            nextTitle.innerText = "Next In Queue";
+            list.appendChild(nextTitle);
+
+            if (playQueue && playQueue.length > 0 && queueIndex + 1 < playQueue.length) {
+                for(let i = queueIndex + 1; i < Math.min(queueIndex + 31, playQueue.length); i++) {
+                    const t = playQueue[i];
+                    const div = document.createElement('div');
+                    div.className = 'track-item';
+                    div.innerHTML = `<img src="${t.imgUrl}" style="width:48px;height:48px;border-radius:8px;margin-right:15px;object-fit:cover;"><div class="track-info"><span class="track-title">${t.title}</span><span class="track-artist">${t.artist}</span></div>`;
+                    div.onclick = () => {
+                        queueIndex = i;
+                        loadAndPlay(t);
+                        history.back();
+                    };
+                    list.appendChild(div);
+                }
+            } else {
+                list.innerHTML += '<p style="text-align:center; color:#666; margin-top:20px; font-size: 0.9rem;">Queue is empty.</p>';
+            }
+            
+            document.getElementById('queue-modal').classList.add('open');
+            history.pushState({ modal: 'queue' }, '', '#queue');
+        };
+
+        // --- Nested Modal & Overlay Bug Fixer ---
+        // This listener runs AFTER the existing popstate and aggressively cleans up the UI state
+        window.addEventListener('popstate', (e) => {
+            const state = e.state ? e.state.modal : 'home';
+            setTimeout(() => {
+                const openSheets = document.querySelectorAll('.bottom-sheet.open');
+                const overlay = document.getElementById('modal-overlay');
+                
+                // 1. Fix sticky overlay bug
+                if(overlay) overlay.style.display = openSheets.length > 0 ? 'block' : 'none';
+                
+                // 2. Fix nested queue modal bug
+                if (state !== 'queue') {
+                    const qm = document.getElementById('queue-modal');
+                    if (qm) qm.classList.remove('open');
+                }
+                
+                // 3. Fix scroll lock bug if full player force closed
+                if (state === 'home' || state === 'playlist_view') {
+                    document.body.style.overflow = 'hidden'; 
+                }
+            }, 50); // slight delay ensures primary listener processes first
+        });
+        
+        // --- Audio Auto-Advance Bug Fix ---
+        // Safely patch the nextTrack function to fix the infinite 1-track loop bug
+        const originalNextTrack = window.nextTrack;
+        window.nextTrack = function() {
+            // Prevent looping if it's the end of the queue and loop is false
+            if (!audio.loop && !isShuffle && playQueue && playQueue.length > 0 && queueIndex >= playQueue.length - 1) {
+                if(audio) { audio.pause(); audio.currentTime = 0; }
+                updatePlayIcons(false);
+                showToast("End of queue", "queue_music");
+                return; // Stop here, don't play next
+            }
+            originalNextTrack();
+        };
     </script>
 </body>
 </html>
