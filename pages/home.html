@@ -358,63 +358,6 @@
             opacity: 1; transform: translateX(-50%) translateY(0); 
         }
 
-        /* ==========================================================================
-           12. SPOTIFY LYRICS SCROLL & NEAT UI OVERRIDES
-           ========================================================================== */
-        
-        /* Clean UI: Hide the legacy dummy buttons while keeping lines in code */
-        .extra-audio-controls { display: none !important; }
-
-        /* The Spotify Scroll Engine */
-        #full-player { 
-            overflow-y: scroll !important; 
-            scroll-snap-type: y mandatory; 
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .player-scroll-child { 
-            height: 100vh; 
-            height: 100dvh; 
-            width: 100%; 
-            scroll-snap-align: start; 
-            position: relative; 
-            flex-shrink: 0;
-        }
-
-        /* Lyrics View Styling */
-        #lyrics-view {
-            padding: 40px 25px 120px 25px;
-            background: rgba(0,0,0,0.4);
-            display: flex;
-            flex-direction: column;
-        }
-        .lyrics-card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 24px;
-            padding: 30px 20px;
-            min-height: 80%;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .lyrics-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 25px; color: #fff; }
-        #lyrics-content {
-            font-size: 1.5rem;
-            line-height: 1.6;
-            font-weight: 700;
-            color: rgba(255,255,255,0.6);
-            white-space: pre-wrap;
-            transition: all 0.3s;
-        }
-        #lyrics-content.loaded { color: #fff; }
-        
-        /* Visual cue for scrolling */
-        .scroll-hint {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; flex-direction: column; align-items: center; opacity: 0.5;
-            animation: bounce 2s infinite;
-        }
-        .scroll-hint span { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 5px; }
-
     </style>
 </head>
 <body>
@@ -497,68 +440,53 @@
 
     <div id="full-player">
         <div class="player-bg" id="player-bg"></div>
+        <div class="player-content">
+            <div class="player-header">
+                <span class="material-symbols-rounded" onclick="closeFullPlayer()" style="font-size: 30px; cursor: pointer;">keyboard_arrow_down</span>
+                <span>Now Playing</span>
+                <span class="material-symbols-rounded" style="font-size: 26px; cursor: pointer;" onclick="openOptionsModal()">more_horiz</span>
+            </div>
+            
+            <div class="artwork-container" ondblclick="toggleLike()">
+                <div class="premium-bass-badge">Max Bass Active</div>
+                <div id="ambient-glow"></div>
+                <img id="full-img" src="" alt="Album Art">
+            </div>
 
-        <div class="player-scroll-child">
-            <div class="player-content">
-                <div class="player-header">
-                    <span class="material-symbols-rounded" onclick="closeFullPlayer()" style="font-size: 30px; cursor: pointer;">keyboard_arrow_down</span>
-                    <span>Now Playing</span>
-                    <span class="material-symbols-rounded" style="font-size: 26px; cursor: pointer;" onclick="openOptionsModal()">more_horiz</span>
-                </div>
-                
-                <div class="artwork-container" ondblclick="toggleLike()">
-                    <div class="premium-bass-badge">Max Bass Active</div>
-                    <div id="ambient-glow"></div>
-                    <img id="full-img" src="" alt="Album Art">
-                </div>
-
-                <div class="player-info">
-                    <div class="player-text">
-                        <div style="display:flex; align-items:center; width:100%;">
-                            <h1 id="full-title">Track Name</h1>
-                            <div class="visualizer" id="now-playing-vis">
-                                <div class="vis-bar"></div><div class="vis-bar"></div><div class="vis-bar"></div>
-                            </div>
+            <div class="player-info">
+                <div class="player-text">
+                    <div style="display:flex; align-items:center; width:100%;">
+                        <h1 id="full-title">Track Name</h1>
+                        <div class="visualizer" id="now-playing-vis">
+                            <div class="vis-bar"></div><div class="vis-bar"></div><div class="vis-bar"></div>
                         </div>
-                        <p id="full-artist">Artist</p>
                     </div>
-                    <span class="material-symbols-rounded" id="btn-like" onclick="toggleLike()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s;">favorite_border</span>
+                    <p id="full-artist">Artist</p>
                 </div>
+                <span class="material-symbols-rounded" id="btn-like" onclick="toggleLike()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s;">favorite_border</span>
+            </div>
 
-                <div class="extra-audio-controls">
-                    <span class="material-symbols-rounded secondary-btn" id="btn-bass" onclick="toggleBassBoost()">speaker</span>
-                    <span class="material-symbols-rounded secondary-btn" onclick="showToast('Lyrics feature coming soon!', 'lyrics')">lyrics</span>
-                    <span class="material-symbols-rounded secondary-btn" onclick="showToast('High Quality Streaming Active', 'high_quality')">hq</span>
-                </div>
+            <div class="extra-audio-controls">
+                <span class="material-symbols-rounded secondary-btn" id="btn-bass" onclick="toggleBassBoost()">speaker</span>
+                <span class="material-symbols-rounded secondary-btn" onclick="showToast('Lyrics feature coming soon!', 'lyrics')" style="display: none !important;">lyrics</span>
+                <span class="material-symbols-rounded secondary-btn" onclick="showToast('High Quality Streaming Active', 'high_quality')" style="display: none !important;">hq</span>
+            </div>
 
-                <div class="progress-container" id="progress-container" onclick="seekAudio(event)">
-                    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-                    <div class="time-info">
-                        <span id="current-time">0:00</span>
-                        <span id="total-time">0:00</span>
-                    </div>
-                </div>
-
-                <div class="main-controls">
-                    <span class="material-symbols-rounded secondary-btn" id="btn-shuffle" onclick="toggleShuffle()">shuffle</span>
-                    <span class="material-symbols-rounded" onclick="prevTrack()">skip_previous</span>
-                    <span class="material-symbols-rounded play-btn" id="full-playpause" onclick="togglePlay()">play_circle</span>
-                    <span class="material-symbols-rounded" onclick="nextTrack()">skip_next</span>
-                    <span class="material-symbols-rounded secondary-btn" id="btn-loop" onclick="toggleLoop()">repeat</span>
-                </div>
-
-                <div class="scroll-hint" id="lyrics-scroll-hint" style="display:none;">
-                    <span class="material-symbols-rounded">keyboard_double_arrow_up</span>
-                    <span>Lyrics</span>
+            <div class="progress-container" id="progress-container" onclick="seekAudio(event)">
+                <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+                <div class="time-info">
+                    <span id="current-time">0:00</span>
+                    <span id="total-time">0:00</span>
                 </div>
             </div>
-        </div>
 
-        <div class="player-scroll-child" id="lyrics-view">
-             <div class="lyrics-card">
-                 <h3 class="lyrics-title">Lyrics</h3>
-                 <div id="lyrics-content">Lyrics not available for this track.</div>
-             </div>
+            <div class="main-controls">
+                <span class="material-symbols-rounded secondary-btn" id="btn-shuffle" onclick="toggleShuffle()">shuffle</span>
+                <span class="material-symbols-rounded" onclick="prevTrack()">skip_previous</span>
+                <span class="material-symbols-rounded play-btn" id="full-playpause" onclick="togglePlay()">play_circle</span>
+                <span class="material-symbols-rounded" onclick="nextTrack()">skip_next</span>
+                <span class="material-symbols-rounded secondary-btn" id="btn-loop" onclick="toggleLoop()">repeat</span>
+            </div>
         </div>
     </div>
 
@@ -775,22 +703,22 @@
             if (playQueue && playQueue.length > 0) {
                 queueIndex = 0;
                 openFullPlayer();
-                loadAndPlay(playQueue[0]);
+                loadAndPlay(playQueue);
             } else {
                 showToast('Playlist is empty', 'error');
             }
         };
 
         // ==========================================================================
-        // FEATURE: SWIPE DOWN TO DISMISS PLAYER (DISABLED FOR VERTICAL SCROLL LYRICS)
+        // FEATURE: SWIPE DOWN TO DISMISS PLAYER
         // ==========================================================================
-        // Overridden swipe gesture logic to support vertical lyrics scrolling
         let swipeStartY = 0;
-        const playerScrollBox = document.getElementById('full-player');
-        
-        // ==========================================================================
-        // 1. FIREBASE SETUP & ROUTING
-        // ==========================================================================
+        const playerModal = document.getElementById('full-player');
+        playerModal.addEventListener('touchstart', e => swipeStartY = e.touches.clientY);
+        playerModal.addEventListener('touchend', e => {
+            if (e.changedTouches.clientY - swipeStartY > 100) closeFullPlayer();
+        });
+
 
         let currentUserUid = null;
 
@@ -981,7 +909,7 @@
                         const bestAudio = Array.isArray(song.downloadUrl) ? song.downloadUrl[song.downloadUrl.length - 1].url : song.downloadUrl;
                         const artist = song.artists?.primary?.map(a => a.name).join(', ') || song.primaryArtists;
                         const cleanTitle = song.name.replace(/&quot;/g, '"').replace(/&#039;/g, "'");
-                        const trackObj = { title: cleanTitle, artist: artist, imgUrl: bestImg, audioUrl: bestAudio, id: song.id };
+                        const trackObj = { title: cleanTitle, artist: artist, imgUrl: bestImg, audioUrl: bestAudio };
 
                         const div = document.createElement('div');
                         div.className = 'track-item';
@@ -1075,31 +1003,6 @@
             if(queueIndex === -1) queueIndex = 0;
         }
 
-        // NEW FEATURE: SPOTIFY LYRICS FETCHER ENGINE
-        async function fetchLyrics(songId) {
-            const contentEl = document.getElementById('lyrics-content');
-            const hintEl = document.getElementById('lyrics-scroll-hint');
-            if(!contentEl) return;
-            
-            contentEl.innerText = "Searching for lyrics...";
-            contentEl.classList.remove('loaded');
-            if(hintEl) hintEl.style.display = 'none';
-
-            try {
-                const res = await fetch(`${API_SERVER}/songs/${songId}/lyrics`);
-                const data = await res.json();
-                if(data.status === 'SUCCESS' && data.data && data.data.lyrics) {
-                    contentEl.innerHTML = data.data.lyrics.replace(/\n/g, '<br>');
-                    contentEl.classList.add('loaded');
-                    if(hintEl) hintEl.style.display = 'flex';
-                } else {
-                    contentEl.innerText = "Lyrics not available for this track.";
-                }
-            } catch(e) {
-                contentEl.innerText = "Lyrics could not be loaded.";
-            }
-        }
-
         window.loadAndPlay = async function(trackObj, updateHistory = true) {
             if(!trackObj || !audio) return;
             currentTrackData = trackObj;
@@ -1114,12 +1017,6 @@
             if(document.getElementById('full-title')) document.getElementById('full-title').innerText = trackObj.title;
             if(document.getElementById('full-artist')) document.getElementById('full-artist').innerText = trackObj.artist;
             if(document.getElementById('full-img')) document.getElementById('full-img').src = trackObj.imgUrl;
-
-            // RESET SCROLL TO TOP WHEN NEW SONG LOADS
-            if(playerScrollBox) playerScrollBox.scrollTo(0, 0);
-            
-            // Trigger Lyrics Fetch
-            if(trackObj.id) fetchLyrics(trackObj.id);
             
             // MODIFIED FOR FEATURE: Dynamic Color sync!
             const activeColor = generateDarkHexColor(trackObj.title);
@@ -1619,7 +1516,7 @@
             const anchor = document.getElementById('scroll-anchor');
             if(anchor) {
                 const observer = new IntersectionObserver((entries) => {
-                    if(entries[0].isIntersecting) fetchMorePlaylistSongs(activePlaylistViewId);
+                    if(entries.isIntersecting) fetchMorePlaylistSongs(activePlaylistViewId);
                 });
                 observer.observe(anchor);
             }
