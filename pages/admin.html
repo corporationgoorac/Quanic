@@ -417,7 +417,8 @@
         function updateLiveMetrics() {
             let activeCount = 0;
             for (const uid in rtdbCache) {
-                if (rtdbCache[uid].status === 'online') activeCount++;
+                // FIXED BUG: Checks string exact match to eliminate ghost numbers
+                if (rtdbCache[uid] && rtdbCache[uid].status === 'online') activeCount++;
             }
             activeUsersVal.innerText = activeCount;
         }
@@ -473,15 +474,25 @@
 
             // Sort: Online users first
             filtered.sort((a, b) => {
-                const aOnline = rtdbCache[a.id]?.status === 'online' ? 1 : 0;
-                const bOnline = rtdbCache[b.id]?.status === 'online' ? 1 : 0;
+                const aOnline = (rtdbCache[a.id] && rtdbCache[a.id].status === 'online') ? 1 : 0;
+                const bOnline = (rtdbCache[b.id] && rtdbCache[b.id].status === 'online') ? 1 : 0;
                 return bOnline - aOnline;
             });
 
             filtered.forEach(user => {
                 const liveData = rtdbCache[user.id] || {};
-                const isOnline = liveData.status === 'online';
-                const subText = liveData.nowPlaying?.isPlaying ? `🎵 Listening: ${liveData.nowPlaying.title}` : (isOnline ? 'Active Now' : `Last seen: ${timeAgo(liveData.lastActive)}`);
+                // FIXED BUG: Safe evaluation to determine truthy online status
+                const isOnline = (liveData && liveData.status === 'online');
+                
+                // FIXED BUG: Safe evaluation of subtext to prevent false 'Active Now' labels
+                let subText = `Last seen: ${timeAgo(liveData.lastActive)}`;
+                if (isOnline) {
+                    if (liveData.nowPlaying && liveData.nowPlaying.isPlaying) {
+                        subText = `🎵 Listening: ${liveData.nowPlaying.title}`;
+                    } else {
+                        subText = 'Active Now';
+                    }
+                }
 
                 const card = document.createElement('div');
                 card.className = 'user-card';
@@ -497,7 +508,7 @@
                             ${user.name || 'Unknown User'}
                             ${user.admin ? `<span class="admin-badge">Admin</span>` : ''}
                         </div>
-                        <div class="user-sub" style="${liveData.nowPlaying?.isPlaying ? 'color:#E1306C; font-weight:600;' : ''}">${subText}</div>
+                        <div class="user-sub" style="${(isOnline && liveData.nowPlaying && liveData.nowPlaying.isPlaying) ? 'color:#E1306C; font-weight:600;' : ''}">${subText}</div>
                     </div>
                 `;
                 usersListContainer.appendChild(card);
