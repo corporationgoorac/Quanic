@@ -132,7 +132,7 @@
             border-radius: 16px; padding: 8px 12px 8px 8px; display: flex; align-items: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 106; border: 1px solid rgba(255,255,255,0.05);
             transform: translateY(200%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer;
-            pointer-events: none; visibility: hidden; overflow: hidden; /* Added overflow hidden for progress bar */
+            pointer-events: none; visibility: hidden; overflow: hidden; 
         }
         #mini-player.visible { transform: translateY(0); pointer-events: auto; visibility: visible; }
         
@@ -154,7 +154,6 @@
         /* ==========================================================================
            7. SLEEK BOTTOM-UP PLAYER MODAL
            ========================================================================== */
-        /* Increased Z-Index to 110 so it covers absolutely everything when open */
         #full-player {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
             background: #000000; z-index: 110; transform: translateY(100%); 
@@ -186,7 +185,6 @@
             background: #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
         
-        /* Time Info Container for Audio Timers */
         .time-info { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.5); margin-top: 10px; }
 
         .main-controls { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
@@ -199,7 +197,6 @@
         /* ==========================================================================
            8. SLEEK BOTTOM SHEET MODALS
            ========================================================================== */
-        /* Increased to 115 so it covers the full player modal */
         .bottom-sheet {
             position: fixed; bottom: 0; left: 0; width: 100%; background: #181818;
             border-radius: 24px 24px 0 0; padding: 20px 20px calc(env(safe-area-inset-bottom) + 20px) 20px;
@@ -225,7 +222,6 @@
         }
         .save-btn { background: #E1306C; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 600; font-size: 1rem; cursor: pointer; }
 
-        /* Z-index 105 sits below mini-player (106) but above nav (90) */
         #playlist-view-modal {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: #121212;
             z-index: 105; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -266,9 +262,9 @@
             
             <div class="recent-grid" id="recent-grid"></div>
 
-            <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 15px; margin-bottom: 15px; color: rgba(255,255,255,0.9);">Previously Played</h3>
+            <h3 id="history-heading" style="font-size: 1.1rem; font-weight: 700; margin-top: 15px; margin-bottom: 15px; color: rgba(255,255,255,0.9); display: none;">Previously Played</h3>
             <div id="history-list">
-                <p style="color: #666; font-size: 0.95rem;">Your recently played tracks will appear here.</p>
+                <p id="empty-history-msg" style="color: #666; font-size: 0.95rem;">Your recently played tracks will appear here.</p>
             </div>
         </section>
 
@@ -361,13 +357,11 @@
         <span class="material-symbols-rounded" onclick="history.back()" style="position:absolute; right:20px; top:20px; cursor:pointer; color:#888;">close</span>
         <div class="sheet-handle"></div>
         <h3 class="sheet-title">Options</h3>
-        <div id="options-dynamic-content">
-            </div>
+        <div id="options-dynamic-content"></div>
         <button class="modal-btn" onclick="openCreatePlaylistModal()">
             <span class="material-symbols-rounded">add_circle</span> Create New Playlist
         </button>
-        <div id="options-playlist-list" class="modal-list">
-        </div>
+        <div id="options-playlist-list" class="modal-list"></div>
     </div>
 
     <div id="create-playlist-modal" class="bottom-sheet">
@@ -432,12 +426,12 @@
                 window.location.replace("setup.html");
             } else {
                 document.getElementById('header-profile-pic').src = userSnap.data().photoURL || cachedPhoto;
-                fetchUserPlaylists(); // Load playlists for Library
+                fetchUserPlaylists(); 
             }
         });
 
         // ==========================================================================
-        // 2. PWA SERVICE WORKER REGISTRATION & INSTALL BANNER
+        // 2. PWA SERVICE WORKER REGISTRATION
         // ==========================================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js').catch(err => console.error('SW failed', err)));
@@ -479,11 +473,10 @@
         const resultsDiv = document.getElementById('search-results');
         let searchTimeout;
 
-        // The Queue Engine
         let currentTrackData = null;
         let playQueue = [];
         let queueIndex = 0;
-        let currentQueueContext = 'history'; // 'history' or playlistId
+        let currentQueueContext = 'history'; 
         let isShuffle = false;
 
         searchInput.addEventListener('input', () => {
@@ -534,7 +527,6 @@
             } catch (err) { resultsDiv.innerHTML = '<p style="color:red; text-align:center;">Network Error</p>'; }
         }
 
-        // Helper function for active track highlighting globally
         function highlightActiveTrack(title) {
             document.querySelectorAll('.track-title, .recent-grid-item span').forEach(el => {
                 if (el.innerText === title) {
@@ -545,7 +537,7 @@
             });
         }
 
-        // Helper function to format seconds into M:SS
+        // Time format engine
         function formatTime(seconds) {
             if (!seconds || isNaN(seconds)) return "0:00";
             const m = Math.floor(seconds / 60);
@@ -577,7 +569,6 @@
             updatePlayIcons(true);
             highlightActiveTrack(trackObj.title);
             
-            // Reset timers before new audio loads
             document.getElementById('current-time').innerText = "0:00";
             document.getElementById('total-time').innerText = "0:00";
             
@@ -611,13 +602,12 @@
             else { document.getElementById('mini-img').classList.remove('playing'); }
         }
 
-        // Fetch duration as soon as audio loads
         audio.addEventListener('loadedmetadata', () => {
             document.getElementById('total-time').innerText = formatTime(audio.duration);
         });
 
         audio.addEventListener('timeupdate', () => {
-            if (audio.duration) {
+            if (audio.duration && !isNaN(audio.duration)) {
                 const progress = (audio.currentTime / audio.duration) * 100;
                 document.getElementById('progress-fill').style.width = `${progress}%`;
                 document.getElementById('mini-progress-fill').style.width = `${progress}%`;
@@ -774,9 +764,7 @@
                     
                     const items = document.querySelectorAll('.pl-track-item');
                     items.forEach(el => {
-                        if(el.trackData && el.trackData.firestoreId === cleanId) {
-                            el.remove();
-                        }
+                        if(el.trackData && el.trackData.firestoreId === cleanId) el.remove();
                     });
                     
                     playQueue = playQueue.filter(t => t.firestoreId !== cleanId);
@@ -802,7 +790,6 @@
             document.getElementById('pl-view-title').innerText = playlistName;
             document.getElementById('playlist-view-modal').classList.add('open');
             
-            // Show/Hide delete playlist button
             const delBtn = document.getElementById('pl-delete-btn');
             if (playlistId === 'Liked') {
                 delBtn.style.display = 'none';
@@ -1006,7 +993,6 @@
             historyArr = historyArr.filter(t => t.title !== trackObj.title); 
             historyArr.unshift(trackObj); 
             
-            // STRICT LIMIT: Max 20 songs in history to prevent overflow
             if (historyArr.length > 20) historyArr.pop(); 
             
             localStorage.setItem('quanic_history', JSON.stringify(historyArr));
@@ -1017,56 +1003,20 @@
             const historyArr = JSON.parse(localStorage.getItem('quanic_history') || '[]');
             const historyList = document.getElementById('history-list');
             const recentGrid = document.getElementById('recent-grid');
+            const historyHeading = document.getElementById('history-heading');
+            const emptyMsg = document.getElementById('empty-history-msg');
             
-            if (historyArr.length === 0) return;
+            if (historyArr.length === 0) {
+                if(emptyMsg) emptyMsg.style.display = 'block';
+                if(historyHeading) historyHeading.style.display = 'none';
+                return;
+            }
             
             historyList.innerHTML = '';
             if(recentGrid) recentGrid.innerHTML = '';
             
+            // Hide the "Previously Played" header if grid eats all the songs (<= 6)
+            if(historyHeading) historyHeading.style.display = historyArr.length > 6 ? 'block' : 'none';
+            
             historyArr.forEach((track, index) => {
-                let activeClass = (currentTrackData && currentTrackData.title === track.title) ? 'active-playing' : '';
-                
-                // Top 6 played go to Spotify-Style Grid
-                if (index < 6 && recentGrid) {
-                    const gridItem = document.createElement('div');
-                    gridItem.className = 'recent-grid-item';
-                    gridItem.innerHTML = `<img src="${track.imgUrl}" alt="cover"><span class="${activeClass}">${track.title}</span>`;
-                    gridItem.onclick = () => {
-                        currentQueueContext = 'history';
-                        playQueue = historyArr;
-                        queueIndex = index;
-                        openFullPlayer();
-                        loadAndPlay(track, false);
-                    };
-                    recentGrid.appendChild(gridItem);
-                } else {
-                    // The rest go to the traditional sleek vertical list
-                    const div = document.createElement('div');
-                    div.className = 'track-item';
-                    
-                    div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
-                    
-                    div.onclick = () => {
-                        currentQueueContext = 'history';
-                        playQueue = historyArr;
-                        queueIndex = index;
-                        openFullPlayer();
-                        loadAndPlay(track, false); 
-                    };
-
-                    const menuBtn = div.querySelector('.track-menu');
-                    menuBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        openOptionsModal(track, null);
-                    };
-
-                    historyList.appendChild(div);
-                }
-            });
-        }
-        
-        // Initial call to render
-        renderHistory();
-    </script>
-</body>
-</html>
+                let activeClass = (currentTrackData && currentTrackData.title === track.
