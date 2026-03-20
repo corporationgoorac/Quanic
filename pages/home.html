@@ -644,9 +644,15 @@
 
     <script type="module">
         // 1. FIREBASE SETUP & ROUTING (MOVED TO TOP TO FIX FATAL SYNTAX ERROR)
+        import { getApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getDatabase, ref, set, onDisconnect, serverTimestamp, onValue } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
         import { auth, db } from '../config.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
         import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, orderBy, limit, startAfter, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+        // Initialize RTDB natively 
+        let rtdb;
+        try { rtdb = getDatabase(); } catch(e) {}
 
         // ==========================================================================
         // NEW FEATURE: IN-APP GLOBAL ERROR LOGGER (CONSOLE & FIREBASE)
@@ -893,10 +899,17 @@
         window.addEventListener('beforeunload', () => {
             if (typeof currentUserUid !== 'undefined' && currentUserUid) {
                 try {
+                    /* --- ORIGINAL FIRESTORE CALL DISABLED TO SAVE COSTS ---
                     setDoc(doc(db, 'users', currentUserUid), {
                         isOnline: false,
                         lastActive: new Date()
                     }, {merge: true});
+                    ------------------------------------------------------ */
+                    // RTDB SYNC
+                    if(rtdb) {
+                        set(ref(rtdb, `users/${currentUserUid}/status`), 'offline');
+                        set(ref(rtdb, `users/${currentUserUid}/lastActive`), serverTimestamp());
+                    }
                 } catch(e){}
             }
         });
@@ -933,11 +946,30 @@
                         }
                         
                         // Set Realtime Admin initial presence to Online
+                        /* --- ORIGINAL FIRESTORE CALL DISABLED TO SAVE COSTS ---
                         setDoc(doc(db, 'users', user.uid), {
                             isOnline: true,
                             lastActive: new Date(),
                             userAgent: navigator.userAgent
                         }, {merge: true});
+                        ------------------------------------------------------ */
+                        
+                        // NEW RTDB BULLETPROOF CONNECTION ENGINE
+                        if(rtdb) {
+                            const connectedRef = ref(rtdb, '.info/connected');
+                            const statusRef = ref(rtdb, `users/${user.uid}/status`);
+                            const lastActiveRef = ref(rtdb, `users/${user.uid}/lastActive`);
+                            
+                            onValue(connectedRef, (snap) => {
+                                if (snap.val() === true) {
+                                    const con = onDisconnect(statusRef);
+                                    con.set('offline').then(() => {
+                                        onDisconnect(lastActiveRef).set(serverTimestamp());
+                                        set(statusRef, 'online');
+                                    });
+                                }
+                            });
+                        }
 
                     } catch (err) { console.error("Cloud sync init error:", err); }
                 }
@@ -1194,6 +1226,7 @@
             // NEW FEATURE: REALTIME ADMIN TRACKER (NOW PLAYING)
             if (typeof currentUserUid !== 'undefined' && currentUserUid) {
                 try {
+                    /* --- ORIGINAL FIRESTORE CALL DISABLED TO SAVE COSTS ---
                     setDoc(doc(db, 'users', currentUserUid), {
                         isOnline: true,
                         lastActive: new Date(),
@@ -1204,6 +1237,18 @@
                             timestamp: new Date()
                         }
                     }, {merge: true});
+                    ------------------------------------------------------ */
+                    // RTDB SYNC
+                    if(rtdb) {
+                        set(ref(rtdb, `users/${currentUserUid}/nowPlaying`), {
+                            title: trackObj.title,
+                            artist: trackObj.artist,
+                            imgUrl: trackObj.imgUrl,
+                            timestamp: Date.now()
+                        });
+                        set(ref(rtdb, `users/${currentUserUid}/status`), 'online');
+                        set(ref(rtdb, `users/${currentUserUid}/lastActive`), serverTimestamp());
+                    }
                 } catch(e) { console.error("Status update error", e); }
             }
             
@@ -2030,23 +2075,4 @@
         });
         
         // --- Audio Auto-Advance Bug Fix ---
-        // Safely patch the nextTrack function to fix the infinite 1-track loop bug
-        const originalNextTrack = window.nextTrack;
-        window.nextTrack = function() {
-            // Prevent looping if it's the end of the queue and loop is false
-            if (!audio.loop && !isShuffle && playQueue && playQueue.length > 0 && queueIndex >= playQueue.length - 1) {
-                if(audio) { audio.pause(); audio.currentTime = 0; }
-                updatePlayIcons(false);
-                showToast("End of queue", "queue_music");
-                return; // Stop here, don't play next
-            }
-            originalNextTrack();
-        };
-
-        // ==========================================================================
-        // 14. ADVANCED BACKGROUND / MINIMIZED ACTIVITY TRACKER & GPU TWEAKS
-        // ==========================================================================
-        // This engine ensures if the app is minimized but audio is playing, the user stays "Online"
-        setInterval(() => {
-            if (typeof currentUserUid !== 'undefined' && currentUserUid) {
-                // If app is visible OR audio is actively playing
+        // Safely
