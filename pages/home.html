@@ -559,7 +559,7 @@
                     <span class="material-symbols-rounded" style="font-size: 26px; cursor: pointer;" onclick="openOptionsModal()">more_horiz</span>
                 </div>
                 
-                <div class="artwork-container" ondblclick="toggleLike()">
+                <div class="artwork-container">
                     <div class="premium-bass-badge">Max Bass Active</div>
                     <div id="ambient-glow"></div>
                     <img id="full-img" src="" alt="Album Art">
@@ -584,7 +584,7 @@
                     <span class="material-symbols-rounded secondary-btn" onclick="showToast('High Quality Streaming Active', 'high_quality')" style="display: none !important;">hq</span>
                 </div>
 
-                <div class="progress-container" id="progress-container" onclick="seekAudio(event)">
+                <div class="progress-container" id="progress-container">
                     <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
                     <div class="time-info">
                         <span id="current-time">0:00</span>
@@ -1798,6 +1798,7 @@
 
         let lastVisibleDoc = null;
         let isFetchingPlaylist = false;
+        let globalPlaylistObserver = null; // Added globally to fix ghost observer bug
 
         async function loadPlaylistSongs(playlistId) {
             activePlaylistViewId = playlistId;
@@ -1808,10 +1809,12 @@
             
             const anchor = document.getElementById('scroll-anchor');
             if(anchor) {
-                const observer = new IntersectionObserver((entries) => {
+                if (globalPlaylistObserver) globalPlaylistObserver.disconnect(); // Destroy the old ghost!
+                
+                globalPlaylistObserver = new IntersectionObserver((entries) => {
                     if(entries[0].isIntersecting) fetchMorePlaylistSongs(activePlaylistViewId);
                 });
-                observer.observe(anchor);
+                globalPlaylistObserver.observe(anchor);
             }
             
             await fetchMorePlaylistSongs(playlistId);
@@ -1983,18 +1986,25 @@
         
         // 1. Smart-Tap Discrimination Engine (Allows Single Click for Bass, Double Click for Like on Cover Art)
         let artworkClickTimer = null;
+        let artworkClickCount = 0; // Track click amounts
         const artContainer = document.querySelector('.artwork-container');
         if(artContainer) {
             artContainer.addEventListener('click', (e) => {
-                if(artworkClickTimer) {
-                    clearTimeout(artworkClickTimer);
-                    artworkClickTimer = null;
-                    // Double click will natively be handled by the existing ondblclick="toggleLike()" attribute!
-                } else {
+                artworkClickCount++;
+                
+                if(artworkClickCount === 1) {
                     artworkClickTimer = setTimeout(() => {
+                        // Single tap action
                         toggleBassBoost();
+                        artworkClickCount = 0;
                         artworkClickTimer = null;
-                    }, 250); // 250ms is perfect for distinguishing double tap natively
+                    }, 250); // 250ms window to wait for a second tap
+                } else if (artworkClickCount === 2) {
+                    // Double tap action
+                    clearTimeout(artworkClickTimer);
+                    toggleLike(); // Fire the like function purely from JS
+                    artworkClickCount = 0;
+                    artworkClickTimer = null;
                 }
             });
         }
