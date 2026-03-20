@@ -321,12 +321,13 @@
     <div id="options-modal" class="bottom-sheet">
         <div class="sheet-handle"></div>
         <h3 class="sheet-title">Options</h3>
-        <div id="options-dynamic-content"></div>
+        <div id="options-dynamic-content">
+            </div>
         <button class="modal-btn" onclick="openCreatePlaylistModal()">
             <span class="material-symbols-rounded">add_circle</span> Create New Playlist
         </button>
         <div id="options-playlist-list" class="modal-list">
-            </div>
+        </div>
     </div>
 
     <div id="create-playlist-modal" class="bottom-sheet">
@@ -366,6 +367,9 @@
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 2500);
         }
+
+        // Native Haptic Engine
+        const haptic = () => { if(navigator.vibrate) navigator.vibrate(50); };
 
         const cachedPhoto = localStorage.getItem('quanic_user_photo');
         if (cachedPhoto) document.getElementById('header-profile-pic').src = cachedPhoto;
@@ -410,6 +414,7 @@
         // 3. UI TABS NAVIGATOR
         // ==========================================================================
         window.switchTab = function(tabName) {
+            haptic();
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             event.currentTarget.classList.add('active');
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -455,10 +460,8 @@
 
                         const div = document.createElement('div');
                         div.className = 'track-item';
-                        // Added 3-dots here
                         div.innerHTML = `<img src="${bestImg}" alt="cover"><div class="track-info"><span class="track-title">${cleanTitle}</span><span class="track-artist">${artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
                         
-                        // Handle opening full player instantly on card click
                         div.onclick = () => {
                             currentQueueContext = 'search';
                             playQueue = [trackObj]; 
@@ -467,7 +470,6 @@
                             loadAndPlay(trackObj);
                         };
                         
-                        // Handle 3-dots
                         const menuBtn = div.querySelector('.track-menu');
                         menuBtn.onclick = (e) => {
                             e.stopPropagation();
@@ -506,7 +508,6 @@
             if(updateHistory) saveToHistory(trackObj);
             checkIfLiked(trackObj.title);
 
-            // Premium Feature: Lock Screen Media Controls
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: trackObj.title, artist: trackObj.artist, artwork: [{ src: trackObj.imgUrl, sizes: '512x512', type: 'image/jpeg' }]
@@ -519,6 +520,7 @@
         };
 
         window.togglePlay = function() {
+            haptic();
             if (audio.src) {
                 if (audio.paused) { audio.play(); updatePlayIcons(true); } 
                 else { audio.pause(); updatePlayIcons(false); }
@@ -529,7 +531,6 @@
             document.getElementById('mini-playpause').innerText = isPlaying ? 'pause' : 'play_arrow';
             document.getElementById('full-playpause').innerText = isPlaying ? 'pause_circle' : 'play_circle';
             
-            // Pulse animation control
             if(isPlaying) { document.getElementById('mini-img').classList.add('playing'); } 
             else { document.getElementById('mini-img').classList.remove('playing'); }
         }
@@ -541,7 +542,6 @@
             }
         });
         
-        // Auto-Play Next
         audio.addEventListener('ended', () => { if(!audio.loop) nextTrack(); });
 
         window.seekAudio = function(e) {
@@ -553,40 +553,39 @@
         };
 
         window.toggleLoop = function() {
+            haptic();
             audio.loop = !audio.loop;
             document.getElementById('btn-loop').classList.toggle('active');
             showToast(audio.loop ? 'Repeat On' : 'Repeat Off', 'repeat');
         };
 
         window.toggleShuffle = function() {
+            haptic();
             isShuffle = !isShuffle;
             document.getElementById('btn-shuffle').classList.toggle('active');
             showToast(isShuffle ? 'Shuffle On' : 'Shuffle Off', 'shuffle');
         };
 
-        // Advanced Queue Control Logic
         window.nextTrack = function() {
+            haptic();
             if (playQueue.length > 0) {
                 if (isShuffle) {
                     queueIndex = Math.floor(Math.random() * playQueue.length);
                 } else if (queueIndex < playQueue.length - 1) {
                     queueIndex++;
                 } else {
-                    queueIndex = 0; // Loop back to start of playlist
+                    queueIndex = 0; 
                 }
-                
                 loadAndPlay(playQueue[queueIndex], false);
                 
-                // Infinite Scroll Trigger
                 if (currentQueueContext !== 'history' && currentQueueContext !== 'search') {
-                    if (queueIndex >= playQueue.length - 2) {
-                        fetchMorePlaylistSongs(currentQueueContext);
-                    }
+                    if (queueIndex >= playQueue.length - 2) fetchMorePlaylistSongs(currentQueueContext);
                 }
             }
         };
 
         window.prevTrack = function() {
+            haptic();
             if(audio.currentTime > 3) { audio.currentTime = 0; return; }
             if (playQueue.length > 0 && queueIndex > 0) {
                 queueIndex--;
@@ -594,7 +593,6 @@
             }
         };
 
-        // Firebase Like System
         async function checkIfLiked(title) {
             if(!currentUserUid) return;
             const cleanId = title.replace(/[^a-zA-Z0-9]/g, '');
@@ -604,15 +602,14 @@
             if(snap.exists()) {
                 likeBtn.innerText = 'favorite';
                 likeBtn.style.color = '#E1306C';
-                likeBtn.style.transform = 'scale(1.1)';
             } else {
                 likeBtn.innerText = 'favorite_border';
                 likeBtn.style.color = '#fff';
-                likeBtn.style.transform = 'scale(1)';
             }
         }
 
         window.toggleLike = async function() {
+            haptic();
             if(!currentUserUid || !currentTrackData) return;
             const likeBtn = document.getElementById('btn-like');
             const isLiked = likeBtn.innerText === 'favorite';
@@ -633,11 +630,11 @@
                 likeBtn.style.color = '#E1306C';
                 showToast('Added to Liked Songs', 'favorite');
             }
-            setTimeout(() => likeBtn.style.transform = 'scale(1.1)', 150);
+            setTimeout(() => likeBtn.style.transform = 'scale(1)', 150);
         };
 
         // ==========================================================================
-        // 6. NESTED MODALS W/ HARDWARE BACK BUTTON LOGIC
+        // 6. MASTER MODAL ROUTING & HARDWARE BACK CONTROLS
         // ==========================================================================
         let optionTrackTarget = null;
         let activePlaylistViewId = null;
@@ -648,18 +645,24 @@
             history.pushState({ modal: 'full-player' }, '', '#nowplaying');
         };
 
-        window.closeFullPlayer = function() {
-            document.getElementById('full-player').style.transform = 'translateY(100%)';
-            metaThemeColor.setAttribute('content', '#121212'); 
-            if (history.state && history.state.modal === 'full-player') { history.back(); }
-        };
-
         window.openOptionsModal = function(track = null, contextId = null) {
             optionTrackTarget = track || currentTrackData;
             const content = document.getElementById('options-dynamic-content');
             content.innerHTML = '';
             
-            // Context-Aware: Inject "Remove from Playlist" if opened inside a custom playlist
+            // Premium Feature: Add to Queue
+            const queueBtn = document.createElement('button');
+            queueBtn.className = 'modal-btn';
+            queueBtn.style.width = '100%';
+            queueBtn.innerHTML = `<span class="material-symbols-rounded">queue_music</span> Play Next`;
+            queueBtn.onclick = () => {
+                playQueue.splice(queueIndex + 1, 0, optionTrackTarget);
+                showToast('Added to Queue', 'playlist_add_check');
+                history.back();
+            };
+            content.appendChild(queueBtn);
+
+            // Context-Aware: Remove from active playlist (No UI reload!)
             if (contextId && contextId !== 'history' && contextId !== 'search' && contextId !== 'Liked') {
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'modal-btn';
@@ -669,28 +672,46 @@
                     const cleanId = optionTrackTarget.title.replace(/[^a-zA-Z0-9]/g, '');
                     await deleteDoc(doc(db, 'users', currentUserUid, 'playlists', contextId, 'songs', cleanId));
                     showToast('Song removed', 'delete');
-                    history.back(); // Close modal
-                    // Refresh playlist view underneath
-                    if (activePlaylistViewId === contextId) loadPlaylistSongs(contextId); 
+                    
+                    // Target and destroy the DOM element silently to keep scroll position
+                    const items = document.querySelectorAll('.pl-track-item');
+                    items.forEach(el => {
+                        if(el.trackData && el.trackData.title === optionTrackTarget.title) el.remove();
+                    });
+                    history.back(); 
                 };
                 content.appendChild(removeBtn);
             }
+
+            // Premium Feature: Web Share API
+            const shareBtn = document.createElement('button');
+            shareBtn.className = 'modal-btn';
+            shareBtn.style.width = '100%';
+            shareBtn.innerHTML = `<span class="material-symbols-rounded">share</span> Share Song`;
+            shareBtn.onclick = async () => {
+                if (navigator.share) {
+                    await navigator.share({
+                        title: `Listen to ${optionTrackTarget.title}`,
+                        text: `Check out ${optionTrackTarget.title} by ${optionTrackTarget.artist} on Quanic!`,
+                        url: optionTrackTarget.audioUrl 
+                    });
+                } else { showToast('Sharing not supported', 'error'); }
+                history.back();
+            };
+            content.appendChild(shareBtn);
 
             document.getElementById('options-modal').classList.add('open');
             history.pushState({ modal: 'options' }, '', '#options');
             populateOptionsPlaylists();
         };
 
-        function closeOptionsModal() { document.getElementById('options-modal').classList.remove('open'); }
-
         window.openCreatePlaylistModal = function() {
-            closeOptionsModal(); // Close parent
+            history.back(); // close options first
             setTimeout(() => {
                 document.getElementById('create-playlist-modal').classList.add('open');
                 history.pushState({ modal: 'create_playlist' }, '', '#create');
             }, 300);
         };
-        function closeCreatePlaylistModal() { document.getElementById('create-playlist-modal').classList.remove('open'); }
 
         window.openPlaylistView = function(playlistId, playlistName) {
             document.getElementById('pl-view-title').innerText = playlistName;
@@ -698,23 +719,30 @@
             history.pushState({ modal: 'playlist_view' }, '', `#playlist_${playlistId}`);
             loadPlaylistSongs(playlistId);
         };
-        window.closePlaylistView = function() {
-            document.getElementById('playlist-view-modal').classList.remove('open');
-            if (history.state && history.state.modal === 'playlist_view') { history.back(); }
-        }
 
+        // UI Close triggers mapped purely to hardware back routing
+        window.closeFullPlayer = () => { history.back(); };
+        window.closeOptionsModal = () => { history.back(); };
+        window.closeCreatePlaylistModal = () => { history.back(); };
+        window.closePlaylistView = () => { history.back(); };
+
+        // The Master State Router
         window.addEventListener('popstate', (e) => {
-            // Close everything on true back
-            if (!e.state) {
+            const state = e.state ? e.state.modal : 'home';
+            
+            if(state === 'home') {
                 document.getElementById('full-player').style.transform = 'translateY(100%)';
+                document.getElementById('options-modal').classList.remove('open');
+                document.getElementById('create-playlist-modal').classList.remove('open');
+                document.getElementById('playlist-view-modal').classList.remove('open');
                 metaThemeColor.setAttribute('content', '#121212');
-                closeOptionsModal();
-                closeCreatePlaylistModal();
-                document.getElementById('playlist-view-modal').classList.remove('open');
-            } else if (e.state.modal === 'full-player') {
-                closeOptionsModal();
-                closeCreatePlaylistModal();
-                document.getElementById('playlist-view-modal').classList.remove('open');
+            } else if (state === 'playlist_view') {
+                document.getElementById('options-modal').classList.remove('open');
+                document.getElementById('create-playlist-modal').classList.remove('open');
+                document.getElementById('full-player').style.transform = 'translateY(100%)';
+            } else if (state === 'full-player') {
+                document.getElementById('options-modal').classList.remove('open');
+                document.getElementById('create-playlist-modal').classList.remove('open');
             }
         });
 
@@ -728,7 +756,6 @@
             const snap = await getDocs(q);
             
             plContainer.innerHTML = '';
-            
             const likedCard = document.createElement('div');
             likedCard.className = 'playlist-card';
             likedCard.innerHTML = `<span class="material-symbols-rounded">favorite</span><span style="font-size: 1.1rem; font-weight: 600;">Liked Songs</span>`;
@@ -762,14 +789,11 @@
                     const cleanId = optionTrackTarget.title.replace(/[^a-zA-Z0-9]/g, '');
                     const songRef = doc(db, 'users', currentUserUid, 'playlists', docSnap.id, 'songs', cleanId);
                     
-                    // Duplicate Check Logic
                     const check = await getDoc(songRef);
                     if(!check.exists()) {
                         await setDoc(songRef, { ...optionTrackTarget, addedAt: new Date() });
                         showToast('Added to ' + docSnap.data().name);
-                    } else {
-                        showToast('Already in playlist', 'info');
-                    }
+                    } else { showToast('Already in playlist', 'info'); }
                     setTimeout(() => { history.back(); }, 300);
                 };
                 list.appendChild(btn);
@@ -787,9 +811,7 @@
                 const cleanId = optionTrackTarget.title.replace(/[^a-zA-Z0-9]/g, '');
                 await setDoc(doc(db, 'users', currentUserUid, 'playlists', plRef.id, 'songs', cleanId), { ...optionTrackTarget, addedAt: new Date() });
                 showToast('Playlist created & song added');
-            } else {
-                showToast('Playlist created');
-            }
+            } else { showToast('Playlist created'); }
             
             input.value = '';
             fetchUserPlaylists(); 
@@ -842,7 +864,6 @@
                     
                     const div = document.createElement('div');
                     div.className = 'track-item pl-track-item';
-                    // Added 3-dots here too
                     div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
                     
                     div.onclick = () => {
@@ -857,7 +878,7 @@
                     const menuBtn = div.querySelector('.track-menu');
                     menuBtn.onclick = (e) => {
                         e.stopPropagation();
-                        openOptionsModal(track, playlistId); // Pass playlistId so "Remove" appears
+                        openOptionsModal(track, playlistId); 
                     };
 
                     div.trackData = track; 
@@ -890,7 +911,6 @@
             historyArr.forEach((track, index) => {
                 const div = document.createElement('div');
                 div.className = 'track-item';
-                // Added 3-dots here too
                 div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
                 
                 div.onclick = () => {
@@ -910,7 +930,6 @@
                 historyList.appendChild(div);
             });
         }
-        
         renderHistory();
     </script>
 </body>
