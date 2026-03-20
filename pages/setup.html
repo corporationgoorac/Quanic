@@ -199,11 +199,12 @@
         }
 
         .submit-btn:disabled {
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.3);
-            box-shadow: none;
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: rgba(255, 255, 255, 0.4) !important;
+            box-shadow: none !important;
             cursor: not-allowed;
-            transform: none;
+            transform: none !important;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         /* ==========================================================================
@@ -220,6 +221,64 @@
             .premium-input { padding: 12px 16px; font-size: 0.95rem; }
             .submit-btn { padding: 14px 20px; font-size: 1rem; }
         }
+
+        /* ==========================================================================
+           7. REDESIGN & NEW UI FEATURES (GENRE CAPSULES)
+           ========================================================================== */
+        
+        /* Silently hide the old text area so Firebase code still works without deleting it */
+        #old-about-wrapper {
+            display: none !important;
+        }
+
+        .genre-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 5px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-bottom: 10px;
+            padding-right: 5px;
+        }
+        
+        /* Hide scrollbar for neatness */
+        .genre-grid::-webkit-scrollbar { width: 0; height: 0; display: none; }
+        .genre-grid { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .genre-capsule {
+            padding: 10px 18px;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            -webkit-user-select: none;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .genre-capsule:active {
+            transform: scale(0.95);
+        }
+
+        .genre-capsule.selected {
+            background: linear-gradient(90deg, #E1306C, #FF7A00);
+            border-color: transparent;
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 5px 15px rgba(225, 48, 108, 0.35);
+            transform: scale(1.03);
+        }
+        
+        /* Dynamic Header styling */
+        .setup-container {
+            background: radial-gradient(circle at 50% -20%, rgba(225, 48, 108, 0.15) 0%, rgba(18, 18, 18, 0) 70%);
+        }
+
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -239,7 +298,7 @@
     <div class="setup-container">
         
         <div class="profile-pic-wrapper">
-            <img id="user-profile-pic" class="profile-pic" src="" alt="Your Profile Picture">
+            <img id="user-profile-pic" class="profile-pic" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Your Profile Picture" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';">
         </div>
         
         <h1>Complete Profile</h1>
@@ -258,14 +317,77 @@
             </div>
 
             <div class="input-group">
+                <label>Select Your Vibe (Pick at least 3)</label>
+                <div id="genre-grid" class="genre-grid">
+                    </div>
+            </div>
+
+            <div class="input-group" id="old-about-wrapper">
                 <label for="user-about">About You (Music Taste)</label>
                 <textarea id="user-about" class="premium-input" placeholder="What music do you love? (e.g. I am a huge fan of A.R. Rahman melodies, Anirudh hits, and indie Tamil pop.)" required></textarea>
             </div>
 
-            <button type="submit" class="submit-btn" id="save-btn">Initialize Quanic</button>
+            <button type="submit" class="submit-btn" id="save-btn">Pick 3 more</button>
         </form>
 
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Remove 'required' from the hidden textarea so HTML5 validation doesn't block the form submission silently
+            const hiddenTextarea = document.getElementById('user-about');
+            if(hiddenTextarea) hiddenTextarea.removeAttribute('required');
+
+            const genres = [
+                "Tamil Pop", "Melody", "A.R. Rahman", "Anirudh", "Rock", 
+                "Jazz", "Lo-Fi", "Hip-Hop", "R&B", "Folk", 
+                "Classical", "EDM", "Indie", "Kuthu", "Bollywood", 
+                "Country", "Blues", "Acoustic", "Soul", "Metal"
+            ];
+            
+            const grid = document.getElementById('genre-grid');
+            const saveBtn = document.getElementById('save-btn');
+            const selectedGenres = new Set();
+
+            // Lock the button immediately on load
+            saveBtn.disabled = true;
+
+            genres.forEach(genre => {
+                const capsule = document.createElement('div');
+                capsule.className = 'genre-capsule';
+                capsule.innerText = genre;
+                
+                capsule.onclick = () => {
+                    // Toggle Selection
+                    if (selectedGenres.has(genre)) {
+                        selectedGenres.delete(genre);
+                        capsule.classList.remove('selected');
+                    } else {
+                        selectedGenres.add(genre);
+                        capsule.classList.add('selected');
+                    }
+
+                    // Validation Engine
+                    if (selectedGenres.size >= 3) {
+                        saveBtn.disabled = false;
+                        saveBtn.style.background = 'linear-gradient(90deg, #E1306C, #FF7A00)'; // Restore gradient
+                        saveBtn.innerText = 'Initialize Quanic';
+                    } else {
+                        saveBtn.disabled = true;
+                        saveBtn.innerText = `Pick ${3 - selectedGenres.size} more`;
+                    }
+
+                    // MAGIC: Silently write the selected capsules into the old hidden textarea 
+                    // This guarantees your existing Firebase code below works perfectly!
+                    if(hiddenTextarea) {
+                        hiddenTextarea.value = Array.from(selectedGenres).join(', ');
+                    }
+                };
+                
+                grid.appendChild(capsule);
+            });
+        });
+    </script>
 
     <script type="module">
         // 1. Import necessary modules from your existing config and Firebase SDKs
