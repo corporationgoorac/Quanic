@@ -437,6 +437,35 @@
             will-change: background-color, transform;
         }
 
+        /* ==========================================================================
+           15. CRITICAL BUG FIX: OVERLAPPING MODALS ON LOAD
+           ========================================================================== */
+        /* The GPU acceleration accidentally overrode the hidden states of modals. This restores them perfectly! */
+        .bottom-sheet:not(.open) {
+            -webkit-transform: translateY(100%) translateZ(0) !important;
+            transform: translateY(100%) translateZ(0) !important;
+        }
+        .bottom-sheet.open {
+            -webkit-transform: translateY(0) translateZ(0) !important;
+            transform: translateY(0) translateZ(0) !important;
+        }
+        #playlist-view-modal:not(.open) {
+            -webkit-transform: translateX(100%) translateZ(0) !important;
+            transform: translateX(100%) translateZ(0) !important;
+        }
+        #playlist-view-modal.open {
+            -webkit-transform: translateX(0) translateZ(0) !important;
+            transform: translateX(0) translateZ(0) !important;
+        }
+        #mini-player:not(.visible) {
+            -webkit-transform: translateY(200%) translateZ(0) !important;
+            transform: translateY(200%) translateZ(0) !important;
+        }
+        #mini-player.visible {
+            -webkit-transform: translateY(0) translateZ(0) !important;
+            transform: translateY(0) translateZ(0) !important;
+        }
+
     </style>
 </head>
 <body>
@@ -2075,4 +2104,117 @@
         });
         
         // --- Audio Auto-Advance Bug Fix ---
-        // Safely
+        // Safely patch the nextTrack function to fix the infinite 1-track loop bug
+        const originalNextTrack = window.nextTrack;
+        window.nextTrack = function() {
+            // Prevent looping if it's the end of the queue and loop is false
+            if (!audio.loop && !isShuffle && playQueue && playQueue.length > 0 && queueIndex >= playQueue.length - 1) {
+                if(audio) { audio.pause(); audio.currentTime = 0; }
+                updatePlayIcons(false);
+                showToast("End of queue", "queue_music");
+                return; // Stop here, don't play next
+            }
+            originalNextTrack();
+        };
+
+        // ==========================================================================
+        // 14. ADVANCED BACKGROUND / MINIMIZED ACTIVITY TRACKER & GPU TWEAKS
+        // ==========================================================================
+        // This engine ensures if the app is minimized but audio is playing, the user stays "Online"
+        setInterval(() => {
+            if (typeof currentUserUid !== 'undefined' && currentUserUid) {
+                // If app is visible OR audio is actively playing in the background
+                const isPlayingMusic = (audio && !audio.paused && audio.currentTime > 0);
+                const isAppVisible = (document.visibilityState === 'visible');
+                
+                if (isPlayingMusic || isAppVisible) {
+                    try {
+                        let updatePayload = {
+                            isOnline: true,
+                            lastActive: new Date()
+                        };
+                        
+                        // Sync current playtime to make it ultra-realtime
+                        if (isPlayingMusic && currentTrackData) {
+                            updatePayload.nowPlaying = {
+                                title: currentTrackData.title,
+                                artist: currentTrackData.artist,
+                                imgUrl: currentTrackData.imgUrl,
+                                timestamp: new Date(),
+                                isPlaying: true
+                            };
+                        }
+                        
+                        /* --- ORIGINAL FIRESTORE CALL DISABLED TO SAVE COSTS ---
+                        setDoc(doc(db, 'users', currentUserUid), updatePayload, {merge: true});
+                        ------------------------------------------------------ */
+                        // RTDB SYNC
+                        if(rtdb) {
+                            if(isPlayingMusic && currentTrackData) {
+                                set(ref(rtdb, `users/${currentUserUid}/nowPlaying`), {
+                                    title: currentTrackData.title,
+                                    artist: currentTrackData.artist,
+                                    imgUrl: currentTrackData.imgUrl,
+                                    timestamp: Date.now(),
+                                    isPlaying: true
+                                });
+                            }
+                            set(ref(rtdb, `users/${currentUserUid}/status`), 'online');
+                            set(ref(rtdb, `users/${currentUserUid}/lastActive`), serverTimestamp());
+                        }
+                    } catch(e) { console.error("Heartbeat error", e); }
+                }
+            }
+        }, 15000); // 15-second hyper-accurate heartbeat
+
+        // Instantly mark offline ONLY if they minimize AND music is paused
+        document.addEventListener('visibilitychange', () => {
+            if (typeof currentUserUid !== 'undefined' && currentUserUid) {
+                if (document.visibilityState === 'hidden') {
+                    const isPlayingMusic = (audio && !audio.paused && audio.currentTime > 0);
+                    if (!isPlayingMusic) {
+                        try {
+                            /* --- ORIGINAL FIRESTORE CALL DISABLED TO SAVE COSTS ---
+                            setDoc(doc(db, 'users', currentUserUid), {
+                                isOnline: false,
+                                lastActive: new Date()
+                            }, {merge: true});
+                            ------------------------------------------------------ */
+                            // RTDB SYNC
+                            if(rtdb) {
+                                set(ref(rtdb, `users/${currentUserUid}/status`), 'offline');
+                                set(ref(rtdb, `users/${currentUserUid}/lastActive`), serverTimestamp());
+                            }
+                        } catch(e) {}
+                    }
+                } else {
+                    // Back to app = Online immediately
+                    try {
+                        /* --- ORIGINAL FIRESTORE CALL DISABLED TO SAVE COSTS ---
+                        setDoc(doc(db, 'users', currentUserUid), {
+                            isOnline: true,
+                            lastActive: new Date()
+                        }, {merge: true});
+                        ------------------------------------------------------ */
+                        // RTDB SYNC
+                        if(rtdb) {
+                            set(ref(rtdb, `users/${currentUserUid}/status`), 'online');
+                            set(ref(rtdb, `users/${currentUserUid}/lastActive`), serverTimestamp());
+                        }
+                    } catch(e) {}
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
+See my screenshot in full modal playlist the lyrics also show on screen only don't need to click any button for scrolling if need it can be scroll
+
+But it only see there 
+
+
+And fix the home screen loading issue I faced that earlier now see it properly don't make mistake
+
+
+DON'T REMOVE ANY LINES NOT EVEN A SINGLE LINES GIVE ME WHOLE CODE DONT REMOVE ANY LINES NOT EVEN A SINGLE LINES GIVE ME WHOLE CODE
