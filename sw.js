@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quanic-v35'; // Bumped version to force the new code to activate
+const CACHE_NAME = 'quanic-v36'; // Bumped version to force the new code to activate, fixed 'Const' typo
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -7,7 +7,7 @@ const ASSETS_TO_CACHE = [
   '/pages/settings.html',
   '/pages/setup.html',
   '/config.js',
-  '/images/icon.png',
+  '/icon.png', // Updated to match root path used in manifest
   '/manifest.json'
 ];
 
@@ -15,7 +15,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Quan AI] Service Worker Installed & Caching Assets');
+      console.log('[Quanic] Service Worker Installed & Caching Assets');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
@@ -45,6 +45,14 @@ self.addEventListener('fetch', (event) => {
       return; 
   }
 
+  // EXCEPTION 1.5: CRITICAL FOR MUSIC APPS - Do not cache heavy audio streams or live APIs
+  if (url.hostname.includes('saavn') || 
+      url.hostname.includes('googleusercontent') || 
+      event.request.url.endsWith('.mp4') || 
+      event.request.url.endsWith('.m4a')) {
+      return; 
+  }
+
   // EXCEPTION 2: Only intercept standard GET requests
   if (event.request.method !== 'GET') return;
 
@@ -62,7 +70,7 @@ self.addEventListener('fetch', (event) => {
               });
             }
           }).catch((error) => {
-            console.log('[Quan AI] Offline background sync failed, keeping old cache.');
+            console.log('[Quanic] Offline background sync failed, keeping old cache.');
           })
         );
         
