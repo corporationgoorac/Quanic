@@ -431,6 +431,36 @@
     <audio id="audio-core"></audio>
 
     <script type="module">
+
+        // ==========================================================================
+        // NEW FEATURE: IN-APP GLOBAL ERROR LOGGER (CONSOLE & FIREBASE)
+        // ==========================================================================
+        window.showAppError = function(msg) {
+            let errBox = document.getElementById('app-error-log');
+            if(!errBox) {
+                errBox = document.createElement('div');
+                errBox.id = 'app-error-log';
+                errBox.style.cssText = "position:fixed; top:75px; left:10px; right:10px; background:rgba(225, 48, 108, 0.95); backdrop-filter:blur(10px); color:#fff; z-index:99999; padding:12px; border-radius:12px; font-size:12px; max-height:30vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);";
+                errBox.innerHTML = '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.3); padding-bottom:5px; margin-bottom:5px;"><strong style="font-size:14px;">App Logs/Errors (Tap to clear)</strong><span class="material-symbols-rounded" style="font-size:16px;cursor:pointer;">close</span></div>';
+                errBox.onclick = () => { errBox.style.display = 'none'; errBox.querySelectorAll('.err-msg').forEach(e=>e.remove()); };
+                document.body.appendChild(errBox);
+            }
+            errBox.style.display = 'block';
+            const p = document.createElement('p');
+            p.className = 'err-msg';
+            p.style.cssText = 'margin-bottom:6px; font-family:monospace; line-height:1.4; word-break:break-all;';
+            p.innerText = typeof msg === 'object' ? JSON.stringify(msg) : msg;
+            errBox.appendChild(p);
+        };
+        const originalError = console.error;
+        console.error = function(...args) {
+            showAppError(args.join(' '));
+            originalError.apply(console, args);
+        };
+        window.addEventListener('error', function(e) { showAppError(e.message || e); });
+        window.addEventListener('unhandledrejection', function(e) { showAppError(e.reason || e); });
+
+
         // ==========================================================================
         // 0. BULLETPROOF SAFE LOCAL STORAGE PARSER (CRASH PREVENTION)
         // ==========================================================================
@@ -446,7 +476,7 @@
         }
 
         // ==========================================================================
-        // FEATURE: HASH STRING TO HEX COLOR ENGINE
+        // FEATURE: HASH STRING TO HEX COLOR ENGINE (KEPT FOR FALLBACK)
         // ==========================================================================
         function generateDarkHexColor(str) {
             if (!str) return '#1e1e1e';
@@ -461,6 +491,45 @@
             }
             return color;
         }
+
+        // ==========================================================================
+        // NEW FEATURE: ASYNC IMAGE DOMINANT COLOR EXTRACTION
+        // ==========================================================================
+        function getDominantColor(imgSrc, callback) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.crossOrigin = "Anonymous"; // Crucial for external APIs
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                try {
+                    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                    let r = 0, g = 0, b = 0, count = 0;
+                    for (let i = 0; i < data.length; i += 16) { // Skip pixels for speed
+                        r += data[i];
+                        g += data[i+1];
+                        b += data[i+2];
+                        count++;
+                    }
+                    r = Math.floor(r / count);
+                    g = Math.floor(g / count);
+                    b = Math.floor(b / count);
+                    // Darken slightly for the theme background aesthetic
+                    r = Math.floor(r * 0.4); g = Math.floor(g * 0.4); b = Math.floor(b * 0.4);
+                    let hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+                    callback(hex);
+                } catch(e) {
+                    // Failsafe if CORS completely blocks the canvas read
+                    console.log("Canvas read blocked by CORS, falling back...");
+                    callback(null); 
+                }
+            };
+            img.onerror = () => callback(null);
+            img.src = imgSrc;
+        }
+
 
         // ==========================================================================
         // FEATURE: SWIPE DOWN TO DISMISS PLAYER
@@ -710,6 +779,15 @@
                 document.getElementById('player-bg').style.backgroundImage = 'none'; // Replaces the old blurred image override
             }
             
+            // --- NEW FEATURE: THUMBNAIL COLOR OVERRIDE ---
+            if(lastPlayedCache.imgUrl) {
+                getDominantColor(lastPlayedCache.imgUrl, (extractedColor) => {
+                    if (extractedColor) {
+                        if(document.getElementById('player-bg')) document.getElementById('player-bg').style.background = `linear-gradient(to bottom, ${extractedColor} 0%, #000000 100%)`;
+                    }
+                });
+            }
+
             if(audio) audio.src = lastPlayedCache.audioUrl;
             
             // Rebuild queue
@@ -743,6 +821,18 @@
             // Update device mobile toolbar dynamically!
             if (metaThemeColor && document.getElementById('full-player').style.transform === 'translateY(0px)') {
                  metaThemeColor.setAttribute('content', activeColor);
+            }
+
+            // --- NEW FEATURE: THUMBNAIL COLOR OVERRIDE ---
+            if(trackObj.imgUrl) {
+                getDominantColor(trackObj.imgUrl, (extractedColor) => {
+                    if (extractedColor) {
+                        if(document.getElementById('player-bg')) document.getElementById('player-bg').style.background = `linear-gradient(to bottom, ${extractedColor} 0%, #000000 100%)`;
+                        if (metaThemeColor && document.getElementById('full-player').style.transform === 'translateY(0px)') {
+                             metaThemeColor.setAttribute('content', extractedColor);
+                        }
+                    }
+                });
             }
 
             audio.src = trackObj.audioUrl;
@@ -940,6 +1030,13 @@
             // UPDATED FIX: Update to dynamic hex color instead of just black
             const dynamicColorToApply = currentTrackData ? generateDarkHexColor(currentTrackData.title) : '#121212';
             if(metaThemeColor) metaThemeColor.setAttribute('content', dynamicColorToApply); 
+            
+            // --- NEW INJECT FOR THUMBNAIL COLOR SYNC ---
+            if(currentTrackData && currentTrackData.imgUrl) {
+                getDominantColor(currentTrackData.imgUrl, (extractedColor) => {
+                    if (extractedColor && metaThemeColor) metaThemeColor.setAttribute('content', extractedColor);
+                });
+            }
             
             history.pushState({ modal: 'full-player' }, '', '#nowplaying');
         };
@@ -1321,4 +1418,17 @@
                     if(menuBtn) {
                         menuBtn.onclick = (e) => {
                             e.stopPropagation();
-                            openOptionsModal(track,
+                            openOptionsModal(track, null);
+                        };
+                    }
+
+                    historyList.appendChild(div);
+                }
+            });
+        }
+        
+        // Initial 0ms call to render History safely
+        renderHistory();
+    </script>
+</body>
+</html>
