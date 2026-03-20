@@ -75,13 +75,13 @@
         }
         .track-item:active { background: rgba(255,255,255,0.1); }
         .track-item img { width: 48px; height: 48px; border-radius: 8px; margin-right: 15px; object-fit: cover; }
-        .track-info { display: flex; flex-direction: column; overflow: hidden; flex: 1; }
-        .track-title { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; transition: color 0.3s; }
-        .track-artist { color: #888; font-size: 0.85rem; margin-top: 4px; }
+        .track-info { display: flex; flex-direction: column; overflow: hidden; flex: 1; justify-content: center; }
         
         /* PREMIUM FEATURE: Active Track Highlighting */
+        .track-title { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; transition: color 0.3s; display: flex; align-items: center; }
         .track-title.active-playing { color: #E1306C; }
-
+        .track-artist { color: #888; font-size: 0.85rem; margin-top: 4px; }
+        
         /* 3-Dot Menu */
         .track-menu { padding: 10px; color: rgba(255,255,255,0.4); margin-left: auto; transition: color 0.2s; }
         .track-menu:active { color: #fff; }
@@ -109,13 +109,14 @@
         /* ==========================================================================
            6. ULTRA-SLEEK FLOATING MINI PLAYER
            ========================================================================== */
+        /* Increased Z-Index to 106 so it sits ABOVE the playlist view modal (105) */
         #mini-player {
             position: fixed; bottom: calc(env(safe-area-inset-bottom) + 85px); left: 15px; right: 15px;
             background: rgba(40, 40, 40, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-radius: 16px; padding: 8px 12px 8px 8px; display: flex; align-items: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 106; border: 1px solid rgba(255,255,255,0.05);
             transform: translateY(200%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer;
-            pointer-events: none; visibility: hidden; overflow: hidden; /* Added overflow hidden for progress bar */
+            pointer-events: none; visibility: hidden; overflow: hidden; 
         }
         #mini-player.visible { transform: translateY(0); pointer-events: auto; visibility: visible; }
         
@@ -137,6 +138,7 @@
         /* ==========================================================================
            7. SLEEK BOTTOM-UP PLAYER MODAL
            ========================================================================== */
+        /* Increased Z-Index to 110 so it covers absolutely everything when open */
         #full-player {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
             background: #000000; z-index: 110; transform: translateY(100%); 
@@ -160,13 +162,16 @@
         .player-info h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .player-info p { font-size: 1.1rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .progress-container { width: 100%; margin-bottom: 40px; padding: 15px 0; cursor: pointer; }
+        .progress-container { width: 100%; margin-bottom: 10px; padding: 15px 0 5px 0; cursor: pointer; }
         .progress-bar { width: 100%; height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; position: relative; pointer-events: none; }
         .progress-fill { height: 100%; background: #fff; width: 0%; border-radius: 3px; position: relative; transition: width 0.1s linear;}
         .progress-fill::after {
             content: ''; position: absolute; right: -5px; top: -3.5px; width: 12px; height: 12px; 
             background: #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
+        
+        /* PREMIUM FEATURE: Time Tracking UI */
+        .time-info { display: flex; justify-content: space-between; font-size: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 500; margin-bottom: 30px; padding: 0 2px;}
 
         .main-controls { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
         .main-controls span { font-size: 38px; cursor: pointer; transition: transform 0.1s; }
@@ -174,6 +179,10 @@
         .main-controls .play-btn { font-size: 72px; }
         .main-controls .secondary-btn { font-size: 28px; color: rgba(255,255,255,0.5); }
         .main-controls .secondary-btn.active { color: #E1306C; }
+        
+        /* PREMIUM FEATURE: Spinning Loading animation */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spin { animation: spin 1.5s linear infinite; color: #E1306C !important;}
 
         /* ==========================================================================
            8. SLEEK BOTTOM SHEET MODALS
@@ -239,7 +248,7 @@
     <div id="app-container">
         
         <section id="home-view" class="view-section active">
-            <h2>Jump back in</h2>
+            <h2>Recently Quaned</h2>
             <div id="history-list">
                 <p style="color: #666; font-size: 0.95rem;">Your recently played tracks will appear here.</p>
             </div>
@@ -315,6 +324,11 @@
             <div class="progress-container" id="progress-container" onclick="seekAudio(event)">
                 <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
             </div>
+            
+            <div class="time-info">
+                <span id="current-time">0:00</span>
+                <span id="total-time">0:00</span>
+            </div>
 
             <div class="main-controls">
                 <span class="material-symbols-rounded secondary-btn" id="btn-shuffle" onclick="toggleShuffle()">shuffle</span>
@@ -381,6 +395,14 @@
 
         // Native Haptic Engine
         const haptic = () => { if(navigator.vibrate) navigator.vibrate(50); };
+
+        // Helper: Time Formatter
+        function formatTime(secs) {
+            if (isNaN(secs)) return "0:00";
+            const m = Math.floor(secs / 60);
+            const s = Math.floor(secs % 60);
+            return m + ':' + (s < 10 ? '0' : '') + s;
+        }
 
         const cachedPhoto = localStorage.getItem('quanic_user_photo');
         if (cachedPhoto) document.getElementById('header-profile-pic').src = cachedPhoto;
@@ -471,7 +493,11 @@
 
                         const div = document.createElement('div');
                         div.className = 'track-item';
-                        div.innerHTML = `<img src="${bestImg}" alt="cover"><div class="track-info"><span class="track-title">${cleanTitle}</span><span class="track-artist">${artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
+                        
+                        let activeClass = (currentTrackData && currentTrackData.title === trackObj.title) ? 'active-playing' : '';
+                        let eqIcon = (currentTrackData && currentTrackData.title === trackObj.title) ? '<span class="material-symbols-rounded" style="color:#E1306C; font-size:18px; margin-left:8px; animation: pulse-ring 1s infinite;">graphic_eq</span>' : '';
+                        
+                        div.innerHTML = `<img src="${bestImg}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${cleanTitle}${eqIcon}</span><span class="track-artist">${artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
                         
                         div.onclick = () => {
                             currentQueueContext = 'search';
@@ -493,13 +519,21 @@
             } catch (err) { resultsDiv.innerHTML = '<p style="color:red; text-align:center;">Network Error</p>'; }
         }
 
-        // Helper function for active track highlighting
+        // Helper function for active track highlighting globally
         function highlightActiveTrack(title) {
             document.querySelectorAll('.track-title').forEach(el => {
-                if (el.innerText === title) {
+                // Strip the HTML of the EQ icon for comparison
+                const textOnly = el.innerText.replace('graphic_eq', '').trim();
+                if (textOnly === title) {
                     el.classList.add('active-playing');
+                    // Inject EQ if not present
+                    if(!el.innerHTML.includes('graphic_eq')) {
+                         el.innerHTML += '<span class="material-symbols-rounded" style="color:#E1306C; font-size:18px; margin-left:8px; animation: pulse-ring 1s infinite;">graphic_eq</span>';
+                    }
                 } else {
                     el.classList.remove('active-playing');
+                    // Remove EQ
+                    el.innerHTML = el.innerHTML.replace(/<span.*graphic_eq<\/span>/g, '');
                 }
             });
         }
@@ -522,6 +556,12 @@
             document.getElementById('full-artist').innerText = trackObj.artist;
             document.getElementById('full-img').src = trackObj.imgUrl;
             document.getElementById('player-bg').style.backgroundImage = `url('${trackObj.imgUrl}')`;
+
+            // Reset Time UI before loading
+            document.getElementById('current-time').innerText = "0:00";
+            document.getElementById('total-time').innerText = "0:00";
+            document.getElementById('progress-fill').style.width = `0%`;
+            document.getElementById('mini-progress-fill').style.width = `0%`;
 
             audio.src = trackObj.audioUrl;
             audio.play();
@@ -551,19 +591,42 @@
         };
 
         function updatePlayIcons(isPlaying) {
-            document.getElementById('mini-playpause').innerText = isPlaying ? 'pause' : 'play_arrow';
-            document.getElementById('full-playpause').innerText = isPlaying ? 'pause_circle' : 'play_circle';
+            const fullPlayBtn = document.getElementById('full-playpause');
+            const miniPlayBtn = document.getElementById('mini-playpause');
+            
+            // Only update if not currently spinning (buffering)
+            if(!fullPlayBtn.classList.contains('spin')) {
+                fullPlayBtn.innerText = isPlaying ? 'pause_circle' : 'play_circle';
+            }
+            miniPlayBtn.innerText = isPlaying ? 'pause' : 'play_arrow';
             
             if(isPlaying) { document.getElementById('mini-img').classList.add('playing'); } 
             else { document.getElementById('mini-img').classList.remove('playing'); }
         }
 
+        // Premium Feature: Network Buffering Indicators
+        audio.addEventListener('waiting', () => {
+            const fullBtn = document.getElementById('full-playpause');
+            fullBtn.innerText = 'hourglass_empty';
+            fullBtn.classList.add('spin');
+        });
+        audio.addEventListener('playing', () => {
+            const fullBtn = document.getElementById('full-playpause');
+            fullBtn.classList.remove('spin');
+            updatePlayIcons(true);
+        });
+
+        // Audio Timing Engine
+        audio.addEventListener('loadedmetadata', () => {
+            document.getElementById('total-time').innerText = formatTime(audio.duration);
+        });
+
         audio.addEventListener('timeupdate', () => {
             if (audio.duration) {
                 const progress = (audio.currentTime / audio.duration) * 100;
                 document.getElementById('progress-fill').style.width = `${progress}%`;
-                // Premium Feature: Update mini player progress bar
                 document.getElementById('mini-progress-fill').style.width = `${progress}%`;
+                document.getElementById('current-time').innerText = formatTime(audio.currentTime);
             }
         });
         
@@ -913,10 +976,10 @@
                     const div = document.createElement('div');
                     div.className = 'track-item pl-track-item';
                     
-                    // Check if this is the currently playing track and highlight it
                     let activeClass = (currentTrackData && currentTrackData.title === track.title) ? 'active-playing' : '';
+                    let eqIcon = (currentTrackData && currentTrackData.title === track.title) ? '<span class="material-symbols-rounded" style="color:#E1306C; font-size:18px; margin-left:8px; animation: pulse-ring 1s infinite;">graphic_eq</span>' : '';
                     
-                    div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
+                    div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${track.title}${eqIcon}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
                     
                     div.onclick = () => {
                         currentQueueContext = playlistId;
@@ -949,7 +1012,8 @@
             let historyArr = JSON.parse(localStorage.getItem('quanic_history') || '[]');
             historyArr = historyArr.filter(t => t.title !== trackObj.title); 
             historyArr.unshift(trackObj); 
-            if (historyArr.length > 30) historyArr.pop(); 
+            // PRECISE REQUIREMENT: Strictly cap at 20 songs
+            if (historyArr.length > 20) historyArr.pop(); 
             localStorage.setItem('quanic_history', JSON.stringify(historyArr));
             renderHistory();
         }
@@ -965,27 +1029,8 @@
                 div.className = 'track-item';
                 
                 let activeClass = (currentTrackData && currentTrackData.title === track.title) ? 'active-playing' : '';
+                let eqIcon = (currentTrackData && currentTrackData.title === track.title) ? '<span class="material-symbols-rounded" style="color:#E1306C; font-size:18px; margin-left:8px; animation: pulse-ring 1s infinite;">graphic_eq</span>' : '';
                 
-                div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
+                div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${track.title}${eqIcon}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
                 
-                div.onclick = () => {
-                    currentQueueContext = 'history';
-                    playQueue = historyArr;
-                    queueIndex = index;
-                    openFullPlayer();
-                    loadAndPlay(track, false); 
-                };
-
-                const menuBtn = div.querySelector('.track-menu');
-                menuBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    openOptionsModal(track, null);
-                };
-
-                historyList.appendChild(div);
-            });
-        }
-        renderHistory();
-    </script>
-</body>
-</html>
+                div.
