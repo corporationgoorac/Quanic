@@ -69,6 +69,14 @@
         .track-title { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
         .track-artist { color: #888; font-size: 0.85rem; margin-top: 4px; }
 
+        /* Playlist Grid Items */
+        .playlist-card {
+            background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; margin-bottom: 12px;
+            display: flex; align-items: center; cursor: pointer; transition: background 0.2s;
+        }
+        .playlist-card:active { background: rgba(255,255,255,0.1); }
+        .playlist-card .material-symbols-rounded { font-size: 40px; color: #E1306C; margin-right: 15px; }
+
         /* ==========================================================================
            5. BOTTOM NAVIGATION
            ========================================================================== */
@@ -90,9 +98,9 @@
             border-radius: 16px; padding: 8px 12px 8px 8px; display: flex; align-items: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 95; border: 1px solid rgba(255,255,255,0.05);
             transform: translateY(200%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer;
-            pointer-events: none; /* Completely disables interaction when hidden */
+            pointer-events: none; visibility: hidden; /* Guaranteed hidden until song plays */
         }
-        #mini-player.visible { transform: translateY(0); pointer-events: auto; /* Re-enables interaction when visible */ }
+        #mini-player.visible { transform: translateY(0); pointer-events: auto; visibility: visible; }
         #mini-img { width: 42px; height: 42px; border-radius: 10px; margin-right: 12px; object-fit: cover; }
         .mini-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
         .mini-title { font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
@@ -101,11 +109,11 @@
         .mini-btn { font-size: 32px !important; color: #fff; }
 
         /* ==========================================================================
-           7. SLEEK SIDE-OPEN PLAYER MODAL
+           7. SLEEK BOTTOM-UP PLAYER MODAL
            ========================================================================== */
         #full-player {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
-            background: #000000; z-index: 100; transform: translateX(100%); /* Slides from right side */
+            background: #000000; z-index: 100; transform: translateY(100%); /* Now slides from bottom to top */
             transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); display: flex; flex-direction: column; overflow: hidden;
         }
         .player-bg {
@@ -126,11 +134,9 @@
         .player-info h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .player-info p { font-size: 1.1rem; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Interactive Scrubbing Bar */
         .progress-container { width: 100%; margin-bottom: 40px; padding: 15px 0; cursor: pointer; }
         .progress-bar { width: 100%; height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; position: relative; pointer-events: none; }
-        .progress-fill { height: 100%; background: #fff; width: 0%; border-radius: 3px; position: relative; }
-        /* Add a little handle to the end of the progress fill for premium look */
+        .progress-fill { height: 100%; background: #fff; width: 0%; border-radius: 3px; position: relative; transition: width 0.1s linear;}
         .progress-fill::after {
             content: ''; position: absolute; right: -5px; top: -3.5px; width: 12px; height: 12px; 
             background: #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5);
@@ -142,6 +148,45 @@
         .main-controls .play-btn { font-size: 72px; }
         .main-controls .secondary-btn { font-size: 28px; color: rgba(255,255,255,0.5); }
         .main-controls .secondary-btn.active { color: #E1306C; }
+
+        /* ==========================================================================
+           8. SLEEK BOTTOM SHEET MODALS (Options, Playlists)
+           ========================================================================== */
+        .bottom-sheet {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: #181818;
+            border-radius: 24px 24px 0 0; padding: 20px 20px calc(env(safe-area-inset-bottom) + 20px) 20px;
+            z-index: 110; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.6); display: flex; flex-direction: column; max-height: 85vh;
+        }
+        .bottom-sheet.open { transform: translateY(0); }
+        .sheet-handle { width: 40px; height: 5px; background: #333; border-radius: 3px; margin: 0 auto 20px auto; }
+        .sheet-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; text-align: center; }
+        
+        .modal-btn {
+            background: rgba(255,255,255,0.08); border: none; padding: 16px; border-radius: 12px; color: white;
+            font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; margin-bottom: 10px;
+        }
+        .modal-btn span { margin-right: 15px; color: #E1306C; }
+        .modal-list { overflow-y: auto; flex: 1; }
+        
+        /* Create Playlist Input */
+        .input-field {
+            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 16px;
+            border-radius: 12px; color: white; font-size: 1rem; outline: none; margin-bottom: 20px;
+        }
+        .save-btn { background: #E1306C; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 600; font-size: 1rem; cursor: pointer; }
+
+        /* Full Screen Playlist View */
+        #playlist-view-modal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: #121212;
+            z-index: 105; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; flex-direction: column; padding-top: env(safe-area-inset-top);
+        }
+        #playlist-view-modal.open { transform: translateX(0); }
+        .pl-header { display: flex; align-items: center; padding: 20px; background: rgba(18,18,18,0.9); backdrop-filter: blur(10px); z-index: 2; position: sticky; top:0; }
+        .pl-header h2 { margin: 0 0 0 15px; font-size: 1.4rem; }
+        #pl-song-list { overflow-y: auto; flex: 1; padding: 0 20px 100px 20px; }
+        #scroll-anchor { height: 20px; } /* For intersection observer */
 
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -177,7 +222,9 @@
 
         <section id="library-view" class="view-section">
             <h2>Your Library</h2>
-            <p style="color: #666; font-size: 0.95rem;">Playlists and saved tracks coming soon.</p>
+            <div id="user-playlists">
+                <p style="color: #666; font-size: 0.95rem;">Loading playlists...</p>
+            </div>
         </section>
 
     </div>
@@ -214,7 +261,7 @@
             <div class="player-header">
                 <span class="material-symbols-rounded" onclick="closeFullPlayer()" style="font-size: 30px; cursor: pointer;">keyboard_arrow_down</span>
                 <span>Now Playing</span>
-                <span class="material-symbols-rounded" style="font-size: 26px;">more_horiz</span>
+                <span class="material-symbols-rounded" style="font-size: 26px; cursor: pointer;" onclick="openOptionsModal()">more_horiz</span>
             </div>
             
             <div class="artwork-container">
@@ -226,7 +273,7 @@
                     <h1 id="full-title">Track Name</h1>
                     <p id="full-artist">Artist</p>
                 </div>
-                <span class="material-symbols-rounded" style="font-size: 28px; color: #fff;">favorite_border</span>
+                <span class="material-symbols-rounded" id="btn-like" onclick="toggleLike()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s;">favorite_border</span>
             </div>
 
             <div class="progress-container" id="progress-container" onclick="seekAudio(event)">
@@ -243,33 +290,58 @@
         </div>
     </div>
 
+    <div id="options-modal" class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <h3 class="sheet-title">Add to Playlist</h3>
+        <button class="modal-btn" onclick="openCreatePlaylistModal()">
+            <span class="material-symbols-rounded">add_circle</span> Create New Playlist
+        </button>
+        <div id="options-playlist-list" class="modal-list">
+            </div>
+    </div>
+
+    <div id="create-playlist-modal" class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <h3 class="sheet-title">New Playlist</h3>
+        <input type="text" id="new-playlist-name" class="input-field" placeholder="My Awesome Mix">
+        <button class="save-btn" onclick="saveNewPlaylist()">Save & Add Song</button>
+    </div>
+
+    <div id="playlist-view-modal">
+        <div class="pl-header">
+            <span class="material-symbols-rounded" onclick="closePlaylistView()" style="font-size: 30px; cursor: pointer;">arrow_back</span>
+            <h2 id="pl-view-title">Playlist</h2>
+        </div>
+        <div id="pl-song-list">
+            <div id="scroll-anchor"></div>
+        </div>
+    </div>
+
     <audio id="audio-core"></audio>
 
     <script type="module">
         // ==========================================================================
-        // 1. FIREBASE AUTH & 0ms PROFILE RENDER
+        // 1. FIREBASE SETUP & ROUTING
         // ==========================================================================
         import { auth, db } from '../config.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, orderBy, limit, startAfter, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-        // 0ms Load: Instantly render profile pic from local storage
+        let currentUserUid = null;
+
         const cachedPhoto = localStorage.getItem('quanic_user_photo');
-        if (cachedPhoto) {
-            document.getElementById('header-profile-pic').src = cachedPhoto;
-        }
+        if (cachedPhoto) document.getElementById('header-profile-pic').src = cachedPhoto;
 
         onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                window.location.replace("login.html");
-                return;
-            }
+            if (!user) { window.location.replace("login.html"); return; }
+            currentUserUid = user.uid;
             const userRef = doc(db, "users", user.uid);
             const userSnap = await getDoc(userRef);
             if (!userSnap.exists() || !userSnap.data().is_profile_complete) {
                 window.location.replace("setup.html");
             } else {
                 document.getElementById('header-profile-pic').src = userSnap.data().photoURL || cachedPhoto;
+                fetchUserPlaylists(); // Load playlists for Library
             }
         });
 
@@ -277,16 +349,13 @@
         // 2. PWA SERVICE WORKER REGISTRATION & INSTALL BANNER
         // ==========================================================================
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js').catch(err => console.error('SW failed', err));
-            });
+            window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js').catch(err => console.error('SW failed', err)));
         }
 
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // Show the install banner if app is not installed
             document.getElementById('install-banner').style.display = 'flex';
         });
 
@@ -294,9 +363,7 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    document.getElementById('install-banner').style.display = 'none';
-                }
+                if (outcome === 'accepted') document.getElementById('install-banner').style.display = 'none';
                 deferredPrompt = null;
             }
         });
@@ -307,18 +374,24 @@
         window.switchTab = function(tabName) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             event.currentTarget.classList.add('active');
-            
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.getElementById(`${tabName}-view`).classList.add('active');
+            if(tabName === 'library') fetchUserPlaylists();
         };
 
         // ==========================================================================
-        // 4. API SEARCH & LOCAL HISTORY
+        // 4. API SEARCH & DYNAMIC QUEUE ENGINE
         // ==========================================================================
         const API_SERVER = 'https://saavn.sumit.co/api';
         const searchInput = document.getElementById('search-input');
         const resultsDiv = document.getElementById('search-results');
         let searchTimeout;
+
+        // The Queue Engine
+        let currentTrackData = null;
+        let playQueue = [];
+        let queueIndex = 0;
+        let currentQueueContext = 'history'; // 'history' or playlistId
 
         searchInput.addEventListener('input', () => {
             clearTimeout(searchTimeout);
@@ -339,43 +412,48 @@
                         const bestAudio = Array.isArray(song.downloadUrl) ? song.downloadUrl[song.downloadUrl.length - 1].url : song.downloadUrl;
                         const artist = song.artists?.primary?.map(a => a.name).join(', ') || song.primaryArtists;
                         const cleanTitle = song.name.replace(/&quot;/g, '"').replace(/&#039;/g, "'");
+                        const trackObj = { title: cleanTitle, artist: artist, imgUrl: bestImg, audioUrl: bestAudio };
 
                         const div = document.createElement('div');
                         div.className = 'track-item';
                         div.innerHTML = `<img src="${bestImg}" alt="cover"><div class="track-info"><span class="track-title">${cleanTitle}</span><span class="track-artist">${artist}</span></div>`;
-                        
-                        div.onclick = () => loadAndPlay(cleanTitle, artist, bestImg, bestAudio);
+                        div.onclick = () => {
+                            currentQueueContext = 'search';
+                            playQueue = [trackObj]; // Search plays as a single track queue
+                            queueIndex = 0;
+                            loadAndPlay(trackObj);
+                        };
                         resultsDiv.appendChild(div);
                     });
                 }
-            } catch (err) {
-                resultsDiv.innerHTML = '<p style="color:red; text-align:center;">Network Error</p>';
-            }
+            } catch (err) { resultsDiv.innerHTML = '<p style="color:red; text-align:center;">Network Error</p>'; }
         }
 
         // ==========================================================================
-        // 5. SLEEK AUDIO ENGINE & SCRUBBING
+        // 5. SLEEK AUDIO ENGINE, QUEUE NEXT/PREV, & LIKE LOGIC
         // ==========================================================================
         const audio = document.getElementById('audio-core');
         const metaThemeColor = document.getElementById('theme-color-meta');
 
-        window.loadAndPlay = function(title, artist, imgUrl, audioUrl) {
-            // Update Mini Player
-            document.getElementById('mini-title').innerText = title;
-            document.getElementById('mini-artist').innerText = artist;
-            document.getElementById('mini-img').src = imgUrl;
-            document.getElementById('mini-player').classList.add('visible');
+        window.loadAndPlay = async function(trackObj, updateHistory = true) {
+            currentTrackData = trackObj;
             
-            // Update Full Player
-            document.getElementById('full-title').innerText = title;
-            document.getElementById('full-artist').innerText = artist;
-            document.getElementById('full-img').src = imgUrl;
-            document.getElementById('player-bg').style.backgroundImage = `url('${imgUrl}')`;
+            document.getElementById('mini-title').innerText = trackObj.title;
+            document.getElementById('mini-artist').innerText = trackObj.artist;
+            document.getElementById('mini-img').src = trackObj.imgUrl;
+            document.getElementById('mini-player').classList.add('visible'); // Reveals the hidden pill
+            
+            document.getElementById('full-title').innerText = trackObj.title;
+            document.getElementById('full-artist').innerText = trackObj.artist;
+            document.getElementById('full-img').src = trackObj.imgUrl;
+            document.getElementById('player-bg').style.backgroundImage = `url('${trackObj.imgUrl}')`;
 
-            audio.src = audioUrl;
+            audio.src = trackObj.audioUrl;
             audio.play();
             updatePlayIcons(true);
-            saveToHistory({title, artist, imgUrl, audioUrl});
+            
+            if(updateHistory) saveToHistory(trackObj);
+            checkIfLiked(trackObj.title);
         };
 
         window.togglePlay = function() {
@@ -396,61 +474,288 @@
                 document.getElementById('progress-fill').style.width = `${progress}%`;
             }
         });
+        
+        // Auto-Play Next
+        audio.addEventListener('ended', () => { if(!audio.loop) nextTrack(); });
 
-        // Audio Seek / Scrubbing Functionality
         window.seekAudio = function(e) {
             const container = document.getElementById('progress-container');
             const rect = container.getBoundingClientRect();
-            // Calculate where the user clicked relative to the bar's width
             const clickX = e.clientX - rect.left;
-            const percentage = Math.max(0, Math.min(1, clickX / rect.width)); // Keep between 0 and 1
-            
-            if (audio.duration) {
-                audio.currentTime = percentage * audio.duration;
-            }
+            const percentage = Math.max(0, Math.min(1, clickX / rect.width)); 
+            if (audio.duration) audio.currentTime = percentage * audio.duration;
         };
 
-        // Audio Loop Functionality
         window.toggleLoop = function() {
             audio.loop = !audio.loop;
-            const loopBtn = document.getElementById('btn-loop');
-            if (audio.loop) {
-                loopBtn.classList.add('active');
-            } else {
-                loopBtn.classList.remove('active');
+            document.getElementById('btn-loop').classList.toggle('active');
+        };
+
+        // Queue Control Logic
+        window.nextTrack = function() {
+            if (playQueue.length > 0 && queueIndex < playQueue.length - 1) {
+                queueIndex++;
+                loadAndPlay(playQueue[queueIndex], false);
+                
+                // Infinite Scroll Trigger for Playlists: Fetch next 20 if we are 2 songs away from the end
+                if (currentQueueContext !== 'history' && currentQueueContext !== 'search') {
+                    if (queueIndex >= playQueue.length - 2) {
+                        fetchMorePlaylistSongs(currentQueueContext);
+                    }
+                }
             }
         };
 
+        window.prevTrack = function() {
+            if(audio.currentTime > 3) { audio.currentTime = 0; return; }
+            if (playQueue.length > 0 && queueIndex > 0) {
+                queueIndex--;
+                loadAndPlay(playQueue[queueIndex], false);
+            }
+        };
+
+        // Firebase Like System
+        async function checkIfLiked(title) {
+            if(!currentUserUid) return;
+            const cleanId = title.replace(/[^a-zA-Z0-9]/g, '');
+            const docRef = doc(db, 'users', currentUserUid, 'playlists', 'Liked', 'songs', cleanId);
+            const snap = await getDoc(docRef);
+            const likeBtn = document.getElementById('btn-like');
+            if(snap.exists()) {
+                likeBtn.innerText = 'favorite';
+                likeBtn.style.color = '#E1306C';
+                likeBtn.style.transform = 'scale(1.1)';
+            } else {
+                likeBtn.innerText = 'favorite_border';
+                likeBtn.style.color = '#fff';
+                likeBtn.style.transform = 'scale(1)';
+            }
+        }
+
+        window.toggleLike = async function() {
+            if(!currentUserUid || !currentTrackData) return;
+            const likeBtn = document.getElementById('btn-like');
+            const isLiked = likeBtn.innerText === 'favorite';
+            const cleanId = currentTrackData.title.replace(/[^a-zA-Z0-9]/g, '');
+            const likedRef = doc(db, 'users', currentUserUid, 'playlists', 'Liked', 'songs', cleanId);
+
+            likeBtn.style.transform = 'scale(0.8)'; // Tactile feedback
+            
+            if(isLiked) {
+                await deleteDoc(likedRef);
+                likeBtn.innerText = 'favorite_border';
+                likeBtn.style.color = '#fff';
+            } else {
+                // Ensure the "Liked" playlist doc exists first
+                await setDoc(doc(db, 'users', currentUserUid, 'playlists', 'Liked'), { name: 'Liked Songs', createdAt: new Date() }, {merge:true});
+                await setDoc(likedRef, { ...currentTrackData, addedAt: new Date() });
+                likeBtn.innerText = 'favorite';
+                likeBtn.style.color = '#E1306C';
+            }
+            setTimeout(() => likeBtn.style.transform = 'scale(1)', 150);
+        };
+
         // ==========================================================================
-        // 6. SIDE-OPEN MODAL W/ HARDWARE BACK BUTTON LOGIC
+        // 6. NESTED MODALS W/ HARDWARE BACK BUTTON LOGIC
         // ==========================================================================
         window.openFullPlayer = function() {
-            document.getElementById('full-player').style.transform = 'translateX(0)';
+            document.getElementById('full-player').style.transform = 'translateY(0)';
             metaThemeColor.setAttribute('content', '#000000'); 
             history.pushState({ modal: 'full-player' }, '', '#nowplaying');
         };
 
         window.closeFullPlayer = function() {
-            document.getElementById('full-player').style.transform = 'translateX(100%)';
+            document.getElementById('full-player').style.transform = 'translateY(100%)';
             metaThemeColor.setAttribute('content', '#121212'); 
             if (history.state && history.state.modal === 'full-player') { history.back(); }
         };
 
+        window.openOptionsModal = function() {
+            document.getElementById('options-modal').classList.add('open');
+            history.pushState({ modal: 'options' }, '', '#options');
+            populateOptionsPlaylists();
+        };
+        function closeOptionsModal() { document.getElementById('options-modal').classList.remove('open'); }
+
+        window.openCreatePlaylistModal = function() {
+            closeOptionsModal(); // Close parent
+            setTimeout(() => {
+                document.getElementById('create-playlist-modal').classList.add('open');
+                history.pushState({ modal: 'create_playlist' }, '', '#create');
+            }, 300);
+        };
+        function closeCreatePlaylistModal() { document.getElementById('create-playlist-modal').classList.remove('open'); }
+
+        window.openPlaylistView = function(playlistId, playlistName) {
+            document.getElementById('pl-view-title').innerText = playlistName;
+            document.getElementById('playlist-view-modal').classList.add('open');
+            history.pushState({ modal: 'playlist_view' }, '', `#playlist_${playlistId}`);
+            loadPlaylistSongs(playlistId);
+        };
+        window.closePlaylistView = function() {
+            document.getElementById('playlist-view-modal').classList.remove('open');
+            if (history.state && history.state.modal === 'playlist_view') { history.back(); }
+        }
+
         window.addEventListener('popstate', (e) => {
-            if (!e.state || e.state.modal !== 'full-player') {
-                document.getElementById('full-player').style.transform = 'translateX(100%)';
+            // Close everything on true back
+            if (!e.state) {
+                document.getElementById('full-player').style.transform = 'translateY(100%)';
                 metaThemeColor.setAttribute('content', '#121212');
+                closeOptionsModal();
+                closeCreatePlaylistModal();
+                document.getElementById('playlist-view-modal').classList.remove('open');
+            } else if (e.state.modal === 'full-player') {
+                closeOptionsModal();
+                closeCreatePlaylistModal();
+                document.getElementById('playlist-view-modal').classList.remove('open');
             }
         });
 
         // ==========================================================================
-        // 7. LOCAL STORAGE HISTORY RENDER
+        // 7. FIREBASE PLAYLIST ENGINE & INFINITE SCROLL
+        // ==========================================================================
+        async function fetchUserPlaylists() {
+            if(!currentUserUid) return;
+            const plContainer = document.getElementById('user-playlists');
+            const q = query(collection(db, 'users', currentUserUid, 'playlists'), orderBy('createdAt', 'desc'));
+            const snap = await getDocs(q);
+            
+            plContainer.innerHTML = '';
+            
+            // Inject Liked Songs manually at top for premium feel
+            const likedCard = document.createElement('div');
+            likedCard.className = 'playlist-card';
+            likedCard.innerHTML = `<span class="material-symbols-rounded">favorite</span><span style="font-size: 1.1rem; font-weight: 600;">Liked Songs</span>`;
+            likedCard.onclick = () => openPlaylistView('Liked', 'Liked Songs');
+            plContainer.appendChild(likedCard);
+
+            snap.forEach(doc => {
+                if(doc.id === 'Liked') return; // Handled above
+                const div = document.createElement('div');
+                div.className = 'playlist-card';
+                div.innerHTML = `<span class="material-symbols-rounded" style="color:#A7A7A7;">queue_music</span><span style="font-size: 1.1rem; font-weight: 600;">${doc.data().name}</span>`;
+                div.onclick = () => openPlaylistView(doc.id, doc.data().name);
+                plContainer.appendChild(div);
+            });
+        }
+
+        async function populateOptionsPlaylists() {
+            if(!currentUserUid) return;
+            const list = document.getElementById('options-playlist-list');
+            list.innerHTML = '';
+            const q = query(collection(db, 'users', currentUserUid, 'playlists'), orderBy('createdAt', 'desc'));
+            const snap = await getDocs(q);
+            snap.forEach(docSnap => {
+                if(docSnap.id === 'Liked') return;
+                const btn = document.createElement('button');
+                btn.className = 'modal-btn';
+                btn.style.width = '100%';
+                btn.innerHTML = `<span class="material-symbols-rounded" style="color:#A7A7A7;">queue_music</span> Add to ${docSnap.data().name}`;
+                btn.onclick = async () => {
+                    await addDoc(collection(db, 'users', currentUserUid, 'playlists', docSnap.id, 'songs'), { ...currentTrackData, addedAt: new Date() });
+                    btn.innerHTML = `<span class="material-symbols-rounded" style="color:#E1306C;">check_circle</span> Added!`;
+                    setTimeout(() => { history.back(); }, 800);
+                };
+                list.appendChild(btn);
+            });
+        }
+
+        window.saveNewPlaylist = async function() {
+            if(!currentUserUid) return;
+            const input = document.getElementById('new-playlist-name');
+            const name = input.value.trim() || 'New Playlist';
+            
+            // 1. Create Playlist doc
+            const plRef = await addDoc(collection(db, 'users', currentUserUid, 'playlists'), { name: name, createdAt: new Date() });
+            
+            // 2. Add current song to it immediately
+            if(currentTrackData) {
+                await addDoc(collection(db, 'users', currentUserUid, 'playlists', plRef.id, 'songs'), { ...currentTrackData, addedAt: new Date() });
+            }
+            
+            input.value = '';
+            fetchUserPlaylists(); // Refresh library background
+            history.back(); // Close modal via routing
+        };
+
+        // Infinite Scroll Engine
+        let lastVisibleDoc = null;
+        let isFetchingPlaylist = false;
+        let activePlaylistViewId = null;
+
+        async function loadPlaylistSongs(playlistId) {
+            activePlaylistViewId = playlistId;
+            lastVisibleDoc = null;
+            const listDiv = document.getElementById('pl-song-list');
+            listDiv.innerHTML = '<div id="scroll-anchor"></div>'; // Reset
+            
+            // Setup Infinite Scroll Observer
+            const observer = new IntersectionObserver((entries) => {
+                if(entries[0].isIntersecting) fetchMorePlaylistSongs(activePlaylistViewId);
+            });
+            observer.observe(document.getElementById('scroll-anchor'));
+            
+            await fetchMorePlaylistSongs(playlistId);
+        }
+
+        async function fetchMorePlaylistSongs(playlistId) {
+            if(!currentUserUid || isFetchingPlaylist || (lastVisibleDoc === 'END')) return;
+            isFetchingPlaylist = true;
+            
+            let q;
+            if (lastVisibleDoc) {
+                q = query(collection(db, 'users', currentUserUid, 'playlists', playlistId, 'songs'), orderBy('addedAt', 'desc'), startAfter(lastVisibleDoc), limit(20));
+            } else {
+                q = query(collection(db, 'users', currentUserUid, 'playlists', playlistId, 'songs'), orderBy('addedAt', 'desc'), limit(20));
+            }
+
+            const snap = await getDocs(q);
+            const listDiv = document.getElementById('pl-song-list');
+            const anchor = document.getElementById('scroll-anchor');
+
+            if (!snap.empty) {
+                lastVisibleDoc = snap.docs[snap.docs.length - 1];
+                let indexOffset = document.querySelectorAll('.pl-track-item').length; // For Queue Logic
+                
+                // If we are actively playing this playlist, push new songs directly into the active audio queue
+                if(currentQueueContext === playlistId && indexOffset > 0) {
+                    snap.forEach(d => playQueue.push(d.data()));
+                }
+
+                snap.forEach((doc, idx) => {
+                    const track = doc.data();
+                    const globalIdx = indexOffset + idx; // Tracking actual position in playlist
+                    
+                    const div = document.createElement('div');
+                    div.className = 'track-item pl-track-item';
+                    div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title">${track.title}</span><span class="track-artist">${track.artist}</span></div>`;
+                    
+                    div.onclick = () => {
+                        // When clicked, rebuild the queue from everything loaded so far
+                        currentQueueContext = playlistId;
+                        const allLoadedTracks = Array.from(document.querySelectorAll('.pl-track-item')).map(el => el.trackData);
+                        playQueue = allLoadedTracks;
+                        queueIndex = globalIdx;
+                        loadAndPlay(track);
+                    };
+                    div.trackData = track; // Store hidden data on the DOM element for the queue rebuild
+                    listDiv.insertBefore(div, anchor);
+                });
+            } else {
+                lastVisibleDoc = 'END';
+            }
+            isFetchingPlaylist = false;
+        }
+
+        // ==========================================================================
+        // 8. LOCAL STORAGE HISTORY RENDER
         // ==========================================================================
         function saveToHistory(trackObj) {
             let historyArr = JSON.parse(localStorage.getItem('quanic_history') || '[]');
             historyArr = historyArr.filter(t => t.title !== trackObj.title); 
             historyArr.unshift(trackObj); 
-            if (historyArr.length > 20) historyArr.pop(); 
+            if (historyArr.length > 30) historyArr.pop(); 
             localStorage.setItem('quanic_history', JSON.stringify(historyArr));
             renderHistory();
         }
@@ -461,11 +766,17 @@
             if (historyArr.length === 0) return;
             
             historyList.innerHTML = '';
-            historyArr.forEach(track => {
+            historyArr.forEach((track, index) => {
                 const div = document.createElement('div');
                 div.className = 'track-item';
                 div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title">${track.title}</span><span class="track-artist">${track.artist}</span></div>`;
-                div.onclick = () => loadAndPlay(track.title, track.artist, track.imgUrl, track.audioUrl);
+                div.onclick = () => {
+                    // Set context to History so "Next" plays through local storage
+                    currentQueueContext = 'history';
+                    playQueue = historyArr;
+                    queueIndex = index;
+                    loadAndPlay(track, false); // false = don't rewrite it to the top of history immediately while playing through queue
+                };
                 historyList.appendChild(div);
             });
         }
