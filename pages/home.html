@@ -40,6 +40,16 @@
         }
         .profile-pic:active { transform: scale(0.9); border-color: #E1306C; }
 
+        /* PREMIUM FEATURE: Toast Notification System */
+        #toast {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            color: white; padding: 12px 24px; border-radius: 30px; font-size: 0.95rem; font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 9999; transition: top 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.1);
+        }
+        #toast.show { top: calc(env(safe-area-inset-top) + 20px); }
+
         /* ==========================================================================
            3. APP VIEWS
            ========================================================================== */
@@ -68,6 +78,10 @@
         .track-info { display: flex; flex-direction: column; overflow: hidden; flex: 1; }
         .track-title { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
         .track-artist { color: #888; font-size: 0.85rem; margin-top: 4px; }
+        
+        /* 3-Dot Menu */
+        .track-menu { padding: 10px; color: rgba(255,255,255,0.4); margin-left: auto; transition: color 0.2s; }
+        .track-menu:active { color: #fff; }
 
         /* Playlist Grid Items */
         .playlist-card {
@@ -92,16 +106,22 @@
         /* ==========================================================================
            6. ULTRA-SLEEK FLOATING MINI PLAYER
            ========================================================================== */
+        /* Increased Z-Index to 106 so it sits ABOVE the playlist view modal (105) */
         #mini-player {
             position: fixed; bottom: calc(env(safe-area-inset-bottom) + 85px); left: 15px; right: 15px;
             background: rgba(40, 40, 40, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-radius: 16px; padding: 8px 12px 8px 8px; display: flex; align-items: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 95; border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 106; border: 1px solid rgba(255,255,255,0.05);
             transform: translateY(200%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer;
-            pointer-events: none; visibility: hidden; /* Guaranteed hidden until song plays */
+            pointer-events: none; visibility: hidden; 
         }
         #mini-player.visible { transform: translateY(0); pointer-events: auto; visibility: visible; }
-        #mini-img { width: 42px; height: 42px; border-radius: 10px; margin-right: 12px; object-fit: cover; }
+        
+        /* Premium Pulse animation when playing */
+        @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(225, 48, 108, 0.4); } 100% { box-shadow: 0 0 0 8px rgba(225, 48, 108, 0); } }
+        #mini-img { width: 42px; height: 42px; border-radius: 10px; margin-right: 12px; object-fit: cover; transition: box-shadow 0.3s; }
+        #mini-img.playing { animation: pulse-ring 2s infinite; }
+        
         .mini-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
         .mini-title { font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
         .mini-artist { font-size: 0.8rem; color: #A7A7A7; margin-top: 2px; }
@@ -111,9 +131,10 @@
         /* ==========================================================================
            7. SLEEK BOTTOM-UP PLAYER MODAL
            ========================================================================== */
+        /* Increased Z-Index to 110 so it covers absolutely everything when open */
         #full-player {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
-            background: #000000; z-index: 100; transform: translateY(100%); /* Now slides from bottom to top */
+            background: #000000; z-index: 110; transform: translateY(100%); 
             transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); display: flex; flex-direction: column; overflow: hidden;
         }
         .player-bg {
@@ -150,13 +171,14 @@
         .main-controls .secondary-btn.active { color: #E1306C; }
 
         /* ==========================================================================
-           8. SLEEK BOTTOM SHEET MODALS (Options, Playlists)
+           8. SLEEK BOTTOM SHEET MODALS
            ========================================================================== */
+        /* Increased to 115 so it covers the full player modal */
         .bottom-sheet {
             position: fixed; bottom: 0; left: 0; width: 100%; background: #181818;
             border-radius: 24px 24px 0 0; padding: 20px 20px calc(env(safe-area-inset-bottom) + 20px) 20px;
-            z-index: 110; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.6); display: flex; flex-direction: column; max-height: 85vh;
+            z-index: 115; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.8); display: flex; flex-direction: column; max-height: 85vh;
         }
         .bottom-sheet.open { transform: translateY(0); }
         .sheet-handle { width: 40px; height: 5px; background: #333; border-radius: 3px; margin: 0 auto 20px auto; }
@@ -165,18 +187,19 @@
         .modal-btn {
             background: rgba(255,255,255,0.08); border: none; padding: 16px; border-radius: 12px; color: white;
             font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; margin-bottom: 10px;
+            transition: transform 0.1s;
         }
+        .modal-btn:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
         .modal-btn span { margin-right: 15px; color: #E1306C; }
         .modal-list { overflow-y: auto; flex: 1; }
         
-        /* Create Playlist Input */
         .input-field {
             width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 16px;
             border-radius: 12px; color: white; font-size: 1rem; outline: none; margin-bottom: 20px;
         }
         .save-btn { background: #E1306C; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 600; font-size: 1rem; cursor: pointer; }
 
-        /* Full Screen Playlist View */
+        /* Z-index 105 sits below mini-player (106) but above nav (90) */
         #playlist-view-modal {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: #121212;
             z-index: 105; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -186,12 +209,17 @@
         .pl-header { display: flex; align-items: center; padding: 20px; background: rgba(18,18,18,0.9); backdrop-filter: blur(10px); z-index: 2; position: sticky; top:0; }
         .pl-header h2 { margin: 0 0 0 15px; font-size: 1.4rem; }
         #pl-song-list { overflow-y: auto; flex: 1; padding: 0 20px 100px 20px; }
-        #scroll-anchor { height: 20px; } /* For intersection observer */
+        #scroll-anchor { height: 20px; }
 
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
+
+    <div id="toast">
+        <span class="material-symbols-rounded" id="toast-icon">check_circle</span>
+        <span id="toast-msg">Success</span>
+    </div>
 
     <header>
         <h1 class="brand-title">Quanic</h1>
@@ -281,7 +309,7 @@
             </div>
 
             <div class="main-controls">
-                <span class="material-symbols-rounded secondary-btn" id="btn-shuffle">shuffle</span>
+                <span class="material-symbols-rounded secondary-btn" id="btn-shuffle" onclick="toggleShuffle()">shuffle</span>
                 <span class="material-symbols-rounded" onclick="prevTrack()">skip_previous</span>
                 <span class="material-symbols-rounded play-btn" id="full-playpause" onclick="togglePlay()">play_circle</span>
                 <span class="material-symbols-rounded" onclick="nextTrack()">skip_next</span>
@@ -292,7 +320,8 @@
 
     <div id="options-modal" class="bottom-sheet">
         <div class="sheet-handle"></div>
-        <h3 class="sheet-title">Add to Playlist</h3>
+        <h3 class="sheet-title">Options</h3>
+        <div id="options-dynamic-content"></div>
         <button class="modal-btn" onclick="openCreatePlaylistModal()">
             <span class="material-symbols-rounded">add_circle</span> Create New Playlist
         </button>
@@ -328,6 +357,15 @@
         import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, orderBy, limit, startAfter, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
         let currentUserUid = null;
+
+        // Custom Toast Engine
+        window.showToast = function(msg, icon = 'check_circle') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            document.getElementById('toast-icon').innerText = icon;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
 
         const cachedPhoto = localStorage.getItem('quanic_user_photo');
         if (cachedPhoto) document.getElementById('header-profile-pic').src = cachedPhoto;
@@ -392,6 +430,7 @@
         let playQueue = [];
         let queueIndex = 0;
         let currentQueueContext = 'history'; // 'history' or playlistId
+        let isShuffle = false;
 
         searchInput.addEventListener('input', () => {
             clearTimeout(searchTimeout);
@@ -416,13 +455,25 @@
 
                         const div = document.createElement('div');
                         div.className = 'track-item';
-                        div.innerHTML = `<img src="${bestImg}" alt="cover"><div class="track-info"><span class="track-title">${cleanTitle}</span><span class="track-artist">${artist}</span></div>`;
+                        // Added 3-dots here
+                        div.innerHTML = `<img src="${bestImg}" alt="cover"><div class="track-info"><span class="track-title">${cleanTitle}</span><span class="track-artist">${artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
+                        
+                        // Handle opening full player instantly on card click
                         div.onclick = () => {
                             currentQueueContext = 'search';
-                            playQueue = [trackObj]; // Search plays as a single track queue
+                            playQueue = [trackObj]; 
                             queueIndex = 0;
+                            openFullPlayer();
                             loadAndPlay(trackObj);
                         };
+                        
+                        // Handle 3-dots
+                        const menuBtn = div.querySelector('.track-menu');
+                        menuBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            openOptionsModal(trackObj, null);
+                        };
+                        
                         resultsDiv.appendChild(div);
                     });
                 }
@@ -441,7 +492,7 @@
             document.getElementById('mini-title').innerText = trackObj.title;
             document.getElementById('mini-artist').innerText = trackObj.artist;
             document.getElementById('mini-img').src = trackObj.imgUrl;
-            document.getElementById('mini-player').classList.add('visible'); // Reveals the hidden pill
+            document.getElementById('mini-player').classList.add('visible'); 
             
             document.getElementById('full-title').innerText = trackObj.title;
             document.getElementById('full-artist').innerText = trackObj.artist;
@@ -454,6 +505,17 @@
             
             if(updateHistory) saveToHistory(trackObj);
             checkIfLiked(trackObj.title);
+
+            // Premium Feature: Lock Screen Media Controls
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: trackObj.title, artist: trackObj.artist, artwork: [{ src: trackObj.imgUrl, sizes: '512x512', type: 'image/jpeg' }]
+                });
+                navigator.mediaSession.setActionHandler('play', () => togglePlay());
+                navigator.mediaSession.setActionHandler('pause', () => togglePlay());
+                navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack());
+                navigator.mediaSession.setActionHandler('previoustrack', () => prevTrack());
+            }
         };
 
         window.togglePlay = function() {
@@ -466,6 +528,10 @@
         function updatePlayIcons(isPlaying) {
             document.getElementById('mini-playpause').innerText = isPlaying ? 'pause' : 'play_arrow';
             document.getElementById('full-playpause').innerText = isPlaying ? 'pause_circle' : 'play_circle';
+            
+            // Pulse animation control
+            if(isPlaying) { document.getElementById('mini-img').classList.add('playing'); } 
+            else { document.getElementById('mini-img').classList.remove('playing'); }
         }
 
         audio.addEventListener('timeupdate', () => {
@@ -489,15 +555,29 @@
         window.toggleLoop = function() {
             audio.loop = !audio.loop;
             document.getElementById('btn-loop').classList.toggle('active');
+            showToast(audio.loop ? 'Repeat On' : 'Repeat Off', 'repeat');
         };
 
-        // Queue Control Logic
+        window.toggleShuffle = function() {
+            isShuffle = !isShuffle;
+            document.getElementById('btn-shuffle').classList.toggle('active');
+            showToast(isShuffle ? 'Shuffle On' : 'Shuffle Off', 'shuffle');
+        };
+
+        // Advanced Queue Control Logic
         window.nextTrack = function() {
-            if (playQueue.length > 0 && queueIndex < playQueue.length - 1) {
-                queueIndex++;
+            if (playQueue.length > 0) {
+                if (isShuffle) {
+                    queueIndex = Math.floor(Math.random() * playQueue.length);
+                } else if (queueIndex < playQueue.length - 1) {
+                    queueIndex++;
+                } else {
+                    queueIndex = 0; // Loop back to start of playlist
+                }
+                
                 loadAndPlay(playQueue[queueIndex], false);
                 
-                // Infinite Scroll Trigger for Playlists: Fetch next 20 if we are 2 songs away from the end
+                // Infinite Scroll Trigger
                 if (currentQueueContext !== 'history' && currentQueueContext !== 'search') {
                     if (queueIndex >= playQueue.length - 2) {
                         fetchMorePlaylistSongs(currentQueueContext);
@@ -539,25 +619,29 @@
             const cleanId = currentTrackData.title.replace(/[^a-zA-Z0-9]/g, '');
             const likedRef = doc(db, 'users', currentUserUid, 'playlists', 'Liked', 'songs', cleanId);
 
-            likeBtn.style.transform = 'scale(0.8)'; // Tactile feedback
+            likeBtn.style.transform = 'scale(0.8)'; 
             
             if(isLiked) {
                 await deleteDoc(likedRef);
                 likeBtn.innerText = 'favorite_border';
                 likeBtn.style.color = '#fff';
+                showToast('Removed from Liked Songs', 'heart_broken');
             } else {
-                // Ensure the "Liked" playlist doc exists first
                 await setDoc(doc(db, 'users', currentUserUid, 'playlists', 'Liked'), { name: 'Liked Songs', createdAt: new Date() }, {merge:true});
                 await setDoc(likedRef, { ...currentTrackData, addedAt: new Date() });
                 likeBtn.innerText = 'favorite';
                 likeBtn.style.color = '#E1306C';
+                showToast('Added to Liked Songs', 'favorite');
             }
-            setTimeout(() => likeBtn.style.transform = 'scale(1)', 150);
+            setTimeout(() => likeBtn.style.transform = 'scale(1.1)', 150);
         };
 
         // ==========================================================================
         // 6. NESTED MODALS W/ HARDWARE BACK BUTTON LOGIC
         // ==========================================================================
+        let optionTrackTarget = null;
+        let activePlaylistViewId = null;
+
         window.openFullPlayer = function() {
             document.getElementById('full-player').style.transform = 'translateY(0)';
             metaThemeColor.setAttribute('content', '#000000'); 
@@ -570,11 +654,33 @@
             if (history.state && history.state.modal === 'full-player') { history.back(); }
         };
 
-        window.openOptionsModal = function() {
+        window.openOptionsModal = function(track = null, contextId = null) {
+            optionTrackTarget = track || currentTrackData;
+            const content = document.getElementById('options-dynamic-content');
+            content.innerHTML = '';
+            
+            // Context-Aware: Inject "Remove from Playlist" if opened inside a custom playlist
+            if (contextId && contextId !== 'history' && contextId !== 'search' && contextId !== 'Liked') {
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'modal-btn';
+                removeBtn.style.width = '100%';
+                removeBtn.innerHTML = `<span class="material-symbols-rounded" style="color:#ff4444;">delete</span> Remove from this playlist`;
+                removeBtn.onclick = async () => {
+                    const cleanId = optionTrackTarget.title.replace(/[^a-zA-Z0-9]/g, '');
+                    await deleteDoc(doc(db, 'users', currentUserUid, 'playlists', contextId, 'songs', cleanId));
+                    showToast('Song removed', 'delete');
+                    history.back(); // Close modal
+                    // Refresh playlist view underneath
+                    if (activePlaylistViewId === contextId) loadPlaylistSongs(contextId); 
+                };
+                content.appendChild(removeBtn);
+            }
+
             document.getElementById('options-modal').classList.add('open');
             history.pushState({ modal: 'options' }, '', '#options');
             populateOptionsPlaylists();
         };
+
         function closeOptionsModal() { document.getElementById('options-modal').classList.remove('open'); }
 
         window.openCreatePlaylistModal = function() {
@@ -623,19 +729,18 @@
             
             plContainer.innerHTML = '';
             
-            // Inject Liked Songs manually at top for premium feel
             const likedCard = document.createElement('div');
             likedCard.className = 'playlist-card';
             likedCard.innerHTML = `<span class="material-symbols-rounded">favorite</span><span style="font-size: 1.1rem; font-weight: 600;">Liked Songs</span>`;
             likedCard.onclick = () => openPlaylistView('Liked', 'Liked Songs');
             plContainer.appendChild(likedCard);
 
-            snap.forEach(doc => {
-                if(doc.id === 'Liked') return; // Handled above
+            snap.forEach(docSnap => {
+                if(docSnap.id === 'Liked') return; 
                 const div = document.createElement('div');
                 div.className = 'playlist-card';
-                div.innerHTML = `<span class="material-symbols-rounded" style="color:#A7A7A7;">queue_music</span><span style="font-size: 1.1rem; font-weight: 600;">${doc.data().name}</span>`;
-                div.onclick = () => openPlaylistView(doc.id, doc.data().name);
+                div.innerHTML = `<span class="material-symbols-rounded" style="color:#A7A7A7;">queue_music</span><span style="font-size: 1.1rem; font-weight: 600;">${docSnap.data().name}</span>`;
+                div.onclick = () => openPlaylistView(docSnap.id, docSnap.data().name);
                 plContainer.appendChild(div);
             });
         }
@@ -652,10 +757,20 @@
                 btn.className = 'modal-btn';
                 btn.style.width = '100%';
                 btn.innerHTML = `<span class="material-symbols-rounded" style="color:#A7A7A7;">queue_music</span> Add to ${docSnap.data().name}`;
+                
                 btn.onclick = async () => {
-                    await addDoc(collection(db, 'users', currentUserUid, 'playlists', docSnap.id, 'songs'), { ...currentTrackData, addedAt: new Date() });
-                    btn.innerHTML = `<span class="material-symbols-rounded" style="color:#E1306C;">check_circle</span> Added!`;
-                    setTimeout(() => { history.back(); }, 800);
+                    const cleanId = optionTrackTarget.title.replace(/[^a-zA-Z0-9]/g, '');
+                    const songRef = doc(db, 'users', currentUserUid, 'playlists', docSnap.id, 'songs', cleanId);
+                    
+                    // Duplicate Check Logic
+                    const check = await getDoc(songRef);
+                    if(!check.exists()) {
+                        await setDoc(songRef, { ...optionTrackTarget, addedAt: new Date() });
+                        showToast('Added to ' + docSnap.data().name);
+                    } else {
+                        showToast('Already in playlist', 'info');
+                    }
+                    setTimeout(() => { history.back(); }, 300);
                 };
                 list.appendChild(btn);
             });
@@ -666,31 +781,30 @@
             const input = document.getElementById('new-playlist-name');
             const name = input.value.trim() || 'New Playlist';
             
-            // 1. Create Playlist doc
             const plRef = await addDoc(collection(db, 'users', currentUserUid, 'playlists'), { name: name, createdAt: new Date() });
             
-            // 2. Add current song to it immediately
-            if(currentTrackData) {
-                await addDoc(collection(db, 'users', currentUserUid, 'playlists', plRef.id, 'songs'), { ...currentTrackData, addedAt: new Date() });
+            if(optionTrackTarget) {
+                const cleanId = optionTrackTarget.title.replace(/[^a-zA-Z0-9]/g, '');
+                await setDoc(doc(db, 'users', currentUserUid, 'playlists', plRef.id, 'songs', cleanId), { ...optionTrackTarget, addedAt: new Date() });
+                showToast('Playlist created & song added');
+            } else {
+                showToast('Playlist created');
             }
             
             input.value = '';
-            fetchUserPlaylists(); // Refresh library background
-            history.back(); // Close modal via routing
+            fetchUserPlaylists(); 
+            history.back(); 
         };
 
-        // Infinite Scroll Engine
         let lastVisibleDoc = null;
         let isFetchingPlaylist = false;
-        let activePlaylistViewId = null;
 
         async function loadPlaylistSongs(playlistId) {
             activePlaylistViewId = playlistId;
             lastVisibleDoc = null;
             const listDiv = document.getElementById('pl-song-list');
-            listDiv.innerHTML = '<div id="scroll-anchor"></div>'; // Reset
+            listDiv.innerHTML = '<div id="scroll-anchor"></div>'; 
             
-            // Setup Infinite Scroll Observer
             const observer = new IntersectionObserver((entries) => {
                 if(entries[0].isIntersecting) fetchMorePlaylistSongs(activePlaylistViewId);
             });
@@ -716,30 +830,37 @@
 
             if (!snap.empty) {
                 lastVisibleDoc = snap.docs[snap.docs.length - 1];
-                let indexOffset = document.querySelectorAll('.pl-track-item').length; // For Queue Logic
+                let indexOffset = document.querySelectorAll('.pl-track-item').length; 
                 
-                // If we are actively playing this playlist, push new songs directly into the active audio queue
                 if(currentQueueContext === playlistId && indexOffset > 0) {
                     snap.forEach(d => playQueue.push(d.data()));
                 }
 
-                snap.forEach((doc, idx) => {
-                    const track = doc.data();
-                    const globalIdx = indexOffset + idx; // Tracking actual position in playlist
+                snap.forEach((docSnap, idx) => {
+                    const track = docSnap.data();
+                    const globalIdx = indexOffset + idx; 
                     
                     const div = document.createElement('div');
                     div.className = 'track-item pl-track-item';
-                    div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title">${track.title}</span><span class="track-artist">${track.artist}</span></div>`;
+                    // Added 3-dots here too
+                    div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
                     
                     div.onclick = () => {
-                        // When clicked, rebuild the queue from everything loaded so far
                         currentQueueContext = playlistId;
                         const allLoadedTracks = Array.from(document.querySelectorAll('.pl-track-item')).map(el => el.trackData);
                         playQueue = allLoadedTracks;
                         queueIndex = globalIdx;
+                        openFullPlayer();
                         loadAndPlay(track);
                     };
-                    div.trackData = track; // Store hidden data on the DOM element for the queue rebuild
+                    
+                    const menuBtn = div.querySelector('.track-menu');
+                    menuBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        openOptionsModal(track, playlistId); // Pass playlistId so "Remove" appears
+                    };
+
+                    div.trackData = track; 
                     listDiv.insertBefore(div, anchor);
                 });
             } else {
@@ -769,14 +890,23 @@
             historyArr.forEach((track, index) => {
                 const div = document.createElement('div');
                 div.className = 'track-item';
-                div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title">${track.title}</span><span class="track-artist">${track.artist}</span></div>`;
+                // Added 3-dots here too
+                div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
+                
                 div.onclick = () => {
-                    // Set context to History so "Next" plays through local storage
                     currentQueueContext = 'history';
                     playQueue = historyArr;
                     queueIndex = index;
-                    loadAndPlay(track, false); // false = don't rewrite it to the top of history immediately while playing through queue
+                    openFullPlayer();
+                    loadAndPlay(track, false); 
                 };
+
+                const menuBtn = div.querySelector('.track-menu');
+                menuBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    openOptionsModal(track, null);
+                };
+
                 historyList.appendChild(div);
             });
         }
