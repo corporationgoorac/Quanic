@@ -7,7 +7,7 @@ const ASSETS_TO_CACHE = [
   '/pages/settings.html',
   '/pages/setup.html',
   '/config.js',
-  '/icon.png', // Updated to match root path used in manifest
+  '/images/icon.png', 
   '/manifest.json'
 ];
 
