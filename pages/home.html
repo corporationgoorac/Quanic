@@ -1837,10 +1837,11 @@
                     lastVisibleDoc = snap.docs[snap.docs.length - 1];
                     let indexOffset = document.querySelectorAll('.pl-track-item').length; 
                     
-                    if(currentQueueContext === playlistId && indexOffset > 0 && playQueue) {
+                    // FIXED BUG: Only clear and rebuild playQueue if it's currently completely empty
+                    // This prevents the active queue from being overwritten with the identical first batch of songs when scrolling/fetching more
+                    if(currentQueueContext === playlistId && indexOffset > 0 && playQueue && playQueue.length > 0) {
                         snap.forEach(d => playQueue.push(d.data()));
-                    } else if (currentQueueContext === playlistId && indexOffset === 0) {
-                        // Populate initial array for "Universal Play All" button logic
+                    } else if (currentQueueContext === playlistId && (!playQueue || playQueue.length === 0)) {
                         playQueue = [];
                         snap.forEach(d => playQueue.push(d.data()));
                     }
