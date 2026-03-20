@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quan-ai-dynamic-v35'; // Bumped version to force the new code to activate
+const CACHE_NAME = 'quanic-v35'; // Bumped version to force the new code to activate
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
