@@ -700,10 +700,16 @@
         // ==========================================================================
         window.playCurrentPlaylistContext = function() {
             if (window.haptic) window.haptic();
-            if (playQueue && playQueue.length > 0) {
+            
+            // FIX: Grab the currently loaded playlist tracks directly from the DOM to form the queue
+            const allLoadedTracks = Array.from(document.querySelectorAll('.pl-track-item')).map(el => el.trackData);
+            
+            if (allLoadedTracks && allLoadedTracks.length > 0) {
+                currentQueueContext = activePlaylistViewId;
+                playQueue = allLoadedTracks;
                 queueIndex = 0;
                 openFullPlayer();
-                loadAndPlay(playQueue);
+                loadAndPlay(playQueue[queueIndex]); // FIXED: Pass the single track object, not the whole array
             } else {
                 showToast('Playlist is empty', 'error');
             }
