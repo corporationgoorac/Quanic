@@ -422,6 +422,21 @@
         * { -ms-overflow-style: none; scrollbar-width: none; }
         html { scroll-behavior: smooth; }
 
+        /* ==========================================================================
+           14. GLOBAL GPU ACCELERATION & SMOOTHING (NEW)
+           ========================================================================== */
+        #app-container, .view-section, .bottom-sheet, #playlist-view-modal {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: transform, opacity;
+            backface-visibility: hidden;
+        }
+        .track-item, .playlist-card, .recent-grid-item {
+            -webkit-transform: translate3d(0,0,0);
+            transform: translate3d(0,0,0);
+            will-change: background-color, transform;
+        }
+
     </style>
 </head>
 <body>
@@ -495,7 +510,9 @@
             <span class="mini-artist" id="mini-artist">Artist</span>
         </div>
         <div class="mini-controls" onclick="event.stopPropagation()">
+            <span class="material-symbols-rounded mini-btn" onclick="prevTrack()" style="margin-right: 5px; font-size: 28px !important;">skip_previous</span>
             <span class="material-symbols-rounded mini-btn" id="mini-playpause" onclick="togglePlay()">play_arrow</span>
+            <span class="material-symbols-rounded mini-btn" onclick="nextTrack()" style="margin-left: 5px; font-size: 28px !important;">skip_next</span>
         </div>
         <div class="mini-progress-container">
             <div class="mini-progress-fill" id="mini-progress-fill"></div>
@@ -1238,13 +1255,70 @@
             }
         }
 
+        // ==========================================================================
+        // 14. NEW FEATURE: YOUTUBE-STYLE TIMELINE SCRUBBING (DRAG PROGRESS BAR)
+        // ==========================================================================
+        const progContainer = document.getElementById('progress-container');
+        let isScrubbing = false;
+        let wasPlayingBeforeScrub = false;
+
+        function updateScrubVisuals(e) {
+            if(!audio || !audio.duration) return 0;
+            const rect = progContainer.getBoundingClientRect();
+            const clientX = (e.type.includes('touch')) ? e.touches[0].clientX : e.clientX;
+            const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+            
+            if(document.getElementById('progress-fill')) document.getElementById('progress-fill').style.width = `${percentage * 100}%`;
+            if(document.getElementById('current-time')) document.getElementById('current-time').innerText = formatTime(percentage * audio.duration);
+            return percentage;
+        }
+
+        function startScrubbing(e) {
+            if(!audio || !audio.duration) return;
+            isScrubbing = true;
+            wasPlayingBeforeScrub = !audio.paused;
+            audio.pause(); // Pause smoothly to prevent timeupdate jitter like YouTube
+            updateScrubVisuals(e);
+        }
+
+        function moveScrubbing(e) {
+            if(isScrubbing) {
+                updateScrubVisuals(e);
+            }
+        }
+
+        function endScrubbing(e) {
+            if(isScrubbing) {
+                isScrubbing = false;
+                const clientX = (e.type.includes('touch')) ? e.changedTouches[0].clientX : e.clientX;
+                const rect = progContainer.getBoundingClientRect();
+                const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+                
+                audio.currentTime = percentage * audio.duration;
+                if(wasPlayingBeforeScrub) {
+                    audio.play();
+                    updatePlayIcons(true);
+                }
+            }
+        }
+
+        if(progContainer) {
+            progContainer.addEventListener('mousedown', startScrubbing);
+            progContainer.addEventListener('touchstart', startScrubbing, {passive: true});
+            window.addEventListener('mousemove', moveScrubbing);
+            window.addEventListener('touchmove', moveScrubbing, {passive: true});
+            window.addEventListener('mouseup', endScrubbing);
+            window.addEventListener('touchend', endScrubbing);
+        }
+
+
         if(audio) {
             audio.addEventListener('loadedmetadata', () => {
                 if(document.getElementById('total-time')) document.getElementById('total-time').innerText = formatTime(audio.duration);
             });
 
             audio.addEventListener('timeupdate', () => {
-                if (audio.duration) {
+                if (audio.duration && !isScrubbing) { // Smart scrubbing block injected
                     const progress = (audio.currentTime / audio.duration) * 100;
                     if(document.getElementById('progress-fill')) document.getElementById('progress-fill').style.width = `${progress}%`;
                     if(document.getElementById('mini-progress-fill')) document.getElementById('mini-progress-fill').style.width = `${progress}%`;
@@ -1968,6 +2042,11 @@
             }
             originalNextTrack();
         };
-    </script>
-</body>
-</html>
+
+        // ==========================================================================
+        // 14. ADVANCED BACKGROUND / MINIMIZED ACTIVITY TRACKER & GPU TWEAKS
+        // ==========================================================================
+        // This engine ensures if the app is minimized but audio is playing, the user stays "Online"
+        setInterval(() => {
+            if (typeof currentUserUid !== 'undefined' && currentUserUid) {
+                // If app is visible OR audio is actively playing
