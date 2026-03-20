@@ -669,7 +669,7 @@
         </div>
     </div>
 
-    <audio id="audio-core"></audio>
+    <audio id="audio-core" crossorigin="anonymous"></audio>
 
     <script type="module">
         // 1. FIREBASE SETUP & ROUTING (MOVED TO TOP TO FIX FATAL SYNTAX ERROR)
@@ -1205,36 +1205,9 @@
             }
         }
 
-        // INITIALIZE AUDIO CONTEXT EARLIER TO FIX BASS BOOST BUG
-        function initAudioContext() {
-            if (!audioCtx) {
-                try {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    audioCtx = new AudioContext();
-                    const audioEl = document.getElementById('audio-core');
-                    
-                    audioEl.crossOrigin = "anonymous"; 
-                    
-                    const source = audioCtx.createMediaElementSource(audioEl);
-                    bassFilter = audioCtx.createBiquadFilter();
-                    bassFilter.type = 'lowshelf';
-                    bassFilter.frequency.value = 150;
-                    bassFilter.gain.value = isBassBoosted ? 9 : 0; 
-                    
-                    source.connect(bassFilter);
-                    bassFilter.connect(audioCtx.destination);
-                } catch(e) {
-                    console.error("Audio Context Init Failed", e);
-                }
-            }
-        }
-
         window.loadAndPlay = async function(trackObj, updateHistory = true) {
             if(!trackObj || !audio) return;
             currentTrackData = trackObj;
-            
-            // FIX FOR BASS BOOST: Initialize audio context right before loading the stream
-            initAudioContext();
             
             try { localStorage.setItem('quanic_last_played', JSON.stringify(trackObj)); } catch(e){}
             
@@ -1279,12 +1252,7 @@
             audio.src = trackObj.audioUrl;
             let playProm = audio.play();
             if(playProm !== undefined) playProm.catch(e => console.log("Auto-play prevented", e));
-            
-            // Re-sync context state immediately after playing
-            if(audioCtx && audioCtx.state === 'suspended') {
-                 audioCtx.resume().catch(e => console.log("Audio Context Resume Blocked", e));
-            }
-            
+            if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); // Ensure Bass Boost Context stays awake
             updatePlayIcons(true);
             highlightActiveTrack(trackObj.title);
 
@@ -1872,23 +1840,13 @@
                     lastVisibleDoc = snap.docs[snap.docs.length - 1];
                     let indexOffset = document.querySelectorAll('.pl-track-item').length; 
                     
-                    // FIXED BUG FOR REAL THIS TIME: We must rebuild playQueue intelligently
-                    // We only want to push to playQueue if we are fetching *more* songs for an already active queue.
-                    if (currentQueueContext === playlistId) {
-                        if (indexOffset === 0) {
-                            // First load: just clear and set it
-                            playQueue = [];
-                            snap.forEach(d => playQueue.push(d.data()));
-                        } else {
-                            // Infinite scroll load: only append if the tracks aren't already there to prevent doubling up
-                            snap.forEach(d => {
-                                const newTrack = d.data();
-                                // Basic check to see if we already have this track ID in the queue to avoid dupes
-                                if (!playQueue.find(t => t.id === newTrack.id)) {
-                                    playQueue.push(newTrack);
-                                }
-                            });
-                        }
+                    // FIXED BUG: Only clear and rebuild playQueue if it's currently completely empty
+                    // This prevents the active queue from being overwritten with the identical first batch of songs when scrolling/fetching more
+                    if(currentQueueContext === playlistId && indexOffset > 0 && playQueue && playQueue.length > 0) {
+                        snap.forEach(d => playQueue.push(d.data()));
+                    } else if (currentQueueContext === playlistId && (!playQueue || playQueue.length === 0)) {
+                        playQueue = [];
+                        snap.forEach(d => playQueue.push(d.data()));
                     }
 
                     // Update UI Count
@@ -1906,14 +1864,15 @@
                         
                         div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
                         
+                        // BUG 1 FIX: Replaced globalIdx assignment with a dynamic findIndex check
                         div.onclick = () => {
-                            // If they click a track, we enforce the current context and rebuild the queue to reflect what's on screen
                             currentQueueContext = playlistId;
                             const allLoadedTracks = Array.from(document.querySelectorAll('.pl-track-item')).map(el => el.trackData);
                             playQueue = allLoadedTracks;
-                            queueIndex = globalIdx;
+                            let dynamicIdx = playQueue.findIndex(t => t.firestoreId === track.firestoreId);
+                            queueIndex = dynamicIdx !== -1 ? dynamicIdx : globalIdx;
                             openFullPlayer();
-                            loadAndPlay(track);
+                            loadAndPlay(playQueue[queueIndex]);
                         };
                         
                         const menuBtn = div.querySelector('.track-menu');
@@ -2204,3 +2163,36 @@
                 const isAppVisible = (document.visibilityState === 'visible');
                 
                 if (isPlayingMusic || isAppVisible) {
+                    try {
+                        let updatePayload = {
+                            isOnline: true,
+                            lastActive: new Date()
+                        };
+                        
+                        // Sync current playtime to make it ultra-realtime
+                        if (isPlayingMusic && currentTrackData) {
+                            updatePayload.nowPlaying = {
+                                title: currentTrackData.title,
+                                artist: currentTrackData.artist,
+                                imgUrl: currentTrackData.imgUrl,
+                                timestamp: new Date(),
+                                isPlaying: true
+                            };
+                        }
+                        
+                        /* --- ORIGINAL FIRESTORE CALL DISABLED TO SAVE COSTS ---
+                        setDoc(doc(db, 'users', currentUserUid), updatePayload, {merge: true});
+                        ------------------------------------------------------ */
+                        // RTDB SYNC
+                        if(rtdb) {
+                            if(isPlayingMusic && currentTrackData) {
+                                set(ref(rtdb, `users/${currentUserUid}/nowPlaying`), {
+                                    title: currentTrackData.title,
+                                    artist: currentTrackData.artist,
+                                    imgUrl: currentTrackData.imgUrl,
+                                    timestamp: Date.now(),
+                                    isPlaying: true
+                                });
+                            }
+                            set(ref(rtdb, `users/${currentUserUid}/status`), 'online');
+                            set(
