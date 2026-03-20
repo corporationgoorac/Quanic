@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Download Quanic | From Goorac</title>
+    
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#121212">
+    <link rel="apple-touch-icon" href="../images/icon.png">
+
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --accent: #E1306C; /* Quanic Pink */
+            --accent-secondary: #FF7A00; /* Quanic Orange */
+            --text-main: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.6);
+            --border: rgba(255, 255, 255, 0.05);
+            --gradient: linear-gradient(90deg, #E1306C 0%, #FF7A00 100%);
+            --accent-dim: rgba(225, 48, 108, 0.1);
+        }
+
+        /* --- PROFESSIONAL RESET --- */
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            user-select: none; 
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- HEADER --- */
+        header {
+            width: 100%;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(18, 18, 18, 0.85);
+        }
+
+        .logo { 
+            font-size: 1.2rem; 
+            font-weight: 800; 
+            letter-spacing: -0.5px;
+            background: var(--gradient); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            padding: 40px 24px 20px;
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .app-icon-container {
+            width: 96px;
+            height: 96px;
+            flex-shrink: 0;
+        }
+
+        .app-icon {
+            width: 100%;
+            height: 100%;
+            border-radius: 22px;
+            background: #282828;
+            object-fit: cover;
+            box-shadow: 0 10px 30px rgba(225, 48, 108, 0.2);
+        }
+
+        .hero-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-dim);
+            color: var(--accent);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(225, 48, 108, 0.2);
+        }
+
+        .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        h1 { 
+            font-size: 2rem; 
+            font-weight: 800; 
+            margin: 0; 
+            line-height: 1.1; 
+            letter-spacing: -1px;
+        }
+
+        .company-subtitle {
+            color: #A7A7A7;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        
+        .hero p { 
+            color: var(--text-dim); 
+            font-size: 0.95rem; 
+            margin-top: 12px; 
+            line-height: 1.5;
+            max-width: 500px;
+        }
+
+        /* --- INSTALL SECTION --- */
+        .install-section {
+            width: 100%;
+            max-width: 800px;
+            padding: 10px 24px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        #install-btn {
+            background: var(--gradient);
+            color: #fff;
+            border: none;
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px; 
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: none; 
+            transition: transform 0.2s ease;
+        }
+        #install-btn:active { transform: scale(0.97); }
+
+        #update-btn {
+            background: #fff;
+            color: #000;
+            border: none;
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: none; 
+            transition: transform 0.2s ease;
+        }
+
+        /* --- SCREENSHOTS GALLERY --- */
+        .gallery-container {
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 40px;
+        }
+
+        .gallery-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            padding: 10px 24px 20px;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none; 
+        }
+        .gallery-scroll::-webkit-scrollbar { display: none; } 
+
+        .gallery-scroll img {
+            height: 380px; 
+            width: auto;
+            border-radius: 12px;
+            scroll-snap-align: start;
+            object-fit: cover;
+            border: 1px solid var(--border);
+            background-color: var(--surface);
+            cursor: pointer; 
+        }
+
+        /* --- FEATURES --- */
+        .card {
+            width: 100%;
+            max-width: 800px;
+            padding: 0 24px 60px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            width: 100%;
+        }
+
+        @media (min-width: 600px) {
+            .features { grid-template-columns: 1fr 1fr; }
+        }
+
+        .feat-item {
+            display: flex;
+            gap: 16px;
+            padding: 20px;
+            background: var(--surface);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .feat-icon { font-size: 1.5rem; }
+        
+        .feat-text b { display: block; color: #fff; font-size: 1.05rem; margin-bottom: 4px; font-weight: 700; }
+        .feat-text span { color: var(--text-dim); font-size: 0.85rem; line-height: 1.4; }
+
+        /* --- FOOTER & PRIVACY --- */
+        .privacy-footer {
+            width: 100%;
+            padding: 40px 24px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            max-width: 800px;
+        }
+
+        .privacy-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            text-align: left;
+            margin-bottom: 30px;
+        }
+
+        .priv-card {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .priv-card b { color: var(--accent); font-size: 0.9rem; display: block; margin-bottom: 4px; }
+        .priv-card small { color: var(--text-dim); font-size: 0.75rem; line-height: 1.4; }
+
+        /* --- iOS SPECIFIC --- */
+        .ios-notice {
+            display: none;
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--accent);
+            margin-bottom: 16px;
+        }
+        .ios-notice b { color: var(--accent); display: block; margin-bottom: 12px; font-size: 1.1rem; }
+        .ios-step { font-size: 0.9rem; color: #fff; margin: 12px 0; display: flex; gap: 12px; align-items: center; }
+        .ios-step i { color: var(--accent); font-style: normal; font-weight: bold; background: rgba(225, 48, 108, 0.1); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.8rem; }
+
+        /* --- LIGHTBOX --- */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .lightbox.active { display: flex; opacity: 1; }
+        #lightbox-close {
+            position: absolute; top: 30px; right: 20px;
+            background: rgba(255,255,255,0.1); border: none; color: #fff;
+            width: 44px; height: 44px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; z-index: 10000;
+        }
+        .lightbox-scroll {
+            display: flex; overflow-x: auto; width: 100%; height: 100%;
+            scroll-snap-type: x mandatory; scrollbar-width: none; align-items: center;
+        }
+        .lightbox-scroll::-webkit-scrollbar { display: none; }
+        .lightbox-scroll img {
+            width: 100vw; height: auto; max-height: 90vh;
+            object-fit: contain; scroll-snap-align: center; flex-shrink: 0; padding: 20px;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <header>
+        <div class="logo">QUANIC</div>
+    </header>
+
+    <div class="hero">
+        <div class="app-icon-container">
+            <img src="../images/icon.png" alt="Quanic" class="app-icon" onerror="this.src='https://ui-avatars.com/api/?name=Q&background=E1306C&color=fff&size=120'">
+        </div>
+        
+        <div class="hero-text">
+            <div class="status-badge"><div class="dot"></div> VERSION 2.0 STABLE</div>
+            <h1>Quanic</h1>
+            <div class="company-subtitle">by Goorac Corporation</div>
+            <p>Connect with style. Stream with power. The next-generation social and music experience is here.</p>
+        </div>
+    </div>
+
+    <div class="install-section">
+        <button id="install-btn">Install Quanic</button>
+        <button id="update-btn">Apply Update</button>
+
+        <div id="unsupported-msg" style="color: var(--text-dim); font-size: 0.85rem; text-align: center; letter-spacing: 0.5px;">
+            Verifying secure link to Goorac nodes...
+        </div>
+
+        <div id="ios-guide" class="ios-notice">
+            <b>Install on iPhone / iPad</b>
+            <div class="ios-step"><i>1</i> Tap the Share icon (square with arrow) at the bottom.</div>
+            <div class="ios-step"><i>2</i> Scroll down and tap "Add to Home Screen".</div>
+            <div class="ios-step"><i>3</i> Open Quanic from your home screen to begin.</div>
+        </div>
+    </div>
+
+    <div class="gallery-container">
+        <div class="gallery-scroll">
+            <img src="https://drive.google.com/thumbnail?id=1bz989YK2G-Gl9EOOFPeW2jn2rQUr0xf6&sz=w1080" alt="Quanic Screen 1">
+            <img src="https://drive.google.com/thumbnail?id=1oUHtDkSNoPwhTh6xnF3catmMxtahowEq&sz=w1080" alt="Quanic Screen 2">
+            <img src="https://drive.google.com/thumbnail?id=14qgwGRul5CjPIFlmmFTyWSzhBaHeIQNU&sz=w1080" alt="Quanic Screen 3">
+            <img src="https://drive.google.com/thumbnail?id=1alPp4yerfXS_gxajkw6yTU7AZXFm_sHq&sz=w1080" alt="Quanic Screen 4">
+            <img src="https://drive.google.com/thumbnail?id=1GYHSg-HwwvjpD3xlyRpV95b0o3Y0pBNO&sz=w1080" alt="Quanic Screen 5">
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="section-title">The Quanic Advantage</div>
+        <div class="features">
+            <div class="feat-item">
+                <div class="feat-icon">🔊</div>
+                <div class="feat-text">
+                    <b>Studio Audio Engine</b>
+                    <span>Experience music like never before with built-in Bass Boost and hardware-accelerated playback.</span>
+                </div>
+            </div>
+
+            <div class="feat-item">
+                <div class="feat-icon">💬</div>
+                <div class="feat-text">
+                    <b>Quantum Messaging</b>
+                    <span>Real-time, zero-latency chat with your friends, powered by Goorac's event-driven architecture.</span>
+                </div>
+            </div>
+
+            <div class="feat-item">
+                <div class="feat-icon">🚫</div>
+                <div class="feat-text">
+                    <b>Zero Ads. Forever.</b>
+                    <span>Quanic is a clean environment. No sponsored content, no tracking, and no interruptions. Just pure flow.</span>
+                </div>
+            </div>
+
+            <div class="feat-item">
+                <div class="feat-icon">⚡</div>
+                <div class="feat-text">
+                    <b>GPU UI Smoothing</b>
+                    <span>The interface runs at a buttery smooth 60-120fps by offloading all animations to your device's GPU.</span>
+                </div>
+            </div>
+
+            <div class="feat-item">
+                <div class="feat-icon">🎵</div>
+                <div class="feat-text">
+                    <b>Smart Library</b>
+                    <span>Instantly sync your playlists and history across all your devices using our secure cloud sync.</span>
+                </div>
+            </div>
+            
+            <div class="feat-item">
+                <div class="feat-icon">🌍</div>
+                <div class="feat-text">
+                    <b>Resilient PWA</b>
+                    <span>Works offline and on weak connections. Install once, use everywhere without visiting a store.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="privacy-footer">
+        <div class="privacy-grid">
+            <div class="priv-card">
+                <b>Total Privacy</b>
+                <small>We don't sell your data. Your messages and music habits are strictly between you and Quanic.</small>
+            </div>
+            <div class="priv-card">
+                <b>Encrypted Sync</b>
+                <small>All cloud data is end-to-end encrypted before it ever leaves your device.</small>
+            </div>
+        </div>
+        <p style="font-size: 0.7rem; color: rgba(255,255,255,0.2); letter-spacing: 2px; text-transform: uppercase;">Goorac Corporation © 2026</p>
+    </div>
+
+    <div class="lightbox" id="lightbox">
+        <button id="lightbox-close">&times;</button>
+        <div class="lightbox-scroll" id="lightbox-scroll"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+        export const firebaseConfig = {
+            apiKey: "AIzaSyCFzAEHC5KLiO2DEkVtoTlFn9zeCQrwImE",
+            authDomain: "goorac-c3b59.firebaseapp.com",
+            projectId: "goorac-c3b59",
+            storageBucket: "goorac-c3b59.firebasestorage.app",
+            messagingSenderId: "746746595332",
+            appId: "1:746746595332:web:d3f8527d27fe8ca2530d51",
+            measurementId: "G-M46FEVRYSS"
+        };
+        initializeApp(firebaseConfig);
+    </script>
+
+    <script>
+        const installBtn = document.getElementById('install-btn');
+        const updateBtn = document.getElementById('update-btn');
+        const msg = document.getElementById('unsupported-msg');
+        const iosGuide = document.getElementById('ios-guide');
+        let deferredPrompt;
+
+        const VERSION = "2.0";
+        const ua = navigator.userAgent;
+        const isIos = /iPhone|iPad|iPod/.test(ua);
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        if (isStandalone) {
+            const localVer = localStorage.getItem('quanic_v');
+            if (localVer !== VERSION) {
+                msg.textContent = "✨ Feature Update v" + VERSION + " Detected";
+                updateBtn.style.display = 'block';
+                updateBtn.onclick = () => {
+                    updateBtn.textContent = "Syncing...";
+                    localStorage.setItem('quanic_v', VERSION);
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.getRegistrations().then(rs => { for(let r of rs) r.update(); });
+                    }
+                    setTimeout(() => window.location.reload(true), 1000);
+                };
+            } else {
+                msg.textContent = "✅ Quanic is fully optimized.";
+            }
+        } else if (isIos) {
+            msg.style.display = 'none';
+            iosGuide.style.display = 'block';
+        } else {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                installBtn.style.display = 'block';
+                msg.style.display = 'none';
+            });
+
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        installBtn.style.display = 'none';
+                        localStorage.setItem('quanic_v', VERSION);
+                    }
+                }
+            });
+        }
+
+        // Gallery Lightbox
+        const galleryImages = document.querySelectorAll('.gallery-scroll img');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxScroll = document.getElementById('lightbox-scroll');
+        const lightboxClose = document.getElementById('lightbox-close');
+
+        galleryImages.forEach((img, idx) => {
+            const lbImg = document.createElement('img');
+            lbImg.src = img.src.replace('sz=w1080', 'sz=w1920'); 
+            lbImg.id = `lb-${idx}`;
+            lightboxScroll.appendChild(lbImg);
+
+            img.onclick = () => {
+                lightbox.classList.add('active');
+                setTimeout(() => { document.getElementById(`lb-${idx}`).scrollIntoView(); }, 10);
+            };
+        });
+
+        lightboxClose.onclick = () => lightbox.classList.remove('active');
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => { navigator.serviceWorker.register('../sw.js'); });
+        }
+    </script>
+</body>
+</html>
