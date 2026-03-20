@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quanic-v36'; // Bumped version to force the new code to activate, fixed 'Const' typo
+const CACHE_NAME = 'quanic-v6'; // Bumped version to force the new code to activate, fixed 'Const' typo
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
