@@ -191,9 +191,9 @@
     <script type="module">
         // 1. We now import 'db' alongside auth
         import { auth, db, googleProvider } from '../config.js';
-        import { signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         // 2. Import Firestore methods to read the database
-        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         const loginBtn = document.getElementById('login-btn');
 
