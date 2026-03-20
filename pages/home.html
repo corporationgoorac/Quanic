@@ -277,8 +277,9 @@
            10. NEW ENHANCEMENTS: GPU ACCELERATION & SPOTIFY PLAYLIST UI
            ========================================================================== */
         
-        /* HARDWARE ACCELERATION ENGINE: Offloads Audio/Visual rendering to Device GPU */
-        audio, canvas, img, .progress-fill, .mini-progress-fill, .vis-bar, .pop-heart-icon, #ambient-glow, .pl-big-play {
+        /* HARDWARE ACCELERATION ENGINE: Offloads Audio/Visual rendering to Device GPU 
+           NOTE: Removed img/audio/canvas to prevent iOS Safari invisible element bug! */
+        .progress-fill, .mini-progress-fill, .vis-bar, .pop-heart-icon, #ambient-glow, .pl-big-play {
             will-change: transform, opacity, width, background-color;
             transform: translateZ(0);
             -webkit-transform: translate3d(0, 0, 0); /* Forces GPU compositing */
@@ -490,26 +491,32 @@
     <audio id="audio-core"></audio>
 
     <script type="module">
+        // 1. FIREBASE SETUP & ROUTING (MOVED TO TOP TO FIX FATAL SYNTAX ERROR)
+        import { auth, db } from '../config.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, orderBy, limit, startAfter, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
         // ==========================================================================
         // NEW FEATURE: IN-APP GLOBAL ERROR LOGGER (CONSOLE & FIREBASE)
         // ==========================================================================
         window.showAppError = function(msg) {
-            let errBox = document.getElementById('app-error-log');
-            if(!errBox) {
-                errBox = document.createElement('div');
-                errBox.id = 'app-error-log';
-                errBox.style.cssText = "position:fixed; top:75px; left:10px; right:10px; background:rgba(225, 48, 108, 0.95); backdrop-filter:blur(10px); color:#fff; z-index:99999; padding:12px; border-radius:12px; font-size:12px; max-height:30vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);";
-                errBox.innerHTML = '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.3); padding-bottom:5px; margin-bottom:5px;"><strong style="font-size:14px;">App Logs/Errors (Tap to clear)</strong><span class="material-symbols-rounded" style="font-size:16px;cursor:pointer;">close</span></div>';
-                errBox.onclick = () => { errBox.style.display = 'none'; errBox.querySelectorAll('.err-msg').forEach(e=>e.remove()); };
-                document.body.appendChild(errBox);
-            }
-            errBox.style.display = 'block';
-            const p = document.createElement('p');
-            p.className = 'err-msg';
-            p.style.cssText = 'margin-bottom:6px; font-family:monospace; line-height:1.4; word-break:break-all;';
-            p.innerText = typeof msg === 'object' ? JSON.stringify(msg) : msg;
-            errBox.appendChild(p);
+            try {
+                let errBox = document.getElementById('app-error-log');
+                if(!errBox) {
+                    errBox = document.createElement('div');
+                    errBox.id = 'app-error-log';
+                    errBox.style.cssText = "position:fixed; top:75px; left:10px; right:10px; background:rgba(225, 48, 108, 0.95); backdrop-filter:blur(10px); color:#fff; z-index:99999; padding:12px; border-radius:12px; font-size:12px; max-height:30vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);";
+                    errBox.innerHTML = '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.3); padding-bottom:5px; margin-bottom:5px;"><strong style="font-size:14px;">App Logs/Errors (Tap to clear)</strong><span class="material-symbols-rounded" style="font-size:16px;cursor:pointer;">close</span></div>';
+                    errBox.onclick = () => { errBox.style.display = 'none'; errBox.querySelectorAll('.err-msg').forEach(e=>e.remove()); };
+                    document.body.appendChild(errBox);
+                }
+                errBox.style.display = 'block';
+                const p = document.createElement('p');
+                p.className = 'err-msg';
+                p.style.cssText = 'margin-bottom:6px; font-family:monospace; line-height:1.4; word-break:break-all;';
+                p.innerText = typeof msg === 'object' ? (msg.message || JSON.stringify(msg)) : String(msg);
+                errBox.appendChild(p);
+            } catch(e) {} // Fixed infinite loop vector
         };
         const originalError = console.error;
         console.error = function(...args) {
@@ -618,12 +625,6 @@
             if (e.changedTouches[0].clientY - swipeStartY > 100) closeFullPlayer();
         });
 
-        // ==========================================================================
-        // 1. FIREBASE SETUP & ROUTING
-        // ==========================================================================
-        import { auth, db } from '../config.js';
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-        import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, orderBy, limit, startAfter, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
         let currentUserUid = null;
 
@@ -1468,4 +1469,62 @@
             const historyArr = safeStorageGet('quanic_history', []);
             const historyList = document.getElementById('history-list');
             const recentGrid = document.getElementById('recent-grid');
-            const historyTitle = document.
+            const historyTitle = document.getElementById('history-title');
+            
+            if(historyTitle) {
+                historyTitle.style.display = historyArr.length > 6 ? 'block' : 'none';
+            }
+            
+            if (historyArr.length === 0) return;
+            
+            if(historyList) historyList.innerHTML = '';
+            if(recentGrid) recentGrid.innerHTML = '';
+            
+            historyArr.forEach((track, index) => {
+                if(!track) return;
+                let activeClass = (currentTrackData && currentTrackData.title === track.title) ? 'active-playing' : '';
+                
+                if (index < 6 && recentGrid) {
+                    const gridItem = document.createElement('div');
+                    gridItem.className = 'recent-grid-item';
+                    gridItem.innerHTML = `<img src="${track.imgUrl}" alt="cover"><span class="${activeClass}">${track.title}</span>`;
+                    gridItem.onclick = () => {
+                        currentQueueContext = 'history';
+                        playQueue = historyArr;
+                        queueIndex = index;
+                        openFullPlayer();
+                        loadAndPlay(track, false);
+                    };
+                    recentGrid.appendChild(gridItem);
+                } else if (historyList) {
+                    const div = document.createElement('div');
+                    div.className = 'track-item';
+                    
+                    div.innerHTML = `<img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span>`;
+                    
+                    div.onclick = () => {
+                        currentQueueContext = 'history';
+                        playQueue = historyArr;
+                        queueIndex = index;
+                        openFullPlayer();
+                        loadAndPlay(track, false); 
+                    };
+
+                    const menuBtn = div.querySelector('.track-menu');
+                    if(menuBtn) {
+                        menuBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            openOptionsModal(track, null);
+                        };
+                    }
+
+                    historyList.appendChild(div);
+                }
+            });
+        }
+        
+        // Initial 0ms call to render History safely
+        renderHistory();
+    </script>
+</body>
+</html>
