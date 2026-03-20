@@ -1,1 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#121212">
+    <title>Profile Setup | Quanic</title>
+    <link rel="manifest" href="../manifest.json">
+    <style>
+        /* ==========================================================================
+           1. THE "QUANIC MIDNIGHT" FOUNDATION
+           ========================================================================== */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #121212; /* Solid color for native full-screen experience */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            color: #ffffff;
+            /* Allow scrolling if the keyboard pops up on small screens */
+            overflow-y: auto; 
+            overflow-x: hidden;
+            /* Forces dark mode native UI elements (like date pickers) */
+            color-scheme: dark; 
+            /* Added to prevent copying text on the page as requested */
+            -webkit-user-select: none;
+            user-select: none;
+        }
 
+        /* Added to ensure input and textarea fields still allow copy/paste */
+        input, textarea, .premium-input {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        /* ==========================================================================
+           2. SETUP CONTAINER & TYPOGRAPHY
+           ========================================================================== */
+        .setup-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            z-index: 2;
+            /* Removed animation as requested for 0ms loading */
+            width: 100%;
+            max-width: 450px;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+
+        .setup-container h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .setup-container p {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 30px;
+            line-height: 1.5;
+            padding: 0 15px;
+        }
+
+        /* ==========================================================================
+           3. GOOGLE PROFILE PICTURE DISPLAY
+           ========================================================================== */
+        .profile-pic-wrapper {
+            position: relative;
+            margin-bottom: 10px;
+            /* Added stable container dimensions to prevent layout shifts */
+            width: 104px; /* 100px + 4px for borders */
+            height: 104px;
+            border-radius: 50%;
+            background-color: #181818; /* Skeleton background while loading */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(225, 48, 108, 0.5); /* Brand magenta edge */
+            box-shadow: 0 0 30px rgba(225, 48, 108, 0.3); /* Subtle glow */
+            background-color: #181818; /* Fallback color before image loads */
+            transition: transform 0.3s ease;
+            /* Set initial display to block so cached image shows instantly */
+            display: block;
+        }
+
+        .profile-pic:hover {
+            transform: scale(1.05);
+        }
+
+        /* ==========================================================================
+           4. PREMIUM FORM INPUTS (GLASSMORPHISM)
+           ========================================================================== */
+        .setup-form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            text-align: left;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-weight: 500;
+            padding-left: 5px;
+        }
+
+        .premium-input {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #ffffff;
+            padding: 15px 20px;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .premium-input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .premium-input:focus {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(225, 48, 108, 0.6);
+            box-shadow: 0 0 15px rgba(225, 48, 108, 0.15);
+        }
+
+        textarea.premium-input {
+            resize: vertical;
+            min-height: 100px;
+            line-height: 1.5;
+        }
+
+        /* ==========================================================================
+           5. SUBMIT BUTTON
+           ========================================================================== */
+        .submit-btn {
+            background: linear-gradient(90deg, #E1306C, #FF7A00); /* Brand logo gradient */
+            border: none;
+            color: #ffffff;
+            padding: 16px 24px;
+            border-radius: 30px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(225, 48, 108, 0.5);
+        }
+
+        .submit-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 10px rgba(225, 48, 108, 0.3);
+        }
+
+        .submit-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.3);
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ==========================================================================
+           6. ANIMATIONS & MEDIA QUERIES
+           ========================================================================== */
+        @keyframes slide-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 480px) {
+            .setup-container h1 { font-size: 1.6rem; }
+            .premium-input { padding: 12px 16px; font-size: 0.95rem; }
+            .submit-btn { padding: 14px 20px; font-size: 1rem; }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cachedPhoto = localStorage.getItem('quanic_user_photo');
+            if (cachedPhoto) {
+                const picElement = document.getElementById('user-profile-pic');
+                if (picElement) {
+                    picElement.src = cachedPhoto;
+                    picElement.style.display = 'block';
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+
+    <div class="setup-container">
+        
+        <div class="profile-pic-wrapper">
+            <img id="user-profile-pic" class="profile-pic" src="" alt="Your Profile Picture">
+        </div>
+        
+        <h1>Complete Profile</h1>
+        <p>This information personalizes your Quanic app, allowing for a deeply customized music experience.</p>
+
+        <form class="setup-form" id="profile-form">
+            
+            <div class="input-group">
+                <label for="user-name">Full Name</label>
+                <input type="text" id="user-name" class="premium-input" placeholder="e.g. Siva Manihandan" required autocomplete="name">
+            </div>
+
+            <div class="input-group">
+                <label for="user-dob">Date of Birth</label>
+                <input type="date" id="user-dob" class="premium-input" required>
+            </div>
+
+            <div class="input-group">
+                <label for="user-about">About You (Music Taste)</label>
+                <textarea id="user-about" class="premium-input" placeholder="What music do you love? (e.g. I am a huge fan of A.R. Rahman melodies, Anirudh hits, and indie Tamil pop.)" required></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn" id="save-btn">Initialize Quanic</button>
+        </form>
+
+    </div>
+
+    <script type="module">
+        // 1. Import necessary modules from your existing config and Firebase SDKs
+        import { auth, db } from '../config.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+        // DOM Elements
+        const profileForm = document.getElementById('profile-form');
+        const saveBtn = document.getElementById('save-btn');
+        const nameInput = document.getElementById('user-name');
+        const dobInput = document.getElementById('user-dob');
+        const aboutInput = document.getElementById('user-about');
+        const profilePic = document.getElementById('user-profile-pic');
+
+        let currentUser = null; // Store the user object globally within the script
+
+        /**
+         * INITIALIZATION: Verify User Session
+         * Ensure the user is authenticated before allowing them to fill the form.
+         * Auto-populate data from their Google account to save them time.
+         */
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user; // Lock in the user
+                console.log("[Quanic] Authenticated user in Setup:", user.uid);
+
+                // Auto-fill the name from Google
+                if (user.displayName) {
+                    nameInput.value = user.displayName;
+                }
+
+                // Display the Google Profile Picture
+                if (user.photoURL) {
+                    profilePic.src = user.photoURL;
+                    profilePic.style.display = 'block';
+                    // Save to local storage immediately so it loads in 0ms on refresh
+                    localStorage.setItem('quanic_user_photo', user.photoURL);
+                } else {
+                    // Fallback to a UI placeholder if they don't have a Google photo
+                    const fallbackUrl = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.displayName || 'User') + '&background=E1306C&color=fff';
+                    profilePic.src = fallbackUrl;
+                    profilePic.style.display = 'block';
+                    localStorage.setItem('quanic_user_photo', fallbackUrl);
+                }
+            } else {
+                // Security check: If they are not logged in, kick them back to login page
+                console.log("[Quanic] No active session found. Redirecting to login.");
+                window.location.replace("login.html");
+            }
+        });
+
+        /**
+         * FORM SUBMISSION: Save Data to Firestore
+         * intercepts the native submit, constructs the data payload, and writes to DB.
+         */
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent page refresh
+
+            // Double check user exists before writing to database
+            if (!currentUser) {
+                alert("Authentication error. Please log in again.");
+                window.location.replace("login.html");
+                return;
+            }
+
+            try {
+                // 1. UI Update: Show processing state
+                saveBtn.disabled = true;
+                saveBtn.innerText = 'Initializing Profile...';
+
+                // 2. Gather values from the form
+                const finalName = nameInput.value.trim();
+                const dob = dobInput.value;
+                const aboutText = aboutInput.value.trim();
+                const photoUrl = currentUser.photoURL || localStorage.getItem('quanic_user_photo') || '';
+                const email = currentUser.email || '';
+
+                // 3. Construct the User Profile Payload for Firestore
+                const userData = {
+                    uid: currentUser.uid,
+                    email: email,
+                    name: finalName,
+                    photoURL: photoUrl,
+                    date_of_birth: dob,
+                    // The 'about' text serves as the core memory for the app personality
+                    memory: aboutText, 
+                    account_created: serverTimestamp(),
+                    is_profile_complete: true
+                };
+
+                // 4. Database Write: Save to the 'users' collection using their UID as the document ID
+                const userRef = doc(db, "users", currentUser.uid);
+                await setDoc(userRef, userData, { merge: true });
+
+                console.log("[Quanic] Profile successfully created in Firestore.");
+
+                // 5. Update Local Storage Cache (so login.html skips setup next time)
+                localStorage.setItem('quanic_has_profile', 'true');
+                localStorage.setItem('quanic_user_name', finalName);
+                // Added new lines to store all profile details locally as requested
+                localStorage.setItem('quanic_user_photo', photoUrl);
+                localStorage.setItem('quanic_user_dob', dob);
+                localStorage.setItem('quanic_user_memory', aboutText);
+
+                // 6. Success & Redirect to main application
+                saveBtn.innerText = 'Success! Redirecting...';
+                
+                // Small delay so the user sees the success message before it jumps
+                setTimeout(() => {
+                    window.location.replace("home.html");
+                }, 800);
+
+            } catch (error) {
+                // Error Handling
+                console.error("[Quanic] Error saving profile:", error);
+                alert("Failed to save profile to Goorac servers. Please check your connection.");
+                
+                // Reset button state
+                saveBtn.disabled = false;
+                saveBtn.innerText = 'Initialize Quanic';
+            }
+        });
+    </script>
+</body>
+</html>
