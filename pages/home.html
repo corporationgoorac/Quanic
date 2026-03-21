@@ -478,24 +478,26 @@
         }
 
         /* ==========================================================================
-           16. TRENDING NOW UI STYLES (NEW FEATURE INJECTION)
+           16. TRENDING UI CHART STYLES (NEW FEATURE)
            ========================================================================== */
-        .trending-header { font-size: 2.2rem; font-weight: 800; margin-bottom: 5px; background: linear-gradient(135deg, #FF7A00, #E1306C); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .trending-subtitle { color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-bottom: 25px; font-weight: 600; letter-spacing: 0.5px; }
-        .trending-item { display: flex; align-items: center; padding: 12px 15px; border-radius: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.02); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .trending-item:active { transform: scale(0.98); background: rgba(255,255,255,0.08); }
-        .trending-rank { font-size: 1.2rem; font-weight: 800; color: rgba(255,255,255,0.3); width: 35px; text-align: center; margin-right: 15px; font-style: italic; }
-        .trending-item img { width: 60px; height: 60px; border-radius: 12px; margin-right: 15px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
-        .trending-item .track-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+        .trending-header { margin-bottom: 20px; }
+        .trending-header h1 { font-size: 2.2rem; font-weight: 800; background: linear-gradient(90deg, #ff8a00, #e52e71); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px; }
+        .trending-header p { color: #A7A7A7; font-size: 0.95rem; font-weight: 600; }
         
-        /* Premium Gold, Silver, Bronze Rank Highlights */
-        .trending-item:nth-child(1) { background: linear-gradient(90deg, rgba(255,215,0,0.1), rgba(255,255,255,0.02)); border: 1px solid rgba(255,215,0,0.2); }
-        .trending-item:nth-child(1) .trending-rank { color: #FFD700; text-shadow: 0 0 15px rgba(255,215,0,0.6); font-size: 1.6rem; }
-        .trending-item:nth-child(2) { background: linear-gradient(90deg, rgba(192,192,192,0.08), rgba(255,255,255,0.02)); border: 1px solid rgba(192,192,192,0.2); }
-        .trending-item:nth-child(2) .trending-rank { color: #C0C0C0; text-shadow: 0 0 15px rgba(192,192,192,0.6); font-size: 1.5rem; }
-        .trending-item:nth-child(3) { background: linear-gradient(90deg, rgba(205,127,50,0.08), rgba(255,255,255,0.02)); border: 1px solid rgba(205,127,50,0.2); }
-        .trending-item:nth-child(3) .trending-rank { color: #CD7F32; text-shadow: 0 0 15px rgba(205,127,50,0.6); font-size: 1.4rem; }
-
+        .trending-track-item {
+            display: flex; align-items: center; padding: 12px 10px; border-radius: 12px; margin-bottom: 12px; 
+            background: rgba(255,255,255,0.03); cursor: pointer; transition: background 0.2s, transform 0.1s; 
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+        .trending-track-item:active { background: rgba(255,255,255,0.08); transform: scale(0.98); }
+        
+        .trending-rank { font-size: 1.2rem; font-weight: 800; color: rgba(255,255,255,0.3); width: 30px; text-align: center; margin-right: 10px; font-style: italic;}
+        .trending-track-item:nth-child(1) .trending-rank { color: #FFD700; font-size: 1.5rem; text-shadow: 0 0 10px rgba(255,215,0,0.4); }
+        .trending-track-item:nth-child(2) .trending-rank { color: #C0C0C0; font-size: 1.4rem; }
+        .trending-track-item:nth-child(3) .trending-rank { color: #CD7F32; font-size: 1.3rem; }
+        
+        .trending-img-wrapper { position: relative; width: 52px; height: 52px; border-radius: 10px; margin-right: 15px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .trending-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -539,10 +541,12 @@
         </section>
 
         <section id="trending-view" class="view-section">
-            <h2 class="trending-header">Trending Now</h2>
-            <p class="trending-subtitle">The hottest tracks on Quanic, updated hourly.</p>
+            <div class="trending-header">
+                <h1>Trending</h1>
+                <p>Top 15 tracks worldwide right now</p>
+            </div>
             <div id="trending-list-container">
-                <p style="color: #666; font-size: 0.95rem; text-align: center; margin-top: 30px;">Loading trending hits...</p>
+                <p style="color: #666; font-size: 0.95rem; text-align: center;">Loading hot tracks...</p>
             </div>
         </section>
 
@@ -565,7 +569,7 @@
             <span class="nav-label">Search</span>
         </div>
         <div class="nav-item" onclick="switchTab('trending')">
-            <span class="material-symbols-rounded">whatshot</span>
+            <span class="material-symbols-rounded">local_fire_department</span>
             <span class="nav-label">Trending</span>
         </div>
         <div class="nav-item" onclick="switchTab('library')">
@@ -1004,7 +1008,7 @@
                     localStorage.setItem('quanic_user_photo', fetchedPhoto);
                     
                     fetchUserPlaylists(); // Live sync from Firebase
-                    fetchTrendingFeed(); // Load trending data
+                    fetchTrendingFeed(); // Fetch the new trending data on load
 
                     // NEW FEATURE: CLOUD HISTORY RESTORE ON LOGIN
                     try {
@@ -1090,7 +1094,7 @@
             const targetView = document.getElementById(`${tabName}-view`);
             if(targetView) targetView.classList.add('active');
             if(tabName === 'library') fetchUserPlaylists();
-            if(tabName === 'trending') fetchTrendingFeed(); // Refresh the feed if they click it
+            if(tabName === 'trending') fetchTrendingFeed(); // Refresh trending when tab opened
         };
 
         // ==========================================================================
@@ -1224,6 +1228,85 @@
             if(queueIndex === -1) queueIndex = 0;
         }
 
+        // NEW FEATURE: LOG PLAYS TO CENTRAL TRENDING DATABASE
+        async function logPlayEventForTrending(trackObj) {
+            if (!currentUserUid || !trackObj || !trackObj.title) return;
+            try {
+                const cleanId = trackObj.id || trackObj.firestoreId || btoa(encodeURIComponent(trackObj.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+                await addDoc(collection(db, 'play_events'), {
+                    songId: cleanId,
+                    title: trackObj.title,
+                    artist: trackObj.artist,
+                    imgUrl: trackObj.imgUrl,
+                    audioUrl: trackObj.audioUrl,
+                    playedAt: new Date()
+                });
+            } catch(e) { console.error("Failed to log trending event", e); }
+        }
+
+        // NEW FEATURE: FETCH TOP 15 TRENDING FEED FROM SERVER
+        let trendingQueueCache = [];
+        window.fetchTrendingFeed = async function() {
+            try {
+                const container = document.getElementById('trending-list-container');
+                if(!container) return;
+                
+                const trendingRef = doc(db, 'public_feeds', 'trending');
+                const trendingSnap = await getDoc(trendingRef);
+                
+                if (trendingSnap.exists() && trendingSnap.data().tracks) {
+                    const top15 = trendingSnap.data().tracks;
+                    trendingQueueCache = top15;
+                    container.innerHTML = '';
+                    
+                    if(top15.length === 0) {
+                        container.innerHTML = '<p style="color: #666; text-align: center;">No trending tracks yet.</p>';
+                        return;
+                    }
+
+                    top15.forEach((track, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'trending-track-item';
+                        let activeClass = (currentTrackData && currentTrackData.title === track.title) ? 'active-playing' : '';
+                        
+                        div.innerHTML = `
+                            <div class="trending-rank">${index + 1}</div>
+                            <div class="trending-img-wrapper">
+                                <img src="${track.imgUrl}" alt="cover">
+                            </div>
+                            <div class="track-info">
+                                <span class="track-title ${activeClass}">${track.title}</span>
+                                <span class="track-artist">${track.artist}</span>
+                            </div>
+                            <span class="material-symbols-rounded track-menu">more_vert</span>
+                        `;
+                        
+                        div.onclick = () => {
+                            currentQueueContext = 'trending';
+                            playQueue = trendingQueueCache;
+                            queueIndex = index;
+                            openFullPlayer();
+                            loadAndPlay(track);
+                        };
+
+                        const menuBtn = div.querySelector('.track-menu');
+                        if(menuBtn) {
+                            menuBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                openOptionsModal(track, null);
+                            };
+                        }
+                        
+                        container.appendChild(div);
+                    });
+                } else {
+                    container.innerHTML = '<p style="color: #666; text-align: center;">Trending data will appear here soon.</p>';
+                }
+            } catch(e) {
+                console.error("Failed to fetch trending feed", e);
+            }
+        };
+
         // NEW FEATURE: MULTI-ENGINE LYRICS FETCHER (SAAVN -> LYRIST -> LRCLIB)
         async function fetchLyrics(songId, title, artist) {
             const contentEl = document.getElementById('lyrics-content');
@@ -1299,8 +1382,10 @@
         window.loadAndPlay = async function(trackObj, updateHistory = true) {
             if(!trackObj || !audio) return;
             currentTrackData = trackObj;
-            logPlayEventForTrending(trackObj); // NEW TRENDING LOG INJECTION
             
+            // FIREBASE FEATURE: Log this play to the trending engine!
+            logPlayEventForTrending(trackObj);
+
             try { localStorage.setItem('quanic_last_played', JSON.stringify(trackObj)); } catch(e){}
             
             if(document.getElementById('mini-title')) document.getElementById('mini-title').innerText = trackObj.title;
@@ -2332,12 +2417,6 @@
                 }
             }
         });
-
-        // ==========================================================================
-        // 15. NEW TRENDING FETCH AND LOGGING ENGINE
-        // ==========================================================================
-        
-        async function logPlayEventForTrending(trackObj) {
-            if (!currentUserUid || !trackObj) return;
-            try {
-                const cleanId = trackObj.id || trackObj.firestore
+    </script>
+</body>
+</html>
