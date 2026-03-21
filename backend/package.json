@@ -1,0 +1,14 @@
+{
+  "name": "quanic-trending-worker",
+  "version": "1.0.0",
+  "description": "Background worker for Quanic trending songs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "firebase-admin": "^12.0.0",
+    "node-cron": "^3.0.3"
+  }
+}
