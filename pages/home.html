@@ -509,6 +509,11 @@
             background: #E1306C; display: flex; align-items: center; justify-content: center;
             color: white; font-weight: 800; transition: transform 0.3s; z-index: 1;
         }
+        .swipe-indicator.success {
+            background: linear-gradient(90deg, #E1306C, #FF7A00) !important;
+            box-shadow: 0 0 20px rgba(225, 48, 108, 0.6);
+            transform: scale(1.1) !important;
+        }
         .track-item-inner {
             display: flex; align-items: center; width: 100%; height: 100%; position: relative; z-index: 2; background: inherit;
         }
@@ -2510,35 +2515,87 @@
         // Swipe to Queue Function
         function initSwipeToQueue(el, trackObj) {
             let startX = 0;
+            let startY = 0;
             let currentX = 0;
+            let isScrolling = false;
+            let triggered = false;
             const inner = el.querySelector('.track-item-inner');
             const indicator = el.querySelector('.swipe-indicator');
 
             el.addEventListener('touchstart', (e) => {
                 startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                isScrolling = false;
+                triggered = false;
                 inner.style.transition = 'none';
+                indicator.style.transition = 'none';
+                indicator.classList.remove('success');
             }, {passive: true});
 
             el.addEventListener('touchmove', (e) => {
-                currentX = e.touches[0].clientX - startX;
+                if (isScrolling) return;
+                
+                let deltaX = e.touches[0].clientX - startX;
+                let deltaY = e.touches[0].clientY - startY;
+                
+                // If the user is scrolling vertically more than horizontally, lock swipe out
+                if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 5) {
+                    isScrolling = true;
+                    return;
+                }
+
+                currentX = deltaX;
                 if(currentX > 0) {
                     const transform = Math.min(currentX, 100);
                     inner.style.transform = `translateX(${transform}px)`;
-                    indicator.style.transform = `scale(${transform/100})`;
+                    
+                    // Visual feedback as it approaches threshold mapping to brand theme
+                    if (transform >= 70 && !triggered) {
+                        triggered = true;
+                        indicator.classList.add('success');
+                        if (window.haptic) window.haptic();
+                    } else if (transform < 70) {
+                        triggered = false;
+                        indicator.classList.remove('success');
+                        indicator.style.transform = `scale(${transform/100})`;
+                    }
                 }
             }, {passive: true});
 
             el.addEventListener('touchend', () => {
+                if (isScrolling) {
+                    inner.style.transform = 'translateX(0)';
+                    return;
+                }
+
                 inner.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
-                if(currentX > 70) {
+                indicator.style.transition = 'transform 0.3s, background 0.3s, box-shadow 0.3s';
+                
+                if(currentX >= 70) {
                     // Logic to add to queue
                     if(playQueue) {
-                        playQueue.splice(queueIndex + 1, 0, trackObj);
-                        showToast('Added to queue', 'playlist_add');
-                        if(window.haptic) window.haptic();
+                        // Check for duplicate to prevent adding exact same song multiple times
+                        const isDuplicate = playQueue.some(t => 
+                            (t.title === trackObj.title && t.artist === trackObj.artist) || 
+                            (t.id && trackObj.id && t.id === trackObj.id)
+                        );
+
+                        if (isDuplicate) {
+                            showToast('Already in queue', 'info');
+                            if(window.haptic) window.haptic(); // Distinct feedback
+                        } else {
+                            playQueue.splice(queueIndex + 1, 0, trackObj);
+                            showToast('Added to queue', 'playlist_add');
+                            // Double success haptic
+                            if(window.haptic) {
+                                window.haptic();
+                                setTimeout(() => { if(window.haptic) window.haptic(); }, 100);
+                            }
+                        }
                     }
                 }
                 inner.style.transform = 'translateX(0)';
+                indicator.classList.remove('success');
                 currentX = 0;
             });
         }
