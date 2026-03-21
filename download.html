@@ -451,11 +451,25 @@
         let deferredPrompt;
 
         const VERSION = "2.0";
-        const ua = navigator.userAgent;
+        
+        // --- BROWSER BREAKOUT LOGIC INTEGRATED ---
+        const ua = navigator.userAgent || navigator.vendor;
+        const isInstagram = ua.indexOf('Instagram') > -1 || ua.indexOf('FBAN') > -1 || ua.indexOf('FBAV') > -1;
+        const isAndroid = /Android/i.test(ua);
         const isIos = /iPhone|iPad|iPod/.test(ua);
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-        if (isStandalone) {
+        // Auto-Redirect logic for Android Instagram/Facebook
+        if (isInstagram && isAndroid) {
+            const chromeIntent = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=https;package=com.android.chrome;end`;
+            window.location.href = chromeIntent;
+            
+            // Fallback button if auto-redirect fails
+            installBtn.textContent = "Open in Chrome to Install";
+            installBtn.style.display = 'block';
+            installBtn.onclick = () => { window.location.href = chromeIntent; };
+            msg.textContent = "⚠️ In-app browser detected. Please open in Chrome.";
+        } else if (isStandalone) {
             const localVer = localStorage.getItem('quanic_v');
             if (localVer !== VERSION) {
                 msg.textContent = "✨ Feature Update v" + VERSION + " Detected";
@@ -493,6 +507,14 @@
                 }
             });
         }
+
+        // --- ADDED APP INSTALLED EVENT LOGIC ---
+        window.addEventListener('appinstalled', () => {
+            localStorage.setItem('quanic_v', VERSION);
+            installBtn.style.display = 'none';
+            msg.textContent = "✅ Connection Established. Welcome to Quanic.";
+            msg.style.display = 'block';
+        });
 
         // Gallery Lightbox
         const galleryImages = document.querySelectorAll('.gallery-scroll img');
