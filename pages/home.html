@@ -498,6 +498,13 @@
         
         .trending-img-wrapper { position: relative; width: 52px; height: 52px; border-radius: 10px; margin-right: 15px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .trending-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* NEW FEATURES CSS INJECTIONS */
+        #search-suggestions { padding: 10px 0; animation: fade-in 0.4s ease; display: block; }
+        .search-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .search-card { border-radius: 12px; padding: 18px 15px; height: 100px; position: relative; overflow: hidden; font-weight: 800; font-size: 1.15rem; color: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.2s; display: flex; align-items: flex-end; }
+        .search-card:active { transform: scale(0.95); }
+        .search-card::after { content: ''; position: absolute; width: 60px; height: 60px; background: rgba(255,255,255,0.15); border-radius: 50%; top: -15px; right: -15px; filter: blur(5px); }
     </style>
 </head>
 <body>
@@ -537,7 +544,13 @@
                 <span class="material-symbols-rounded" style="color:#A7A7A7;">search</span>
                 <input type="text" id="search-input" placeholder="Search songs, artists...">
             </div>
-            <div id="search-results"></div>
+            
+            <div id="search-suggestions">
+                <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 15px; color: rgba(255,255,255,0.9); letter-spacing: -0.5px;">Browse your vibes</h3>
+                <div class="search-grid" id="search-grid-container"></div>
+            </div>
+
+            <div id="search-results" style="display:none;"></div>
         </section>
 
         <section id="trending-view" class="view-section">
@@ -621,7 +634,10 @@
                         </div>
                         <p id="full-artist">Artist</p>
                     </div>
-                    <span class="material-symbols-rounded" id="btn-like" onclick="toggleLike()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s;">favorite_border</span>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span class="material-symbols-rounded" onclick="openPlaylistSelectorModal()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s;">library_add</span>
+                        <span class="material-symbols-rounded" id="btn-like" onclick="toggleLike()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s;">favorite_border</span>
+                    </div>
                 </div>
 
                 <div class="extra-audio-controls">
@@ -671,6 +687,16 @@
         <div class="sheet-handle"></div>
         <h3 class="sheet-title">Up Next</h3>
         <div id="queue-list" class="modal-list"></div>
+    </div>
+
+    <div id="playlist-selector-modal" class="bottom-sheet">
+        <span class="material-symbols-rounded" onclick="history.back()" style="position:absolute; right:20px; top:20px; cursor:pointer; color:#888;">close</span>
+        <div class="sheet-handle"></div>
+        <h3 class="sheet-title">Add to Playlist</h3>
+        <button class="modal-btn" onclick="openCreatePlaylistModal()">
+            <span class="material-symbols-rounded">add_circle</span> Create New Playlist
+        </button>
+        <div id="dedicated-playlist-list" class="modal-list"></div>
     </div>
 
     <div id="options-modal" class="bottom-sheet">
@@ -1095,6 +1121,11 @@
             if(targetView) targetView.classList.add('active');
             if(tabName === 'library') fetchUserPlaylists();
             if(tabName === 'trending') fetchTrendingFeed(); // Refresh trending when tab opened
+            
+            // Re-trigger grid generation dynamically on search
+            if(tabName === 'search' && generateSearchSuggestions) {
+                generateSearchSuggestions();
+            }
         };
 
         // ==========================================================================
@@ -1115,6 +1146,17 @@
 
         if(searchInput) {
             searchInput.addEventListener('input', () => {
+                
+                // INJECT: Grid Toggler logic
+                const sugg = document.getElementById('search-suggestions');
+                if(searchInput.value.trim().length > 0) {
+                    if(sugg) sugg.style.display = 'none';
+                    if(resultsDiv) resultsDiv.style.display = 'block';
+                } else {
+                    if(sugg) sugg.style.display = 'block';
+                    if(resultsDiv) resultsDiv.style.display = 'none';
+                }
+
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => { performSearch(searchInput.value); }, 500);
             });
@@ -1852,25 +1894,28 @@
             const state = e.state ? e.state.modal : 'home';
             
             const overlay = document.getElementById('modal-overlay');
-            if (overlay) overlay.style.display = (state === 'options' || state === 'create_playlist' || state === 'queue') ? 'block' : 'none';
+            if (overlay) overlay.style.display = (state === 'options' || state === 'create_playlist' || state === 'queue' || state === 'playlist_selector') ? 'block' : 'none';
             
             if(state === 'home') {
                 if(document.getElementById('full-player')) document.getElementById('full-player').style.transform = 'translateY(100%)';
                 if(document.getElementById('options-modal')) document.getElementById('options-modal').classList.remove('open');
                 if(document.getElementById('create-playlist-modal')) document.getElementById('create-playlist-modal').classList.remove('open');
                 if(document.getElementById('queue-modal')) document.getElementById('queue-modal').classList.remove('open'); // ADDED
+                if(document.getElementById('playlist-selector-modal')) document.getElementById('playlist-selector-modal').classList.remove('open');
                 if(document.getElementById('playlist-view-modal')) document.getElementById('playlist-view-modal').classList.remove('open');
                 if(metaThemeColor) metaThemeColor.setAttribute('content', '#121212');
             } else if (state === 'playlist_view') {
                 if(document.getElementById('options-modal')) document.getElementById('options-modal').classList.remove('open');
                 if(document.getElementById('create-playlist-modal')) document.getElementById('create-playlist-modal').classList.remove('open');
                 if(document.getElementById('queue-modal')) document.getElementById('queue-modal').classList.remove('open'); // ADDED
+                if(document.getElementById('playlist-selector-modal')) document.getElementById('playlist-selector-modal').classList.remove('open');
                 if(document.getElementById('full-player')) document.getElementById('full-player').style.transform = 'translateY(100%)';
                 if(metaThemeColor) metaThemeColor.setAttribute('content', '#121212');
             } else if (state === 'full-player') {
                 if(document.getElementById('options-modal')) document.getElementById('options-modal').classList.remove('open');
                 if(document.getElementById('create-playlist-modal')) document.getElementById('create-playlist-modal').classList.remove('open');
                 if(document.getElementById('queue-modal')) document.getElementById('queue-modal').classList.remove('open'); // ADDED
+                if(document.getElementById('playlist-selector-modal')) document.getElementById('playlist-selector-modal').classList.remove('open');
                 if(document.getElementById('modal-overlay')) document.getElementById('modal-overlay').style.display = 'none'; // PRODUCTION FIX: Force kill ghost overlay
             }
         });
@@ -2301,6 +2346,10 @@
                     const cm = document.getElementById('create-playlist-modal');
                     if (cm) cm.classList.remove('open');
                 }
+                if (state !== 'playlist_selector') {
+                    const psm = document.getElementById('playlist-selector-modal');
+                    if (psm) psm.classList.remove('open');
+                }
 
                 const openSheets = document.querySelectorAll('.bottom-sheet.open');
                 const overlay = document.getElementById('modal-overlay');
@@ -2417,6 +2466,59 @@
                 }
             }
         });
-    </script>
-</body>
-</html>
+
+        // ==========================================================================
+        // 15. NEW FEATURE: SWIPE TO QUEUE GESTURE ENGINE
+        // ==========================================================================
+        let swipeVars = { startX: 0, currentX: 0, target: null, title: null, bg: null };
+        document.addEventListener('touchstart', (e) => {
+            const item = e.target.closest('.track-item, .trending-track-item, .pl-track-item');
+            if(!item || e.target.closest('.track-menu')) return;
+            swipeVars.target = item;
+            swipeVars.startX = e.touches[0].clientX;
+            swipeVars.currentX = 0;
+            
+            let titleEl = item.querySelector('.track-title');
+            if(!titleEl) return;
+            swipeVars.title = titleEl.innerText;
+            
+            item.style.transition = 'none';
+            item.style.willChange = 'transform';
+            
+            if(!item.parentNode.style.position || item.parentNode.style.position === 'static') {
+                item.parentNode.style.position = 'relative';
+            }
+        }, {passive: true});
+
+        document.addEventListener('touchmove', (e) => {
+            if(!swipeVars.target) return;
+            const diffX = e.touches[0].clientX - swipeVars.startX;
+            if(diffX > 0 && diffX < 150) { 
+                swipeVars.currentX = diffX;
+                swipeVars.target.style.transform = `translateX(${diffX}px) translateZ(0)`;
+                
+                if(!swipeVars.bg) {
+                    swipeVars.bg = document.createElement('div');
+                    swipeVars.bg.className = 'swipe-bg-indicator';
+                    swipeVars.bg.style.cssText = `position:absolute; left:${swipeVars.target.offsetLeft}px; top:${swipeVars.target.offsetTop}px; width:${swipeVars.target.offsetWidth}px; height:${swipeVars.target.offsetHeight}px; display:flex; align-items:center; padding-left:20px; border-radius:12px; z-index:0; transition:background 0.2s;`;
+                    swipeVars.bg.innerHTML = `<span class="material-symbols-rounded" style="color:white; font-size: 28px;">queue_music</span>`;
+                    swipeVars.target.parentNode.insertBefore(swipeVars.bg, swipeVars.target);
+                }
+                swipeVars.target.style.position = 'relative';
+                swipeVars.target.style.zIndex = '1';
+                
+                if(diffX > 80) swipeVars.bg.style.backgroundColor = '#E1306C'; 
+                else swipeVars.bg.style.backgroundColor = 'rgba(255,255,255,0.05)';
+            }
+        }, {passive: true});
+
+        document.addEventListener('touchend', (e) => {
+            if(!swipeVars.target) return;
+            const target = swipeVars.target;
+            const bg = swipeVars.bg;
+            
+            target.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+            target.style.transform = 'translateX(0) translateZ(0)';
+            
+            if(swipeVars.currentX > 80) {
+                if(window.haptic)
