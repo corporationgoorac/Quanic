@@ -57,9 +57,9 @@
             /* Removed animation as requested for 0ms loading */
             width: 100%;
             max-width: 450px;
-            padding: 40px 20px;
+            padding: 10px 20px; /* Reduced top padding to remove unwanted top space */
             box-sizing: border-box;
-            background: radial-gradient(circle at 50% -20%, rgba(225, 48, 108, 0.15) 0%, rgba(18, 18, 18, 0) 70%); /* Moved from bottom for grouping */
+            background: transparent; /* Changed to transparent to match solid dark theme of home */
             
             /* NEW FIXES FOR PWA BUTTON VISIBILITY (85% Height & Scrolling) */
             max-height: 85dvh;
@@ -77,15 +77,15 @@
             font-size: 1.8rem;
             font-weight: 600;
             letter-spacing: 1px;
-            margin-top: 15px;
-            margin-bottom: 5px;
+            margin-top: 5px; /* Reduced margin to push content up */
+            margin-bottom: 2px;
             text-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
 
         .setup-container p {
             font-size: 0.9rem;
             color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 30px;
+            margin-bottom: 15px; /* Tightened space before inputs */
             line-height: 1.5;
             padding: 0 15px;
         }
@@ -97,8 +97,8 @@
             position: relative;
             margin-bottom: 10px;
             /* Added stable container dimensions to prevent layout shifts */
-            width: 104px; /* 100px + 4px for borders */
-            height: 104px;
+            width: 84px; /* Reduced size: 80px + 4px for borders */
+            height: 84px;
             border-radius: 50%;
             background-color: #181818; /* Skeleton background while loading */
             display: flex;
@@ -108,8 +108,8 @@
         }
 
         .profile-pic {
-            width: 100px;
-            height: 100px;
+            width: 80px; /* Reduced size to make profile pic smaller */
+            height: 80px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid rgba(225, 48, 108, 0.5); /* Brand magenta edge */
@@ -151,8 +151,8 @@
         }
 
         .premium-input {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05); /* Matched home.html exactly */
+            border: 1px solid rgba(255, 255, 255, 0.02); /* Matched home.html exactly */
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             color: #ffffff;
@@ -264,8 +264,8 @@
         .genre-capsule {
             padding: 10px 18px;
             border-radius: 25px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05); /* Matched home.html exactly */
+            border: 1px solid rgba(255, 255, 255, 0.02); /* Matched home.html exactly */
             color: rgba(255, 255, 255, 0.7);
             font-size: 0.9rem;
             cursor: pointer;
