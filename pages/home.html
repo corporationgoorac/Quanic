@@ -158,7 +158,8 @@
         /* Increased Z-Index to 110 so it covers absolutely everything when open */
         #full-player {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
-            background: #000000; z-index: 110; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); display: flex; flex-direction: column; overflow: hidden;
+            background: #000000; z-index: 110; transform: translateY(100%); 
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); display: flex; flex-direction: column; overflow: hidden;
         }
         .player-bg {
             position: absolute; top: -10%; left: -10%; width: 120%; height: 120%;
@@ -226,7 +227,8 @@
         
         .modal-btn {
             background: rgba(255,255,255,0.08); border: none; padding: 16px; border-radius: 12px; color: white;
-            font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; margin-bottom: 10px; transition: transform 0.1s;
+            font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; margin-bottom: 10px;
+            transition: transform 0.1s;
         }
         .modal-btn:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
         .modal-btn span { margin-right: 15px; color: #E1306C; }
@@ -285,9 +287,11 @@
         /* HARDWARE ACCELERATION ENGINE: Offloads Audio/Visual rendering to Device GPU 
            NOTE: Removed img/audio/canvas to prevent iOS Safari invisible element bug! */
         .progress-fill, .mini-progress-fill, .vis-bar, .pop-heart-icon, #ambient-glow, .pl-big-play {
-            will-change: transform, opacity, width, background-color; transform: translateZ(0);
+            will-change: transform, opacity, width, background-color;
+            transform: translateZ(0);
             -webkit-transform: translate3d(0, 0, 0); /* Forces GPU compositing */
-            backface-visibility: hidden; perspective: 1000px;
+            backface-visibility: hidden;
+            perspective: 1000px;
         }
 
         /* SPOTIFY-STYLE PLAYLIST BANNER */
@@ -315,7 +319,8 @@
         #ambient-glow {
             position: absolute; top: 15%; left: 15%; width: 70%; height: 70%;
             border-radius: 50%; background-color: rgba(225, 48, 108, 0.5); /* Fallback */
-            filter: blur(60px); z-index: 1; opacity: 0.8; animation: breathe-glow 4s infinite alternate ease-in-out;
+            filter: blur(60px); z-index: 1; opacity: 0.8;
+            animation: breathe-glow 4s infinite alternate ease-in-out;
             pointer-events: none;
         }
         @keyframes breathe-glow {
@@ -347,7 +352,8 @@
             background: rgba(18, 18, 18, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             padding: 6px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 800; letter-spacing: 1px;
             color: #E1306C; z-index: 20; opacity: 0; pointer-events: none; border: 1px solid rgba(225, 48, 108, 0.5);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-transform: uppercase; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-transform: uppercase;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
         .artwork-container.bass-boost-active .premium-bass-badge { 
             opacity: 1; transform: translateX(-50%) translateY(0); 
@@ -362,38 +368,62 @@
 
         /* The Spotify Scroll Engine */
         #full-player { 
-            overflow-y: scroll !important; scroll-snap-type: y mandatory; 
-            scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
+            overflow-y: scroll !important; 
+            scroll-snap-type: y mandatory; 
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
         }
 
         .player-scroll-child { 
-            height: 100vh; height: 100dvh; 
-            width: 100%; scroll-snap-align: start; 
-            position: relative; flex-shrink: 0;
+            height: 100vh; 
+            height: 100dvh; 
+            width: 100%; 
+            scroll-snap-align: start; 
+            position: relative; 
+            flex-shrink: 0;
         }
 
         /* Lyrics View Styling */
         #lyrics-view {
-            padding: 40px 25px 120px 25px; background: rgba(0,0,0,0.4);
-            display: flex; flex-direction: column;
+            padding: 40px 25px 120px 25px;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
         }
         .lyrics-card {
-            background: rgba(255,255,255,0.05); border-radius: 24px;
-            padding: 30px 20px; min-height: 80%; border: 1px solid rgba(255,255,255,0.05); /* NEW LINES: Fixes overflow by making the card a secure flex container */
-            flex: 1; display: flex; flex-direction: column; overflow: hidden;
+            background: rgba(255,255,255,0.05);
+            border-radius: 24px;
+            padding: 30px 20px;
+            min-height: 80%;
+            border: 1px solid rgba(255,255,255,0.05);
+            /* NEW LINES: Fixes overflow by making the card a secure flex container */
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
         .lyrics-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 25px; color: #fff; flex-shrink: 0; }
         #lyrics-content {
-            font-size: 1.5rem; line-height: 1.6; font-weight: 700; color: rgba(255,255,255,0.6); white-space: pre-wrap; transition: all 0.3s;
+            font-size: 1.5rem;
+            line-height: 1.6;
+            font-weight: 700;
+            color: rgba(255,255,255,0.6);
+            white-space: pre-wrap;
+            transition: all 0.3s;
             /* NEW LINES: Makes the lyrics scrollable INSIDE the card */
-            overflow-y: auto; flex: 1; padding-right: 5px; word-wrap: break-word; -webkit-overflow-scrolling: touch;
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 5px;
+            word-wrap: break-word;
+            -webkit-overflow-scrolling: touch;
         }
         #lyrics-content.loaded { color: #fff; }
         
         /* Visual cue for scrolling */
         .scroll-hint {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; flex-direction: column; align-items: center; opacity: 0.5; animation: bounce 2s infinite;
+            display: flex; flex-direction: column; align-items: center; opacity: 0.5;
+            animation: bounce 2s infinite;
         }
         .scroll-hint span { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 5px; }
 
@@ -408,11 +438,14 @@
            14. GLOBAL GPU ACCELERATION & SMOOTHING (NEW)
            ========================================================================== */
         #app-container, .view-section, .bottom-sheet, #playlist-view-modal {
-            -webkit-transform: translateZ(0); transform: translateZ(0);
-            will-change: transform, opacity; backface-visibility: hidden;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: transform, opacity;
+            backface-visibility: hidden;
         }
         .track-item, .playlist-card, .recent-grid-item {
-            -webkit-transform: translate3d(0,0,0); transform: translate3d(0,0,0);
+            -webkit-transform: translate3d(0,0,0);
+            transform: translate3d(0,0,0);
             will-change: background-color, transform;
         }
 
@@ -420,12 +453,30 @@
            15. CRITICAL BUG FIX: OVERLAPPING MODALS ON LOAD
            ========================================================================== */
         /* The GPU acceleration accidentally overrode the hidden states of modals. This restores them perfectly! */
-        .bottom-sheet:not(.open) { -webkit-transform: translateY(100%) translateZ(0) !important; transform: translateY(100%) translateZ(0) !important; }
-        .bottom-sheet.open { -webkit-transform: translateY(0) translateZ(0) !important; transform: translateY(0) translateZ(0) !important; }
-        #playlist-view-modal:not(.open) { -webkit-transform: translateX(100%) translateZ(0) !important; transform: translateX(100%) translateZ(0) !important; }
-        #playlist-view-modal.open { -webkit-transform: translateX(0) translateZ(0) !important; transform: translateX(0) translateZ(0) !important; }
-        #mini-player:not(.visible) { -webkit-transform: translateY(200%) translateZ(0) !important; transform: translateY(200%) translateZ(0) !important; }
-        #mini-player.visible { -webkit-transform: translateY(0) translateZ(0) !important; transform: translateY(0) translateZ(0) !important; }
+        .bottom-sheet:not(.open) {
+            -webkit-transform: translateY(100%) translateZ(0) !important;
+            transform: translateY(100%) translateZ(0) !important;
+        }
+        .bottom-sheet.open {
+            -webkit-transform: translateY(0) translateZ(0) !important;
+            transform: translateY(0) translateZ(0) !important;
+        }
+        #playlist-view-modal:not(.open) {
+            -webkit-transform: translateX(100%) translateZ(0) !important;
+            transform: translateX(100%) translateZ(0) !important;
+        }
+        #playlist-view-modal.open {
+            -webkit-transform: translateX(0) translateZ(0) !important;
+            transform: translateX(0) translateZ(0) !important;
+        }
+        #mini-player:not(.visible) {
+            -webkit-transform: translateY(200%) translateZ(0) !important;
+            transform: translateY(200%) translateZ(0) !important;
+        }
+        #mini-player.visible {
+            -webkit-transform: translateY(0) translateZ(0) !important;
+            transform: translateY(0) translateZ(0) !important;
+        }
 
         /* ==========================================================================
            16. TRENDING UI CHART STYLES (NEW FEATURE)
@@ -436,8 +487,9 @@
         
         .trending-track-item {
             display: flex; align-items: center; padding: 12px 10px; border-radius: 12px; margin-bottom: 12px; 
-            background: rgba(255,255,255,0.03); cursor: pointer; transition: background 0.2s, transform 0.1s;
-            border: 1px solid rgba(255,255,255,0.02); position: relative; overflow: hidden;
+            background: rgba(255,255,255,0.03); cursor: pointer; transition: background 0.2s, transform 0.1s; 
+            border: 1px solid rgba(255,255,255,0.02);
+            position: relative; overflow: hidden;
         }
         .trending-track-item:active { background: rgba(255,255,255,0.08); transform: scale(0.98); }
         
@@ -466,7 +518,8 @@
         }
         .suggestion-card {
             height: 100px; border-radius: 12px; padding: 15px; position: relative; overflow: hidden;
-            display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.2s;
+            display: flex; flex-direction: column; justify-content: space-between; cursor: pointer;
+            transition: transform 0.2s;
         }
         .suggestion-card:active { transform: scale(0.95); }
         .suggestion-card h4 { font-size: 1.1rem; font-weight: 800; z-index: 2; position: relative; }
@@ -478,7 +531,8 @@
 
         .playlist-selector-btn {
             background: rgba(255,255,255,0.08); border: none; padding: 12px; border-radius: 50%;
-            color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;
+            color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;
+            transition: all 0.2s;
         }
         .playlist-selector-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.15); }
     </style>
@@ -726,6 +780,7 @@
         import { auth, db } from '../config.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, orderBy, limit, startAfter, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
         // Initialize RTDB natively 
         let rtdb;
         try { rtdb = getDatabase(); } catch(e) {}
@@ -761,7 +816,8 @@
         };
         window.addEventListener('error', function(e) { showAppError(e.message || e); });
         window.addEventListener('unhandledrejection', function(e) { showAppError(e.reason || e); });
-        
+
+
         // ==========================================================================
         // 0. BULLETPROOF SAFE LOCAL STORAGE PARSER (CRASH PREVENTION)
         // ==========================================================================
@@ -823,8 +879,7 @@
                     if(document.getElementById('ambient-glow')) document.getElementById('ambient-glow').style.backgroundColor = rawHex;
 
                     // Darken slightly for the theme background aesthetic
-                    r = Math.floor(r * 0.4);
-                    g = Math.floor(g * 0.4); b = Math.floor(b * 0.4);
+                    r = Math.floor(r * 0.4); g = Math.floor(g * 0.4); b = Math.floor(b * 0.4);
                     let hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
                     callback(hex);
                 } catch(e) {
@@ -846,6 +901,7 @@
 
         window.toggleBassBoost = function() {
             if(window.haptic) window.haptic();
+            
             if (!audioCtx) {
                 try {
                     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -853,7 +909,8 @@
                     const audioEl = document.getElementById('audio-core');
                     
                     // Required for cross-origin audio processing without blocking
-                    audioEl.crossOrigin = "anonymous";
+                    audioEl.crossOrigin = "anonymous"; 
+                    
                     const source = audioCtx.createMediaElementSource(audioEl);
                     bassFilter = audioCtx.createBiquadFilter();
                     bassFilter.type = 'lowshelf';
@@ -871,6 +928,7 @@
             
             // Resume context if suspended by browser autoplay policy
             if (audioCtx.state === 'suspended') audioCtx.resume();
+
             isBassBoosted = !isBassBoosted;
             bassFilter.gain.value = isBassBoosted ? 9 : 0; // Changed from 15 to 9 (60%) for production clarity
             
@@ -889,8 +947,10 @@
         // ==========================================================================
         window.playCurrentPlaylistContext = function() {
             if (window.haptic) window.haptic();
+            
             // FIX: Grab the currently loaded playlist tracks directly from the DOM to form the queue
             const allLoadedTracks = Array.from(document.querySelectorAll('.pl-track-item')).map(el => el.trackData);
+            
             if (allLoadedTracks && allLoadedTracks.length > 0) {
                 currentQueueContext = activePlaylistViewId;
                 playQueue = allLoadedTracks;
@@ -914,6 +974,7 @@
         // ==========================================================================
 
         let currentUserUid = null;
+
         // Dynamic Time-of-Day Greeting
         const currentHour = new Date().getHours();
         let greetingText = 'Good evening';
@@ -1103,7 +1164,7 @@
         const resultsDiv = document.getElementById('search-results');
         const suggestionsDiv = document.getElementById('search-suggestions-container');
         let searchTimeout;
-        
+
         // The Queue Engine
         let currentTrackData = null;
         let playQueue = [];
@@ -1149,6 +1210,7 @@
                         
                         // NEW: Support Swipe inside search
                         div.innerHTML = `<div class="swipe-indicator"><span class="material-symbols-rounded">add_to_queue</span></div><div class="track-item-inner"><img src="${bestImg}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${cleanTitle}</span><span class="track-artist">${artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span></div>`;
+                        
                         div.onclick = () => {
                             currentQueueContext = 'search';
                             playQueue = [trackObj]; 
@@ -1167,11 +1229,12 @@
                         
                         // Init Swipe Gesture
                         initSwipeToQueue(div, trackObj);
+
                         if(resultsDiv) resultsDiv.appendChild(div);
                     });
                 }
             } catch (err) { 
-                if(resultsDiv) resultsDiv.innerHTML = '<p style="color:red; text-align:center;">Network Error</p>';
+                if(resultsDiv) resultsDiv.innerHTML = '<p style="color:red; text-align:center;">Network Error</p>'; 
             }
         }
 
@@ -1228,6 +1291,7 @@
             }
 
             if(audio) audio.src = lastPlayedCache.audioUrl;
+            
             // Rebuild queue
             currentQueueContext = 'history';
             playQueue = safeStorageGet('quanic_history', []);
@@ -1260,6 +1324,7 @@
                 
                 const trendingRef = doc(db, 'public_feeds', 'trending');
                 const trendingSnap = await getDoc(trendingRef);
+                
                 if (trendingSnap.exists() && trendingSnap.data().tracks) {
                     const top15 = trendingSnap.data().tracks;
                     trendingQueueCache = top15;
@@ -1273,7 +1338,6 @@
                     top15.forEach((track, index) => {
                         const div = document.createElement('div');
                         div.className = 'trending-track-item';
-                       
                         let activeClass = (currentTrackData && currentTrackData.title === track.title) ? 'active-playing' : '';
                         
                         div.innerHTML = `
@@ -1281,7 +1345,7 @@
                             <div class="track-item-inner">
                                 <div class="trending-rank">${index + 1}</div>
                                 <div class="trending-img-wrapper">
-                                 <img src="${track.imgUrl}" alt="cover">
+                                    <img src="${track.imgUrl}" alt="cover">
                                 </div>
                                 <div class="track-info">
                                     <span class="track-title ${activeClass}">${track.title}</span>
@@ -1290,6 +1354,7 @@
                                 <span class="material-symbols-rounded track-menu">more_vert</span>
                             </div>
                         `;
+                        
                         div.onclick = () => {
                             currentQueueContext = 'trending';
                             playQueue = trendingQueueCache;
@@ -1326,10 +1391,12 @@
             contentEl.innerText = "Searching for lyrics...";
             contentEl.classList.remove('loaded');
             if(hintEl) hintEl.style.display = 'none';
+
             try {
                 // Aggressive Title Cleaning (Crucial for Tamil/Indian Songs to hit the APIs correctly)
                 let cleanTitle = title ? title.replace(/\(From.*?\)/gi, '').replace(/\[.*?\]/g, '').replace(/\(Tamil.*?\)/gi, '').replace(/- Original.*/gi, '').split('-')[0].trim() : '';
                 let cleanArtist = artist ? artist.split(',')[0].trim() : '';
+
                 // 1. Try JioSaavn FIRST (Best database for Tamil & Indian Music)
                 if (songId) {
                     try {
@@ -1380,6 +1447,7 @@
 
                 // 4. If all three databases come up completely empty
                 contentEl.innerText = "Lyrics not available for this track yet.";
+
             } catch(e) {
                 console.error("Lyrics fetch error:", e);
                 contentEl.innerText = "Lyrics could not be loaded.";
@@ -1393,8 +1461,7 @@
             // FIREBASE FEATURE: Log this play to the trending engine!
             logPlayEventForTrending(trackObj);
 
-            try { localStorage.setItem('quanic_last_played', JSON.stringify(trackObj));
-            } catch(e){}
+            try { localStorage.setItem('quanic_last_played', JSON.stringify(trackObj)); } catch(e){}
             
             if(document.getElementById('mini-title')) document.getElementById('mini-title').innerText = trackObj.title;
             if(document.getElementById('mini-artist')) document.getElementById('mini-artist').innerText = trackObj.artist;
@@ -1407,8 +1474,10 @@
 
             // RESET SCROLL TO TOP WHEN NEW SONG LOADS
             if(playerScrollBox) playerScrollBox.scrollTo(0, 0);
+            
             // Trigger Advanced Multi-Engine Lyrics Fetch
             fetchLyrics(trackObj.id, trackObj.title, trackObj.artist);
+            
             // MODIFIED FOR FEATURE: Dynamic Color sync!
             const activeColor = generateDarkHexColor(trackObj.title);
             if(document.getElementById('player-bg')) {
@@ -1424,8 +1493,7 @@
             if(trackObj.imgUrl) {
                 getDominantColor(trackObj.imgUrl, (extractedColor) => {
                     if (extractedColor) {
-                        if(document.getElementById('player-bg')) document.getElementById('player-bg').style.background = 
-`linear-gradient(to bottom, ${extractedColor} 0%, #000000 100%)`;
+                        if(document.getElementById('player-bg')) document.getElementById('player-bg').style.background = `linear-gradient(to bottom, ${extractedColor} 0%, #000000 100%)`;
                         if (metaThemeColor && document.getElementById('full-player').style.transform === 'translateY(0px)') {
                              metaThemeColor.setAttribute('content', extractedColor);
                         }
@@ -1436,10 +1504,10 @@
             audio.src = trackObj.audioUrl;
             let playProm = audio.play();
             if(playProm !== undefined) playProm.catch(e => console.log("Auto-play prevented", e));
-            if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            // Ensure Bass Boost Context stays awake
+            if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); // Ensure Bass Boost Context stays awake
             updatePlayIcons(true);
             highlightActiveTrack(trackObj.title);
+
             // NEW FEATURE: REALTIME ADMIN TRACKER (NOW PLAYING)
             if (typeof currentUserUid !== 'undefined' && currentUserUid) {
                 try {
@@ -1466,8 +1534,7 @@
                         set(ref(rtdb, `users/${currentUserUid}/status`), 'online');
                         set(ref(rtdb, `users/${currentUserUid}/lastActive`), serverTimestamp());
                     }
-                } catch(e) { console.error("Status update error", e);
-                }
+                } catch(e) { console.error("Status update error", e); }
             }
             
             if(document.getElementById('current-time')) document.getElementById('current-time').innerText = "0:00";
@@ -1496,14 +1563,13 @@
             if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); // Sync Audio API
             if (audio.src) {
                 if (audio.paused) { 
-                    let playPromise = audio.play();
-                    if (playPromise !== undefined) { playPromise.then(() => updatePlayIcons(true)).catch(e => console.log("Play interrupted", e)); } else { updatePlayIcons(true);
-                    } 
+                    let playPromise = audio.play(); 
+                    if (playPromise !== undefined) { playPromise.then(() => updatePlayIcons(true)).catch(e => console.log("Play interrupted", e)); } else { updatePlayIcons(true); } 
                 } 
-                else { audio.pause();
-                updatePlayIcons(false); }
+                else { audio.pause(); updatePlayIcons(false); }
             }
         };
+
         function updatePlayIcons(isPlaying) {
             const miniPlay = document.getElementById('mini-playpause');
             const fullPlay = document.getElementById('full-playpause');
@@ -1514,7 +1580,7 @@
             if(fullPlay) fullPlay.innerText = isPlaying ? 'pause_circle' : 'play_circle';
             
             if(miniImg) {
-                if(isPlaying) miniImg.classList.add('playing');
+                if(isPlaying) miniImg.classList.add('playing'); 
                 else miniImg.classList.remove('playing');
             }
             if(vis) {
@@ -1546,8 +1612,7 @@
             isScrubbing = true;
             wasPlayingBeforeScrub = !audio.paused;
             let p = audio.playPromise; 
-            audio.pause();
-            // Pause smoothly to prevent timeupdate jitter like YouTube
+            audio.pause(); // Pause smoothly to prevent timeupdate jitter like YouTube
             updateScrubVisuals(e);
         }
 
@@ -1567,10 +1632,8 @@
                 audio.currentTime = percentage * audio.duration;
                 if(wasPlayingBeforeScrub) {
                     let playPromise = audio.play();
-                    if (playPromise !== undefined) { playPromise.then(() => updatePlayIcons(true)).catch(e => console.log("Scrub play interrupted", e)); } else { updatePlayIcons(true);
-                    }
-                    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-                    // Re-sync Web Audio API
+                    if (playPromise !== undefined) { playPromise.then(() => updatePlayIcons(true)).catch(e => console.log("Scrub play interrupted", e)); } else { updatePlayIcons(true); }
+                    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); // Re-sync Web Audio API
                 }
             }
         }
@@ -1589,6 +1652,7 @@
             audio.addEventListener('loadedmetadata', () => {
                 if(document.getElementById('total-time')) document.getElementById('total-time').innerText = formatTime(audio.duration);
             });
+
             audio.addEventListener('timeupdate', () => {
                 if (audio.duration && !isScrubbing) { // Smart scrubbing block injected
                     const progress = (audio.currentTime / audio.duration) * 100;
@@ -1597,6 +1661,7 @@
                     if(document.getElementById('current-time')) document.getElementById('current-time').innerText = formatTime(audio.currentTime);
                 }
             });
+            
             audio.addEventListener('ended', () => { if(!audio.loop) nextTrack(); });
         }
 
@@ -1609,6 +1674,7 @@
             const percentage = Math.max(0, Math.min(1, clickX / rect.width)); 
             if (audio.duration) audio.currentTime = percentage * audio.duration;
         };
+
         window.toggleLoop = function() {
             if(!audio) return;
             window.haptic();
@@ -1617,6 +1683,7 @@
             if(btn) btn.classList.toggle('active');
             showToast(audio.loop ? 'Repeat On' : 'Repeat Off', 'repeat');
         };
+
         window.toggleShuffle = function() {
             window.haptic();
             isShuffle = !isShuffle;
@@ -1624,6 +1691,7 @@
             if(btn) btn.classList.toggle('active');
             showToast(isShuffle ? 'Shuffle On' : 'Shuffle Off', 'shuffle');
         };
+
         window.nextTrack = function() {
             window.haptic();
             if (playQueue && playQueue.length > 0) {
@@ -1632,14 +1700,16 @@
                 } else if (queueIndex < playQueue.length - 1) {
                     queueIndex++;
                 } else {
-                    queueIndex = 0;
+                    queueIndex = 0; 
                 }
                 if(playQueue[queueIndex]) loadAndPlay(playQueue[queueIndex], false);
+                
                 if (currentQueueContext !== 'history' && currentQueueContext !== 'search' && currentQueueContext !== 'trending') {
                     if (queueIndex >= playQueue.length - 2) fetchMorePlaylistSongs(currentQueueContext);
                 }
             }
         };
+
         window.prevTrack = function() {
             if(!audio) return;
             window.haptic();
@@ -1649,6 +1719,7 @@
                 if(playQueue[queueIndex]) loadAndPlay(playQueue[queueIndex], false);
             }
         };
+
         async function checkIfLiked(title, explicitId) {
             if(!currentUserUid || !title) return;
             try {
@@ -1657,6 +1728,7 @@
                 const snap = await getDoc(docRef);
                 const likeBtn = document.getElementById('btn-like');
                 if(!likeBtn) return;
+                
                 if(snap.exists()) {
                     likeBtn.innerText = 'favorite';
                     likeBtn.style.color = '#E1306C';
@@ -1676,7 +1748,8 @@
             const isLiked = likeBtn.innerText === 'favorite';
             const cleanId = currentTrackData.firestoreId || currentTrackData.title.replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(currentTrackData.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
             
-            likeBtn.style.transform = 'scale(0.8)';
+            likeBtn.style.transform = 'scale(0.8)'; 
+            
             // FEATURE: Double Tap Heart Popup Code injected
             if(!isLiked) {
                 const artworkArea = document.querySelector('.artwork-container');
@@ -1703,10 +1776,10 @@
                     likeBtn.style.color = '#E1306C';
                     showToast('Added to Liked Songs', 'favorite');
                 }
-            } catch(e) { console.log(e);
-            }
+            } catch(e) { console.log(e); }
             setTimeout(() => likeBtn.style.transform = 'scale(1)', 150);
         };
+
         // ==========================================================================
         // 6. MASTER MODAL ROUTING & HARDWARE BACK CONTROLS
         // ==========================================================================
@@ -1781,11 +1854,11 @@
                             url: shareLinkUrl 
                         });
                     } catch(e){}
-                } else { showToast('Sharing not supported', 'error');
-                }
+                } else { showToast('Sharing not supported', 'error'); }
                 history.back();
             };
             content.appendChild(shareBtn);
+
             if (contextId && contextId !== 'history' && contextId !== 'search' && contextId !== 'trending') {
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'modal-btn';
@@ -1796,13 +1869,15 @@
                         const cleanId = optionTrackTarget.firestoreId || optionTrackTarget.title.replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(optionTrackTarget.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
                         await deleteDoc(doc(db, 'users', currentUserUid, 'playlists', contextId, 'songs', cleanId));
                         showToast('Song removed', 'delete');
+                        
                         const items = document.querySelectorAll('.pl-track-item');
                         items.forEach(el => {
                             if(el.trackData && el.trackData.firestoreId === cleanId) el.remove();
                         });
+                        
                         if(playQueue) playQueue = playQueue.filter(t => t.firestoreId !== cleanId);
                     } catch(e){}
-                    history.back();
+                    history.back(); 
                 };
                 content.appendChild(removeBtn);
             }
@@ -1822,8 +1897,10 @@
 
         window.openPlaylistView = function(playlistId, playlistName) {
             if(document.getElementById('pl-view-title')) document.getElementById('pl-view-title').innerText = playlistName;
+            
             // INJECTED FOR NEW SPOTIFY BANNER FEATURE
             if(document.getElementById('pl-view-title-large')) document.getElementById('pl-view-title-large').innerText = playlistName;
+
             const modal = document.getElementById('playlist-view-modal');
             if(modal) modal.classList.add('open');
             
@@ -1834,13 +1911,16 @@
             }
 
             history.pushState({ modal: 'playlist_view' }, '', `#playlist_${playlistId}`);
+            
             // Reset Song Count UI
             if(document.getElementById('pl-song-count')) document.getElementById('pl-song-count').innerText = "Loading tracks...";
+            
             loadPlaylistSongs(playlistId);
         };
 
         window.closeFullPlayer = () => { history.back(); };
         window.closePlaylistView = () => { history.back(); };
+
         window.addEventListener('popstate', (e) => {
             const state = e.state ? e.state.modal : 'home';
             
@@ -1887,6 +1967,7 @@
                 likedCard.onclick = () => openPlaylistView('Liked', 'Liked Songs');
                 if(plContainer) plContainer.appendChild(likedCard);
                 cacheData.push({id: 'Liked', name: 'Liked Songs'});
+
                 snap.forEach(docSnap => {
                     if(docSnap.id === 'Liked') return; 
                     const div = document.createElement('div');
@@ -1896,9 +1977,9 @@
                     if(plContainer) plContainer.appendChild(div);
                     cacheData.push({id: docSnap.id, name: docSnap.data().name});
                 });
+                
                 try { localStorage.setItem('quanic_playlists', JSON.stringify(cacheData)); } catch(e){}
-            } catch(e) { console.error("Error fetching playlists", e);
-            }
+            } catch(e) { console.error("Error fetching playlists", e); }
         }
 
         async function populateOptionsPlaylists() {
@@ -1919,17 +2000,18 @@
                         btn.className = 'modal-btn';
                         btn.style.width = '100%';
                         btn.innerHTML = `<span class="material-symbols-rounded" style="color:#A7A7A7;">queue_music</span> Add to ${docSnap.data().name}`;
+                        
                         btn.onclick = async () => {
                             const track = optionTrackTarget || currentTrackData;
                             if(!track) return;
                             const cleanId = track.firestoreId || track.title.replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(track.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
                             const songRef = doc(db, 'users', currentUserUid, 'playlists', docSnap.id, 'songs', cleanId);
+                            
                             const check = await getDoc(songRef);
                             if(!check.exists()) {
                                 await setDoc(songRef, { ...track, firestoreId: cleanId, addedAt: new Date() });
                                 showToast('Added to ' + docSnap.data().name);
-                            } else { showToast('Already in playlist', 'info');
-                            }
+                            } else { showToast('Already in playlist', 'info'); }
                             history.back();
                         };
                         targetList.appendChild(btn);
@@ -1946,6 +2028,7 @@
             try {
                 const input = document.getElementById('new-playlist-name');
                 const name = input ? (input.value.trim() || 'New Playlist') : 'New Playlist';
+                
                 const plRef = await addDoc(collection(db, 'users', currentUserUid, 'playlists'), { name: name, createdAt: new Date() });
                 
                 const track = optionTrackTarget || currentTrackData;
@@ -1953,14 +2036,14 @@
                     const cleanId = track.firestoreId || track.title.replace(/[^a-zA-Z0-9]/g, '') || btoa(encodeURIComponent(track.title)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'unknown';
                     await setDoc(doc(db, 'users', currentUserUid, 'playlists', plRef.id, 'songs', cleanId), { ...track, firestoreId: cleanId, addedAt: new Date() });
                     showToast('Playlist created & song added');
-                } else { showToast('Playlist created');
-                }
+                } else { showToast('Playlist created'); }
                 
                 if(input) input.value = '';
                 fetchUserPlaylists(); 
             } catch(e){}
             history.back(); 
         };
+
         window.deleteActivePlaylist = async function() {
             if(!currentUserUid || !activePlaylistViewId || activePlaylistViewId === 'Liked') return;
             if(confirm("Are you sure you want to delete this entire playlist?")) {
@@ -1969,7 +2052,7 @@
                     showToast('Playlist deleted', 'delete_sweep');
                     fetchUserPlaylists();
                 } catch(e){}
-                history.back();
+                history.back(); 
             }
         };
 
@@ -1986,8 +2069,7 @@
             
             const anchor = document.getElementById('scroll-anchor');
             if(anchor) {
-                if (globalPlaylistObserver) globalPlaylistObserver.disconnect();
-                // Destroy the old ghost!
+                if (globalPlaylistObserver) globalPlaylistObserver.disconnect(); // Destroy the old ghost!
                 
                 globalPlaylistObserver = new IntersectionObserver((entries) => {
                     if(entries[0].isIntersecting) fetchMorePlaylistSongs(activePlaylistViewId);
@@ -2029,6 +2111,7 @@
 
                     // Update UI Count
                     if(document.getElementById('pl-song-count')) document.getElementById('pl-song-count').innerText = `${indexOffset + snap.docs.length} tracks`;
+
                     snap.forEach((docSnap, idx) => {
                         const track = docSnap.data();
                         track.firestoreId = docSnap.id; 
@@ -2060,7 +2143,7 @@
                             };
                         }
 
-                        div.trackData = track;
+                        div.trackData = track; 
                         initSwipeToQueue(div, track);
                         listDiv.insertBefore(div, anchor);
                     });
@@ -2070,8 +2153,7 @@
                         if(document.getElementById('pl-song-count')) document.getElementById('pl-song-count').innerText = "0 tracks";
                     }
                 }
-            } catch(e) { console.error(e);
-            }
+            } catch(e) { console.error(e); }
             isFetchingPlaylist = false;
         }
 
@@ -2084,9 +2166,11 @@
             const filteredArr = historyArr.filter(t => t.title !== trackObj.title); 
             filteredArr.unshift(trackObj); 
             
-            if (filteredArr.length > 20) filteredArr.pop();
+            if (filteredArr.length > 20) filteredArr.pop(); 
+            
             try { localStorage.setItem('quanic_history', JSON.stringify(filteredArr)); } catch(e){}
             renderHistory();
+
             // NEW FEATURE: CLOUD HISTORY PUSH (MAX 20)
             if (typeof currentUserUid !== 'undefined' && currentUserUid) {
                 try {
@@ -2094,8 +2178,7 @@
                         tracks: filteredArr,
                         lastUpdated: new Date()
                     }, {merge: true});
-                } catch(e) { console.error("Failed to sync history to cloud", e);
-                }
+                } catch(e) { console.error("Failed to sync history to cloud", e); }
             }
         }
 
@@ -2104,11 +2187,13 @@
             const historyList = document.getElementById('history-list');
             const recentGrid = document.getElementById('recent-grid');
             const historyTitle = document.getElementById('history-title');
+            
             if(historyTitle) {
                 historyTitle.style.display = historyArr.length > 6 ? 'block' : 'none';
             }
             
             if (historyArr.length === 0) return;
+            
             if(historyList) historyList.innerHTML = '';
             if(recentGrid) recentGrid.innerHTML = '';
             
@@ -2131,7 +2216,9 @@
                 } else if (historyList) {
                     const div = document.createElement('div');
                     div.className = 'track-item';
+                    
                     div.innerHTML = `<div class="swipe-indicator"><span class="material-symbols-rounded">add_to_queue</span></div><div class="track-item-inner"><img src="${track.imgUrl}" alt="cover"><div class="track-info"><span class="track-title ${activeClass}">${track.title}</span><span class="track-artist">${track.artist}</span></div><span class="material-symbols-rounded track-menu">more_vert</span></div>`;
+                    
                     div.onclick = () => {
                         currentQueueContext = 'history';
                         playQueue = historyArr;
@@ -2156,6 +2243,7 @@
         
         // Initial 0ms call to render History safely
         renderHistory();
+
         // ==========================================================================
         // MASSIVE FEATURE: SMART TAP BASS BOOST & DEEP LINK HANDLER
         // ==========================================================================
@@ -2212,6 +2300,7 @@
                 }
             }
         });
+
         // ==========================================================================
         // 13. MASSIVE BUG FIXES & SPOTIFY FEATURES INJECTION (QUEUE, SPEED, MODAL FIX)
         // ==========================================================================
@@ -2257,6 +2346,7 @@
             nextTitle.style.cssText = "font-size:0.8rem; color:#fff; font-weight:800; margin-bottom:10px; text-transform:uppercase;";
             nextTitle.innerText = "Next In Queue";
             list.appendChild(nextTitle);
+
             if (playQueue && playQueue.length > 0 && queueIndex + 1 < playQueue.length) {
                 for(let i = queueIndex + 1; i < Math.min(queueIndex + 31, playQueue.length); i++) {
                     const t = playQueue[i];
@@ -2305,19 +2395,18 @@
                 
                 // 3. Fix scroll lock bug if full player force closed
                 if (state === 'home' || state === 'playlist_view') {
-                    document.body.style.overflow = 'hidden';
+                    document.body.style.overflow = 'hidden'; 
                 }
-            }, 50);
-            // slight delay ensures primary listener processes first
+            }, 50); // slight delay ensures primary listener processes first
         });
+        
         // --- Audio Auto-Advance Bug Fix ---
         // Safely patch the nextTrack function to fix the infinite 1-track loop bug
         const originalNextTrack = window.nextTrack;
         window.nextTrack = function() {
             // Prevent looping if it's the end of the queue and loop is false
             if (!audio.loop && !isShuffle && playQueue && playQueue.length > 0 && queueIndex >= playQueue.length - 1) {
-                if(audio) { audio.pause();
-                audio.currentTime = 0; }
+                if(audio) { audio.pause(); audio.currentTime = 0; }
                 updatePlayIcons(false);
                 showToast("End of queue", "queue_music");
                 return; // Stop here, don't play next
@@ -2346,10 +2435,10 @@
                         if (isPlayingMusic && currentTrackData) {
                             updatePayload.nowPlaying = {
                                 title: currentTrackData.title,
-                                 artist: currentTrackData.artist,
+                                artist: currentTrackData.artist,
                                 imgUrl: currentTrackData.imgUrl,
                                 timestamp: new Date(),
-                                 isPlaying: true
+                                isPlaying: true
                             };
                         }
                         
@@ -2364,18 +2453,16 @@
                                     artist: currentTrackData.artist,
                                     imgUrl: currentTrackData.imgUrl,
                                     timestamp: Date.now(),
-                                     isPlaying: true
+                                    isPlaying: true
                                 });
                             }
                             set(ref(rtdb, `users/${currentUserUid}/status`), 'online');
                             set(ref(rtdb, `users/${currentUserUid}/lastActive`), serverTimestamp());
                         }
-                    } catch(e) { console.error("Heartbeat error", e);
-                    }
+                    } catch(e) { console.error("Heartbeat error", e); }
                 }
             }
-        }, 15000);
-        // 15-second hyper-accurate heartbeat
+        }, 15000); // 15-second hyper-accurate heartbeat
 
         // Instantly mark offline ONLY if they minimize AND music is paused
         document.addEventListener('visibilitychange', () => {
@@ -2385,10 +2472,10 @@
                     if (!isPlayingMusic) {
                         try {
                             /* --- ORIGINAL FIRESTORE CALL DISABLED TO SAVE COSTS ---
-                             setDoc(doc(db, 'users', currentUserUid), {
+                            setDoc(doc(db, 'users', currentUserUid), {
                                 isOnline: false,
                                 lastActive: new Date()
-                             }, {merge: true});
+                            }, {merge: true});
                             ------------------------------------------------------ */
                             // RTDB SYNC
                             if(rtdb) {
@@ -2399,7 +2486,7 @@
                     }
                 } else {
                     // Back to app = Online immediately
-                     try {
+                    try {
                         /* --- ORIGINAL FIRESTORE CALL DISABLED TO SAVE COSTS ---
                         setDoc(doc(db, 'users', currentUserUid), {
                             isOnline: true,
@@ -2423,58 +2510,77 @@
         // Swipe to Queue Function
         function initSwipeToQueue(el, trackObj) {
             let startX = 0;
-            let startY = 0;
             let currentX = 0;
-            let currentY = 0;
-            let isScrolling = false;
-            let swipeTriggered = false;
-
             const inner = el.querySelector('.track-item-inner');
             const indicator = el.querySelector('.swipe-indicator');
 
             el.addEventListener('touchstart', (e) => {
                 startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-                currentX = 0;
-                currentY = 0;
-                isScrolling = false;
-                swipeTriggered = false;
                 inner.style.transition = 'none';
             }, {passive: true});
 
             el.addEventListener('touchmove', (e) => {
-                if (isScrolling) return; // If we determined it's a vertical scroll, ignore horizontal swipe
-                
                 currentX = e.touches[0].clientX - startX;
-                currentY = e.touches[0].clientY - startY;
-                
-                // Determine if user is scrolling vertically or swiping horizontally
-                if (Math.abs(currentY) > Math.abs(currentX) && Math.abs(currentY) > 10) {
-                    isScrolling = true;
-                    return;
-                }
-
-                if(currentX > 0 && !isScrolling) {
+                if(currentX > 0) {
                     const transform = Math.min(currentX, 100);
                     inner.style.transform = `translateX(${transform}px)`;
                     indicator.style.transform = `scale(${transform/100})`;
-                    
-                    // Add snap vibration feedback when threshold is reached
-                    if (currentX > 70 && !swipeTriggered) {
-                        swipeTriggered = true;
-                        if(window.haptic) window.haptic(); // Vibrate when threshold met
-                    } else if (currentX <= 70 && swipeTriggered) {
-                        swipeTriggered = false; // Reset if they pull back
-                    }
                 }
             }, {passive: true});
 
             el.addEventListener('touchend', () => {
                 inner.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
-                if(currentX > 70 && !isScrolling) {
+                if(currentX > 70) {
                     // Logic to add to queue
                     if(playQueue) {
-                        // Check for duplicates
-                        const isAlreadyInQueue = playQueue.some(t => 
-                            (t.id && t.id === trackObj.id) || 
-                            (t.firestoreId && t.firestore
+                        playQueue.splice(queueIndex + 1, 0, trackObj);
+                        showToast('Added to queue', 'playlist_add');
+                        if(window.haptic) window.haptic();
+                    }
+                }
+                inner.style.transform = 'translateX(0)';
+                currentX = 0;
+            });
+        }
+
+        // Search Suggestions Engine
+        function generateSearchSuggestions() {
+            const grid = document.getElementById('search-suggestion-grid');
+            if(!grid) return;
+            grid.innerHTML = '';
+            
+            const history = safeStorageGet('quanic_history', []);
+            const artists = [...new Set(history.map(t => t.artist.split(',')[0].trim()))].slice(0, 4);
+            const moods = ['Chill', 'Workout', 'Sad', 'Party'];
+            const colors = ['#E1306C', '#FF7A00', '#2E7D32', '#1565C0', '#6A1B9A', '#AD1457', '#00838F', '#283593'];
+
+            const combined = [...artists, ...moods].slice(0, 8);
+            
+            combined.forEach((item, idx) => {
+                const card = document.createElement('div');
+                card.className = 'suggestion-card';
+                card.style.background = colors[idx % colors.length];
+                card.innerHTML = `
+                    <h4>${item}</h4>
+                    <span class="material-symbols-rounded card-icon">music_note</span>
+                `;
+                card.onclick = () => {
+                    const input = document.getElementById('search-input');
+                    input.value = item;
+                    input.dispatchEvent(new Event('input'));
+                };
+                grid.appendChild(card);
+            });
+        }
+
+        // Add to Playlist Nested Modal Logic
+        window.openAddToPlaylistSheet = function() {
+            populateOptionsPlaylists();
+            const sheet = document.getElementById('add-to-playlist-sheet');
+            sheet.classList.add('open');
+            history.pushState({ modal: 'add_to_playlist' }, '', '#add-to-playlist');
+        };
+
+    </script>
+</body>
+</html>
