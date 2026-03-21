@@ -489,6 +489,10 @@
             msg.style.display = 'none';
             iosGuide.style.display = 'block';
         } else {
+            // FIX: Immediately show the install button so users don't have to wait
+            installBtn.style.display = 'block';
+            msg.style.display = 'none';
+
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
@@ -504,6 +508,10 @@
                         installBtn.style.display = 'none';
                         localStorage.setItem('quanic_v', VERSION);
                     }
+                } else {
+                    // FIX: Fallback just in case they click it before the prompt is officially ready
+                    msg.textContent = "Preparing installation... Please tap again in a moment.";
+                    msg.style.display = 'block';
                 }
             });
         }
