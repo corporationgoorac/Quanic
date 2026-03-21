@@ -25,13 +25,14 @@
             width: 100vw !important;
             height: 100vh !important;
             height: 100dvh !important;
-            background-color: #121212 !important; /* Updated to Quanic Professional Dark Theme */
+            background-color: #121212 !important; 
+            background: radial-gradient(circle at 50% -10%, rgba(225, 48, 108, 0.15) 0%, rgba(18, 18, 18, 1) 60%) !important;
             color: #ffffff;
             font-family: 'Inter', -apple-system, system-ui, sans-serif;
             overflow: hidden !important;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start; /* Changed to flex-start to allow proper scrolling */
             align-items: center;
             position: fixed !important;
             top: 0 !important;
@@ -54,16 +55,14 @@
             align-items: center;
             text-align: center;
             z-index: 2;
-            /* Removed animation as requested for 0ms loading */
             width: 100%;
             max-width: 450px;
-            padding: 20px 20px 30px 20px; /* Scaled down padding to save vertical space */
+            height: 100%; /* Take full height to manage its own scroll */
+            padding: 40px 24px calc(24px + env(safe-area-inset-bottom)); /* Safe area for modern phones */
             box-sizing: border-box;
-            max-height: 100dvh; /* Ensures the container respects screen boundaries */
-            overflow-y: auto; /* Allows internal scrolling if the screen is super small */
+            overflow-y: auto; 
             scrollbar-width: none; /* Firefox */
             -ms-overflow-style: none; /* IE/Edge */
-            background: radial-gradient(circle at 50% -20%, rgba(225, 48, 108, 0.15) 0%, rgba(18, 18, 18, 0) 70%);
         }
 
         .setup-container::-webkit-scrollbar {
@@ -71,19 +70,19 @@
         }
 
         .setup-container h1 {
-            font-size: 1.5rem; /* Slightly reduced for spacing */
+            font-size: 1.8rem; /* Restored professional size */
             font-weight: 600;
-            letter-spacing: 1px;
-            margin-top: 10px;
-            margin-bottom: 5px;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            letter-spacing: 0.5px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
         .setup-container p {
-            font-size: 0.85rem; /* Slightly reduced */
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 15px; /* Reduced margin to pull form up */
-            line-height: 1.4;
+            font-size: 0.95rem; /* Restored professional size */
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 30px; 
+            line-height: 1.5;
             padding: 0 10px;
         }
 
@@ -92,27 +91,26 @@
            ========================================================================== */
         .profile-pic-wrapper {
             position: relative;
-            margin-bottom: 5px;
-            /* Shrunk avatar size */
-            width: 84px; 
-            height: 84px;
+            margin-bottom: 10px;
+            width: 104px; 
+            height: 104px;
             border-radius: 50%;
-            background-color: #181818; /* Skeleton background while loading */
+            background-color: #181818; 
             display: flex;
             justify-content: center;
             align-items: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
         }
 
         .profile-pic {
-            width: 80px; /* Shrunk from 100px */
-            height: 80px; /* Shrunk from 100px */
+            width: 100px; /* Restored size for better visual hierarchy */
+            height: 100px; 
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid rgba(225, 48, 108, 0.5); /* Brand magenta edge */
-            box-shadow: 0 0 30px rgba(225, 48, 108, 0.3); /* Subtle glow */
-            background-color: #181818; /* Fallback color before image loads */
+            border: 2px solid rgba(225, 48, 108, 0.6); 
+            box-shadow: 0 0 20px rgba(225, 48, 108, 0.2); 
+            background-color: #181818; 
             transition: transform 0.3s ease;
-            /* Set initial display to block so cached image shows instantly */
             display: block;
         }
 
@@ -127,35 +125,35 @@
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 12px; /* Reduced gap between inputs */
+            flex: 1; /* Pushes button to bottom */
+            gap: 20px; /* Restored elegant spacing */
             text-align: left;
-            padding-bottom: 20px; /* Extra padding at bottom to clear any iOS home bars */
         }
 
         .input-group {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
         }
 
         .input-group label {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.8);
             letter-spacing: 0.5px;
             text-transform: uppercase;
-            font-weight: 500;
+            font-weight: 600;
             padding-left: 5px;
         }
 
         .premium-input {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             color: #ffffff;
-            padding: 12px 16px; /* Slightly reduced padding */
-            border-radius: 12px;
-            font-size: 0.95rem;
+            padding: 16px 20px; /* Premium padding */
+            border-radius: 14px;
+            font-size: 1rem;
             font-family: inherit;
             outline: none;
             transition: all 0.3s ease;
@@ -164,57 +162,60 @@
         }
 
         .premium-input::placeholder {
-            color: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.3);
         }
 
         .premium-input:focus {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(225, 48, 108, 0.6);
-            box-shadow: 0 0 15px rgba(225, 48, 108, 0.15);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(225, 48, 108, 0.7);
+            box-shadow: 0 0 20px rgba(225, 48, 108, 0.2);
         }
 
         textarea.premium-input {
             resize: vertical;
-            min-height: 80px; /* Reduced from 100px */
-            line-height: 1.4;
+            min-height: 100px; 
+            line-height: 1.5;
         }
 
         /* ==========================================================================
            5. SUBMIT BUTTON
            ========================================================================== */
         .submit-btn {
-            background: linear-gradient(90deg, #E1306C, #FF7A00); /* Brand logo gradient */
+            background: linear-gradient(90deg, #E1306C, #FF7A00); 
             border: none;
             color: #ffffff;
-            padding: 14px 20px; /* Reduced padding */
+            padding: 18px 24px; /* Thick, tap-friendly button */
             border-radius: 30px;
-            font-size: 1rem; /* Adjusted font size */
-            font-weight: 600;
+            font-size: 1.05rem; 
+            font-weight: 700;
             letter-spacing: 1px;
             cursor: pointer;
-            margin-top: 5px; /* Reduced spacing above button */
+            margin-top: auto; /* Pushes button to the bottom of the form */
+            position: sticky; /* Keeps it visible even when scrolling */
+            bottom: 20px;
+            z-index: 10;
             transition: all 0.3s ease;
             outline: none;
-            box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
+            box-shadow: 0 8px 25px rgba(225, 48, 108, 0.4);
         }
 
         .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(225, 48, 108, 0.5);
+            box-shadow: 0 10px 30px rgba(225, 48, 108, 0.5);
         }
 
         .submit-btn:active {
             transform: translateY(1px);
-            box-shadow: 0 2px 10px rgba(225, 48, 108, 0.3);
+            box-shadow: 0 4px 15px rgba(225, 48, 108, 0.4);
         }
 
         .submit-btn:disabled {
-            background: rgba(255, 255, 255, 0.05) !important;
-            color: rgba(255, 255, 255, 0.4) !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+            color: rgba(255, 255, 255, 0.3) !important;
             box-shadow: none !important;
             cursor: not-allowed;
             transform: none !important;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
         /* ==========================================================================
@@ -227,9 +228,9 @@
 
         /* Mobile Optimization */
         @media (max-width: 480px) {
-            .setup-container h1 { font-size: 1.4rem; }
-            .premium-input { padding: 10px 14px; font-size: 0.9rem; }
-            .submit-btn { padding: 12px 18px; font-size: 0.95rem; }
+            .setup-container h1 { font-size: 1.6rem; }
+            .premium-input { padding: 14px 18px; font-size: 0.95rem; }
+            .submit-btn { padding: 16px 20px; font-size: 1rem; }
         }
 
         /* ==========================================================================
@@ -244,9 +245,9 @@
         .genre-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px; /* Slightly tighter gap */
-            margin-bottom: 5px;
-            max-height: 140px; /* Reduced from 180px */
+            gap: 10px; 
+            margin-bottom: 10px;
+            max-height: 200px; 
             overflow-y: auto;
             padding-bottom: 10px;
             padding-right: 5px;
@@ -257,12 +258,12 @@
         .genre-grid { -ms-overflow-style: none; scrollbar-width: none; }
 
         .genre-capsule {
-            padding: 8px 14px; /* Reduced capsule size */
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.85rem; /* Adjusted text */
+            padding: 10px 18px; 
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem; 
             cursor: pointer;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             user-select: none;
@@ -280,7 +281,7 @@
             border-color: transparent;
             color: #fff;
             font-weight: 700;
-            box-shadow: 0 5px 15px rgba(225, 48, 108, 0.35);
+            box-shadow: 0 5px 15px rgba(225, 48, 108, 0.4);
             transform: scale(1.03);
         }
 
