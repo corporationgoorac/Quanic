@@ -477,6 +477,25 @@
             transform: translateY(0) translateZ(0) !important;
         }
 
+        /* ==========================================================================
+           16. TRENDING NOW UI STYLES (NEW FEATURE INJECTION)
+           ========================================================================== */
+        .trending-header { font-size: 2.2rem; font-weight: 800; margin-bottom: 5px; background: linear-gradient(135deg, #FF7A00, #E1306C); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .trending-subtitle { color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-bottom: 25px; font-weight: 600; letter-spacing: 0.5px; }
+        .trending-item { display: flex; align-items: center; padding: 12px 15px; border-radius: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.02); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .trending-item:active { transform: scale(0.98); background: rgba(255,255,255,0.08); }
+        .trending-rank { font-size: 1.2rem; font-weight: 800; color: rgba(255,255,255,0.3); width: 35px; text-align: center; margin-right: 15px; font-style: italic; }
+        .trending-item img { width: 60px; height: 60px; border-radius: 12px; margin-right: 15px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+        .trending-item .track-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+        
+        /* Premium Gold, Silver, Bronze Rank Highlights */
+        .trending-item:nth-child(1) { background: linear-gradient(90deg, rgba(255,215,0,0.1), rgba(255,255,255,0.02)); border: 1px solid rgba(255,215,0,0.2); }
+        .trending-item:nth-child(1) .trending-rank { color: #FFD700; text-shadow: 0 0 15px rgba(255,215,0,0.6); font-size: 1.6rem; }
+        .trending-item:nth-child(2) { background: linear-gradient(90deg, rgba(192,192,192,0.08), rgba(255,255,255,0.02)); border: 1px solid rgba(192,192,192,0.2); }
+        .trending-item:nth-child(2) .trending-rank { color: #C0C0C0; text-shadow: 0 0 15px rgba(192,192,192,0.6); font-size: 1.5rem; }
+        .trending-item:nth-child(3) { background: linear-gradient(90deg, rgba(205,127,50,0.08), rgba(255,255,255,0.02)); border: 1px solid rgba(205,127,50,0.2); }
+        .trending-item:nth-child(3) .trending-rank { color: #CD7F32; text-shadow: 0 0 15px rgba(205,127,50,0.6); font-size: 1.4rem; }
+
     </style>
 </head>
 <body>
@@ -519,6 +538,14 @@
             <div id="search-results"></div>
         </section>
 
+        <section id="trending-view" class="view-section">
+            <h2 class="trending-header">Trending Now</h2>
+            <p class="trending-subtitle">The hottest tracks on Quanic, updated hourly.</p>
+            <div id="trending-list-container">
+                <p style="color: #666; font-size: 0.95rem; text-align: center; margin-top: 30px;">Loading trending hits...</p>
+            </div>
+        </section>
+
         <section id="library-view" class="view-section">
             <h2>Your Library</h2>
             <div id="user-playlists">
@@ -536,6 +563,10 @@
         <div class="nav-item" onclick="switchTab('search')">
             <span class="material-symbols-rounded">search</span>
             <span class="nav-label">Search</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('trending')">
+            <span class="material-symbols-rounded">whatshot</span>
+            <span class="nav-label">Trending</span>
         </div>
         <div class="nav-item" onclick="switchTab('library')">
             <span class="material-symbols-rounded">library_music</span>
@@ -973,6 +1004,7 @@
                     localStorage.setItem('quanic_user_photo', fetchedPhoto);
                     
                     fetchUserPlaylists(); // Live sync from Firebase
+                    fetchTrendingFeed(); // Load trending data
 
                     // NEW FEATURE: CLOUD HISTORY RESTORE ON LOGIN
                     try {
@@ -1058,6 +1090,7 @@
             const targetView = document.getElementById(`${tabName}-view`);
             if(targetView) targetView.classList.add('active');
             if(tabName === 'library') fetchUserPlaylists();
+            if(tabName === 'trending') fetchTrendingFeed(); // Refresh the feed if they click it
         };
 
         // ==========================================================================
@@ -1266,6 +1299,7 @@
         window.loadAndPlay = async function(trackObj, updateHistory = true) {
             if(!trackObj || !audio) return;
             currentTrackData = trackObj;
+            logPlayEventForTrending(trackObj); // NEW TRENDING LOG INJECTION
             
             try { localStorage.setItem('quanic_last_played', JSON.stringify(trackObj)); } catch(e){}
             
@@ -1510,7 +1544,7 @@
                 }
                 if(playQueue[queueIndex]) loadAndPlay(playQueue[queueIndex], false);
                 
-                if (currentQueueContext !== 'history' && currentQueueContext !== 'search') {
+                if (currentQueueContext !== 'history' && currentQueueContext !== 'search' && currentQueueContext !== 'trending') {
                     if (queueIndex >= playQueue.length - 2) fetchMorePlaylistSongs(currentQueueContext);
                 }
             }
@@ -1665,7 +1699,7 @@
             };
             content.appendChild(shareBtn);
 
-            if (contextId && contextId !== 'history' && contextId !== 'search') {
+            if (contextId && contextId !== 'history' && contextId !== 'search' && contextId !== 'trending') {
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'modal-btn';
                 removeBtn.style.width = '100%';
@@ -2298,6 +2332,12 @@
                 }
             }
         });
-    </script>
-</body>
-</html>
+
+        // ==========================================================================
+        // 15. NEW TRENDING FETCH AND LOGGING ENGINE
+        // ==========================================================================
+        
+        async function logPlayEventForTrending(trackObj) {
+            if (!currentUserUid || !trackObj) return;
+            try {
+                const cleanId = trackObj.id || trackObj.firestore
