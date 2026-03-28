@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#121212">
     <title>Pulse Session | Quantum</title>
 
-    <script src="../components/theme.js"></script>
+    <script src="components/theme.js"></script>
 
     <script>
         window.onerror = function(msg, url, line, col, error) {
@@ -17,7 +17,17 @@
             const box = document.createElement('div');
             box.style.cssText = "position:fixed; top:10px; left:10px; right:10px; z-index:99999; background:var(--surface); color:var(--text); padding:15px; border:1px solid var(--accent); border-radius:8px; font-family:monospace; font-size:12px; box-shadow:0 10px 40px var(--bg);";
             box.innerHTML = `<strong>System Error:</strong><br>${msg}<br><br><em>Line: ${line}</em>`;
-            document.body.appendChild(box);
+            
+            // OLD BUGGY LINE DISABLED:
+            // document.body.appendChild(box);
+            
+            // NEW CRITICAL FIX: Ensures body actually exists before appending, stopping the crash loop!
+            if (document.body) { 
+                document.body.appendChild(box); 
+            } else { 
+                window.addEventListener('DOMContentLoaded', () => document.body.appendChild(box)); 
+            }
+            
             console.error("Global Error Caught:", error);
             return false;
         };
@@ -28,27 +38,40 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-    <script src="../config.js"></script>
+    <script type="module" src="config.js"></script>
     
-    <script type="module">
-        try { import('../config.js'); } catch(e) {}
-    </script>
-
     <script>
+        // OLD BUGGY INITIALIZATION DISABLED
+        /*
         // Safety check to ensure Firestore loaded before components run
         if (typeof window.initFirebaseCore === 'function') {
             window.initFirebaseCore();
         } else if (typeof firebase !== 'undefined' && !firebase.apps.length && window.firebaseConfig) {
             firebase.initializeApp(window.firebaseConfig);
         }
+        */
+       
+        // NEW CRITICAL FIX: FORCED COMPAT INITIALIZATION
+        // The compat SDK requires explicit initialization since config.js is using modular syntax!
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+            firebase.initializeApp({
+                apiKey: "AIzaSyBcqRDG1k2zqQrfLGJa1qbz83B_IlffbtU",
+                authDomain: "quanic-goorac.firebaseapp.com",
+                projectId: "quanic-goorac",
+                storageBucket: "quanic-goorac.firebasestorage.app",
+                messagingSenderId: "897545048675",
+                appId: "1:897545048675:web:d4c3e639cc0f0035435e56",
+                measurementId: "G-SE4ZTDFE1L"
+            });
+        }
     </script>
     
-    <script src="../components/songPicker.js"></script>
-    <script src="../components/fullSongPicker.js"></script> 
-    <script src="../components/emojiPicker.js"></script>
-    <script src="../components/presence.js"></script>
-    <script src="../components/call-notifier.js"></script>
-    <script src="../components/chatLoader.js"></script>
+    <script src="components/songPicker.js"></script>
+    <script src="components/fullSongPicker.js"></script> 
+    <script src="components/emojiPicker.js"></script>
+    <script src="components/presence.js"></script>
+    <script src="components/call-notifier.js"></script>
+    <script src="components/chatLoader.js"></script>
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;700;900&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
