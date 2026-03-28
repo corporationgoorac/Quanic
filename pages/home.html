@@ -831,11 +831,11 @@
     </div>
 
     <div id="broadcast-modal">
-        <div class="broadcast-header">
+        <div class="broadcast-header" id="broadcast-header-text">
             <span class="material-symbols-rounded">campaign</span> Global Notice
         </div>
         <div class="broadcast-body" id="broadcast-message-text"></div>
-        <button class="broadcast-close-btn" onclick="closeBroadcastModal()">Acknowledge</button>
+        <button class="broadcast-close-btn" id="broadcast-btn-text" onclick="closeBroadcastModal()">Acknowledge</button>
     </div>
 
     <script type="module">
@@ -1146,12 +1146,25 @@
                     onSnapshot(doc(db, 'system', 'global_notification'), (docSnap) => {
                         if(docSnap.exists() && docSnap.data().active) {
                             const data = docSnap.data();
-                            const msg = data.message;
+                            const msg = data.message || data.lines || "";
+                            const title = data.title || "Global Notice";
+                            const heading = data.heading || "";
+                            const btnText = data.buttonText || "Acknowledge";
                             const timeStr = data.timestamp ? (data.timestamp.seconds || JSON.stringify(data.timestamp)) : Date.now();
-                            const versionKey = 'quanic_broadcast_seen_' + btoa(unescape(encodeURIComponent(msg))).substring(0,15) + '_' + timeStr;
+                            const versionKey = 'quanic_broadcast_seen_' + (data.version || btoa(unescape(encodeURIComponent(msg))).substring(0,15) + '_' + timeStr);
                             
                             if(!localStorage.getItem(versionKey)) {
-                                document.getElementById('broadcast-message-text').innerText = msg;
+                                const headerEl = document.getElementById('broadcast-header-text');
+                                if(headerEl) headerEl.innerHTML = `<span class="material-symbols-rounded">campaign</span> ${title}`;
+                                
+                                let bodyHtml = "";
+                                if(heading) bodyHtml += `<h3 style="margin-bottom:10px; color:#fff; font-size:1.1rem;">${heading}</h3>`;
+                                bodyHtml += `<div style="white-space: pre-wrap;">${msg}</div>`;
+                                document.getElementById('broadcast-message-text').innerHTML = bodyHtml;
+                                
+                                const btnEl = document.getElementById('broadcast-btn-text');
+                                if(btnEl) btnEl.innerText = btnText;
+
                                 window.currentBroadcastKey = versionKey;
                                 openBroadcastModal();
                             }
