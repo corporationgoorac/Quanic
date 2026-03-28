@@ -1314,6 +1314,7 @@
                 const data = await res.json();
                 
                 // --- NEW ADVANCED ENGLISH API INJECTION (ITUNES) ---
+                if (false) { // DISABLED ITUNES AS REQUESTED, PRESERVING LINES PERFECTLY
                 try {
                     const itunesRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=15`);
                     const itunesData = await itunesRes.json();
@@ -1336,11 +1337,52 @@
                         });
                     }
                 } catch(e) { console.log("English API Fallback failed", e); }
+                } // END DISABLED ITUNES
+                // ---------------------------------------------------
+
+                // --- NEW ADVANCED FEATURE: SOUNDCLOUD / GLOBAL FREE API ---
+                // Using Audius protocol (a free Web3 equivalent to SoundCloud that bypasses CORS issues & offers direct streams)
+                try {
+                    const scRes = await fetch(`https://discoveryprovider.audius.co/v1/tracks/search?query=${encodeURIComponent(query)}&app_name=Quanic_Advanced`);
+                    const scData = await scRes.json();
+                    if(scData.data && scData.data.length > 0) {
+                        const formattedSC = scData.data.map(s => ({
+                            id: s.id,
+                            name: s.title,
+                            primaryArtists: s.user.name,
+                            image: [{url: s.artwork ? s.artwork['480x480'] : '../images/icon.png'}],
+                            downloadUrl: [{url: `https://discoveryprovider.audius.co/v1/tracks/${s.id}/stream?app_name=Quanic_Advanced`}]
+                        }));
+                        
+                        if(!data.data) data.data = { results: [] };
+                        
+                        // ADVANCED INTERLEAVING: Perfectly match JioSaavn + Global results alternating
+                        const mergedList = [];
+                        const saavnLen = data.data.results.length;
+                        const scLen = formattedSC.length;
+                        const maxLen = Math.max(saavnLen, scLen);
+                        
+                        for(let i=0; i<maxLen; i++) {
+                            if(i < saavnLen) mergedList.push(data.data.results[i]);
+                            if(i < scLen) mergedList.push(formattedSC[i]);
+                        }
+                        
+                        // Deduplication Engine
+                        const seen = new Set();
+                        data.data.results = mergedList.filter(s => {
+                            if(!s || !s.name) return false;
+                            const key = s.name.toLowerCase().trim().substring(0, 15); // Match first 15 chars to catch slight variations
+                            if(seen.has(key)) return false;
+                            seen.add(key);
+                            return true;
+                        });
+                    }
+                } catch(e) { console.log("Global SC API Fallback failed", e); }
                 // ---------------------------------------------------
 
                 if(resultsDiv) resultsDiv.innerHTML = '';
                 
-                if (data.data.results.length > 0) {
+                if (data.data.results && data.data.results.length > 0) {
                     data.data.results.forEach(song => {
                         const bestImg = song.image[song.image.length - 1].url;
                         const bestAudio = Array.isArray(song.downloadUrl) ? song.downloadUrl[song.downloadUrl.length - 1].url : song.downloadUrl;
@@ -2783,6 +2825,39 @@
             sheet.classList.add('open');
             history.pushState({ modal: 'add_to_playlist' }, '', '#add-to-playlist');
         };
+
+        // ==========================================================================
+        // 19. MY ADVANCED FEATURES: DOUBLE-TAP TO SEEK (YOUTUBE STYLE) & BOOT LOG
+        // ==========================================================================
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log("%c🚀 QUANIC ENGINE V2.0 BOOT SEQUENCE INITIATED", "color: #E1306C; font-size: 16px; font-weight: bold;");
+            
+            const artContainer = document.querySelector('.artwork-container');
+            if(artContainer) {
+                const createZone = (side) => {
+                    const zone = document.createElement('div');
+                    zone.style.cssText = `position:absolute; top:0; bottom:0; ${side}:0; width:40%; z-index:30; display:flex; align-items:center; justify-content:center; color:white; opacity:0; transition:opacity 0.2s, background 0.2s; background:rgba(255,255,255,0.0); border-radius:16px; flex-direction:column; cursor:pointer;`;
+                    zone.innerHTML = `<span class="material-symbols-rounded" style="font-size:50px; filter:drop-shadow(0 0 10px rgba(0,0,0,0.5));">${side==='left'?'fast_rewind':'fast_forward'}</span><span style="font-weight:800; font-size:14px; text-shadow:0 0 10px rgba(0,0,0,0.5);">10s</span>`;
+                    
+                    let lastTap = 0;
+                    zone.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Block normal artwork clicks
+                        const now = Date.now();
+                        if(now - lastTap < 300) {
+                            if(audio) audio.currentTime = side === 'left' ? Math.max(0, audio.currentTime - 10) : Math.min(audio.duration || 0, audio.currentTime + 10);
+                            zone.style.opacity = '1';
+                            zone.style.background = 'rgba(255,255,255,0.2)';
+                            setTimeout(() => { zone.style.opacity = '0'; zone.style.background = 'rgba(255,255,255,0.0)'; }, 300);
+                            if(window.haptic) window.haptic();
+                        }
+                        lastTap = now;
+                    });
+                    return zone;
+                };
+                artContainer.appendChild(createZone('left'));
+                artContainer.appendChild(createZone('right'));
+            }
+        });
 
     </script>
 </body>
