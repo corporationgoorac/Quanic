@@ -7,8 +7,6 @@
     <meta name="theme-color" content="#121212">
     <title>Pulse Lobby | Quantum</title>
 
-    <script src="components/theme.js"></script>
-
     <script>
         window.onerror = function(msg, url, line, col, error) {
             // Ignore benign resize observer errors
@@ -23,13 +21,10 @@
         };
     </script>
     
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
     <script src="../config.js"></script>
+    
     <script>
+        /* Old Initialization logic disabled
         // Safety check to ensure Firestore loaded before components run
         if (typeof firebase !== 'undefined' && !firebase.firestore) {
             console.error("Firebase loaded but Firestore SDK is missing.");
@@ -41,11 +36,8 @@
         } else if (!firebase.apps.length && window.firebaseConfig) {
             firebase.initializeApp(window.firebaseConfig);
         }
+        */
     </script>
-
-    <script src="components/presence.js"></script>
-    <script src="components/call-notifier.js"></script>
-    <script src="components/chatLoader.js"></script>
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
@@ -349,9 +341,6 @@
 </head>
 <body>
 
-    <call-notifier></call-notifier>
-    <chat-loader></chat-loader>
-
     <script>
         // Instant load cached PFP
         try {
@@ -448,6 +437,10 @@
     </div>
 
     <script>
+        /* =========================================================================
+           V8 LOGIC DISABLED & PRESERVED - REPLACED WITH V10 BELOW 
+           ========================================================================= */
+        /*
         // BLOCK COPY AND SELECTION
         document.oncontextmenu = () => false;
         document.onselectstart = () => false;
@@ -481,12 +474,8 @@
                     if(doc.exists) {
                         const data = doc.data();
                         
-                        // ==============================================================
-                        // NEW FEATURE: USERNAME FIREWALL (PRESERVES ALL ORIGINAL CODE)
-                        // ==============================================================
                         if (!data.username) {
                             document.getElementById('username-firewall').style.display = 'flex';
-                            // Immediately halt further lobby initialization
                             return; 
                         }
 
@@ -495,18 +484,14 @@
                         if(elLobby) elLobby.src = pfp;
                         localStorage.setItem('my_goorac_profile', JSON.stringify(data));
                         
-                        // Proceed to initialize lobby since username exists
-                        checkOnboarding(); // Check if we need to show tutorial
+                        checkOnboarding(); 
                         initLobby();
-                        listenForIncomingPulses(); // START LISTENING FOR INVITES
+                        listenForIncomingPulses(); 
                     }
                 });
 
-                // 2. SET MY PRESENCE (I am waiting for pulse)
                 setMyPresence(true);
                 window.addEventListener('beforeunload', () => setMyPresence(false));
-
-                // --- NEW: Bulletproof lifecycles and Ghost Room Cleanup ---
                 window.addEventListener('pagehide', () => setMyPresence(false));
                 window.addEventListener('unload', () => setMyPresence(false));
                 cleanupGhostRooms(user.uid);
@@ -515,31 +500,23 @@
                     if (document.hidden) setMyPresence(false);
                     else setMyPresence(true);
                 });
-
-                // Initialization functions moved inside the doc.get() success block above to enforce the firewall
-
             } else {
                 window.location.href = 'login.html';
             }
         });
 
-        // --- BACK BUTTON HANDLING (NEW) ---
         window.addEventListener('popstate', (e) => {
-            // Check if Invite Modal is open
             if(document.getElementById('invite-modal').classList.contains('active')) {
                 closeInviteModal();
             }
-            // Check if Onboarding is open
             if(document.getElementById('onboarding-sheet').classList.contains('active')) {
                 closeOnboarding();
             }
         });
 
-        // --- ONBOARDING LOGIC ---
         function checkOnboarding() {
             const hasSeen = localStorage.getItem('pulse_onboarding_seen');
             if(!hasSeen) {
-                // Push state so back button works
                 history.pushState({modal: 'onboarding'}, null, window.location.href);
                 document.getElementById('onboarding-sheet').classList.add('active');
             }
@@ -552,28 +529,21 @@
 
         function closeOnboardingWithBack() {
             closeOnboarding();
-            // Go back in history to remove the pushState we added
             if (history.state && history.state.modal === 'onboarding') {
                 history.back();
             }
         }
 
-        // --- PRESENCE SYSTEM ---
         function setMyPresence(isOnline) {
             const presenceRef = lobbyDb.collection('pulse_active').doc(myUid);
             if(isOnline) {
-                presenceRef.set({
-                    uid: myUid,
-                    status: 'waiting',
-                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                presenceRef.set({ uid: myUid, status: 'waiting', lastSeen: firebase.firestore.FieldValue.serverTimestamp() });
             } else {
                 presenceRef.delete();
             }
         }
 
         async function initLobby() {
-            // Instant Load Cache
             const cachedMutuals = localStorage.getItem('pulse_mutuals_cache');
             if(cachedMutuals) {
                 mutualsCache = JSON.parse(cachedMutuals);
@@ -581,34 +551,25 @@
             }
 
             try {
-                // ORIGINAL LINES PRESERVED SAFELY
                 const doc = await lobbyDb.collection('users').doc(myUid).get();
                 const data = doc.data();
                 const following = (data.following || []).map(u => typeof u === 'string' ? u : u.uid);
                 const followers = (data.followers || []).map(u => typeof u === 'string' ? u : u.uid);
-
-                // Intersect to find Mutuals (Original Code Executed)
                 mutualList = following.filter(id => followers.includes(id));
                 
-                // ==========================================================================
-                // NEW FEATURE: GLOBAL ACTIVE USERS OVERRIDE (Replaces Mutuals list)
-                // ==========================================================================
                 const activeSnap = await lobbyDb.collection('pulse_active').orderBy('lastSeen', 'desc').limit(9).get();
                 const activeGlobalUids = [];
                 activeSnap.forEach(d => { if(d.id !== myUid && activeGlobalUids.length < 8) activeGlobalUids.push(d.id) });
-                mutualList = activeGlobalUids; // Dynamically replacing the mutuals list with active users
-                // ==========================================================================
+                mutualList = activeGlobalUids; 
 
                 if (mutualList.length === 0) {
-                    document.getElementById('mutuals-container').innerHTML = 
-                        `<div style="text-align:center; padding:50px; color:var(--text-dim); font-size:13px;">No active connections found on the network.</div>`;
+                    document.getElementById('mutuals-container').innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-dim); font-size:13px;">No active connections found on the network.</div>`;
                     return;
                 }
 
                 loadedCount = 0;
-                await loadMoreMutuals(); // Load first batch
+                await loadMoreMutuals(); 
 
-                // LISTEN FOR ACTIVE USERS (Realtime Presence)
                 activePresenceListener = lobbyDb.collection('pulse_active')
                     .where('lastSeen', '>', new Date(Date.now() - 1000 * 60 * 5)) 
                     .onSnapshot(snapshot => {
@@ -617,7 +578,6 @@
                         updateActiveStatus(activeUids);
                     });
 
-                // Scroll Loader
                 const container = document.getElementById('mutuals-container');
                 container.addEventListener('scroll', () => {
                     if (container.scrollTop + container.clientHeight >= container.scrollHeight - 20) {
@@ -625,11 +585,6 @@
                     }
                 });
 
-                // ==========================================================================
-                // NEW FEATURE: GLOBAL DATABASE SEARCH (Overrides Original Search Engine)
-                // ==========================================================================
-                
-                // We clone the input node to safely destroy the original event listener WITHOUT deleting the code below!
                 const oldSearchInput = document.getElementById('mutual-search');
                 const newSearchInput = oldSearchInput.cloneNode(true);
                 oldSearchInput.parentNode.replaceChild(newSearchInput, oldSearchInput);
@@ -639,7 +594,6 @@
                     const mContainer = document.getElementById('mutuals-container');
                     
                     if (!term) {
-                        // Restore default active feed
                         mContainer.innerHTML = '';
                         renderList(mutualsCache);
                         return;
@@ -649,11 +603,8 @@
                     loader.style.display = 'block';
                     
                     try {
-                        // Double Query: Search by Username OR Name to ensure exact matches
                         const q1 = lobbyDb.collection('users').where('username', '>=', term).where('username', '<=', term + '\uf8ff').limit(6).get();
                         const q2 = lobbyDb.collection('users').where('name_lower', '>=', term).where('name_lower', '<=', term + '\uf8ff').limit(6).get();
-                        
-                        // Also try exact name if name_lower doesn't exist
                         const q3 = lobbyDb.collection('users').where('name', '>=', term).where('name', '<=', term + '\uf8ff').limit(6).get();
                         
                         const [snap1, snap2, snap3] = await Promise.all([q1, q2, q3]);
@@ -666,7 +617,6 @@
                                 if(d.id !== myUid && !seenUids.has(d.id)) {
                                     let uData = d.data();
                                     uData.uid = d.id;
-                                    // Ensure it has a username (backward compatibility check)
                                     if(uData.username) {
                                         searchResults.push(uData);
                                         seenUids.add(d.id);
@@ -690,7 +640,6 @@
                     loader.style.display = 'none';
                 });
 
-                // ORIGINAL CODE PRESERVED (Dead code due to clone trick above)
                 document.getElementById('mutual-search').addEventListener('input', (e) => {
                     const term = e.target.value.toLowerCase();
                     const items = document.querySelectorAll('.m-card');
@@ -703,43 +652,26 @@
             } catch (e) { console.error(e); }
         }
 
-        // --- INCOMING INVITE LISTENER ---
         function listenForIncomingPulses() {
-            // We listen to the global rooms, ordered by activity. 
-            // We then filter locally to see if WE are involved.
-            // This detects if someone has created a room [Me, Them] and is waiting.
-            
             inviteListener = lobbyDb.collection('pulse_rooms')
                 .orderBy('lastActive', 'desc')
                 .limit(10)
                 .onSnapshot(snapshot => {
                     snapshot.forEach(doc => {
-                        const roomId = doc.id; // Format: uid1_uid2
+                        const roomId = doc.id; 
                         
-                        // Check if this room involves ME
                         if (roomId.includes(myUid)) {
                             const data = doc.data();
-                            
-                            // Determine who is who
-                            // Room ID is sorted strings. 
                             const ids = roomId.split('_');
                             const otherUid = (ids[0] === myUid) ? ids[1] : ids[0];
-                            
-                            // Determine the fields for status
                             const myField = (ids[0] === myUid) ? 'userA' : 'userB';
                             const otherField = (ids[0] === myUid) ? 'userB' : 'userA';
                             
-                            // LOGIC: If OTHER is 'online' AND I am 'offline' (or not joined), they are waiting!
                             if (data[otherField] === 'online' && (!data[myField] || data[myField] === 'offline')) {
-                                
-                                // Fetch their details to show modal
-                                // We likely have them in cache or mutuals list
                                 let otherUser = mutualsCache.find(u => u.uid === otherUid);
-                                
                                 if (otherUser) {
                                     showInviteModal(otherUser);
                                 } else {
-                                    // Fallback fetch
                                     lobbyDb.collection('users').doc(otherUid).get().then(uDoc => {
                                         if(uDoc.exists) showInviteModal(uDoc.data());
                                     });
@@ -751,19 +683,14 @@
         }
 
         function showInviteModal(user) {
-            // Prevent spamming active modal
             if (document.getElementById('invite-modal').classList.contains('active')) return;
-            
-            // Push state so back button works
             history.pushState({modal: 'invite'}, null, window.location.href);
 
-            // Vibrate
             if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
 
             document.getElementById('inviter-img').src = user.photoURL || 'https://via.placeholder.com/150';
             document.getElementById('inviter-name').innerText = user.name || 'Friend';
             
-            // SHOW BADGE IF VERIFIED
             const badgeEl = document.getElementById('inviter-badge');
             if (user.verified) {
                 badgeEl.style.display = 'inline-block';
@@ -771,7 +698,6 @@
                 badgeEl.style.display = 'none';
             }
             
-            // --- NEW: Remove Logic to kill pending room if declined ---
             const declineBtn = document.querySelector('.btn-decline');
             declineBtn.onclick = () => {
                 closeInviteModalWithBack();
@@ -795,14 +721,10 @@
 
         function closeInviteModalWithBack() {
             closeInviteModal();
-            // Go back in history to remove the pushState we added
             if (history.state && history.state.modal === 'invite') {
                 history.back();
             }
         }
-
-
-        // --- RENDERING & LOGIC ---
 
         function updateActiveStatus(activeSet) {
             const container = document.getElementById('mutuals-container');
@@ -814,7 +736,6 @@
                 const uid = card.dataset.uid;
                 if (activeSet.has(uid)) {
                     card.classList.add('is-active');
-                    // MODIFIED VIA CSS OVERRIDES, Original text preserved below
                     card.querySelector('.m-btn span').innerText = 'graphic_eq'; 
                     activeCount++;
                 } else {
@@ -833,7 +754,7 @@
 
             const countEl = document.getElementById('active-count');
             if (activeCount > 0) {
-                countEl.innerText = `${activeCount} ACTIVE NOW`; // Adjusted text for clarity
+                countEl.innerText = `${activeCount} ACTIVE NOW`; 
                 countEl.style.opacity = '1';
             } else {
                 countEl.style.opacity = '0';
@@ -846,7 +767,7 @@
             
             list.forEach(uData => {
                 const existing = document.querySelector(`.m-card[data-uid="${uData.uid}"]`);
-                if(!existing && uData.username) { // Added failsafe to only render users with a username
+                if(!existing && uData.username) { 
                     container.appendChild(createMutualCard(uData));
                 }
             });
@@ -922,7 +843,6 @@
             return div;
         }
 
-        // --- NEW: Bulletproof Ghost Room Cleanup ---
         function cleanupGhostRooms(uid) {
             try {
                 lobbyDb.collection('pulse_rooms').where('userA', '==', uid).get().then(snap => snap.forEach(doc => doc.ref.update({userA: 'offline'})));
@@ -930,8 +850,407 @@
             } catch(e) {}
         }
 
-        // --- NEW: Exit Cleanup to prevent memory leaks and unbind listeners ---
-        function cleanupLobbyAndExit() {
+        window.cleanupLobbyAndExit = function() {
+            setMyPresence(false);
+            if (activePresenceListener) activePresenceListener();
+            if (inviteListener) inviteListener();
+            window.location.href = 'home.html';
+        }
+        */
+    </script>
+
+    <script type="module">
+        import { auth, db } from '../config.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, orderBy, limit, deleteDoc, updateDoc, FieldPath } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        
+        // BLOCK COPY AND SELECTION
+        document.oncontextmenu = () => false;
+        document.onselectstart = () => false;
+        document.ondragstart = () => false;
+
+        const lobbyDb = db;
+        const lobbyAuth = auth;
+
+        let myUid = null;
+        let mutualList = [];
+        let loadedCount = 0;
+        const BATCH_SIZE = 15;
+        let mutualsCache = []; 
+        let activePresenceListener = null;
+        let inviteListener = null;
+
+        onAuthStateChanged(lobbyAuth, async (user) => {
+            if (user) {
+                myUid = user.uid;
+                
+                getDoc(doc(lobbyDb, 'users', user.uid)).then(docSnap => {
+                    if(docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (!data.username) {
+                            document.getElementById('username-firewall').style.display = 'flex';
+                            return; 
+                        }
+
+                        const pfp = data.photoURL || 'https://via.placeholder.com/150';
+                        const elLobby = document.getElementById('lobby-pfp');
+                        if(elLobby) elLobby.src = pfp;
+                        localStorage.setItem('my_goorac_profile', JSON.stringify(data));
+                        
+                        checkOnboarding(); 
+                        initLobby();
+                        listenForIncomingPulses(); 
+                    }
+                });
+
+                setMyPresence(true);
+                window.addEventListener('beforeunload', () => setMyPresence(false));
+
+                window.addEventListener('pagehide', () => setMyPresence(false));
+                window.addEventListener('unload', () => setMyPresence(false));
+                cleanupGhostRooms(user.uid);
+
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) setMyPresence(false);
+                    else setMyPresence(true);
+                });
+
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        window.addEventListener('popstate', (e) => {
+            if(document.getElementById('invite-modal').classList.contains('active')) {
+                closeInviteModal();
+            }
+            if(document.getElementById('onboarding-sheet').classList.contains('active')) {
+                closeOnboarding();
+            }
+        });
+
+        function checkOnboarding() {
+            const hasSeen = localStorage.getItem('pulse_onboarding_seen');
+            if(!hasSeen) {
+                history.pushState({modal: 'onboarding'}, null, window.location.href);
+                document.getElementById('onboarding-sheet').classList.add('active');
+            }
+        }
+
+        window.closeOnboarding = function() {
+            document.getElementById('onboarding-sheet').classList.remove('active');
+            localStorage.setItem('pulse_onboarding_seen', 'true');
+        }
+
+        window.closeOnboardingWithBack = function() {
+            window.closeOnboarding();
+            if (history.state && history.state.modal === 'onboarding') {
+                history.back();
+            }
+        }
+
+        function setMyPresence(isOnline) {
+            if (!myUid) return;
+            const presenceRef = doc(lobbyDb, 'pulse_active', myUid);
+            if(isOnline) {
+                setDoc(presenceRef, {
+                    uid: myUid,
+                    status: 'waiting',
+                    lastSeen: serverTimestamp()
+                }).catch(e=>{});
+            } else {
+                deleteDoc(presenceRef).catch(e=>{});
+            }
+        }
+
+        async function initLobby() {
+            const cachedMutuals = localStorage.getItem('pulse_mutuals_cache');
+            if(cachedMutuals) {
+                mutualsCache = JSON.parse(cachedMutuals);
+                renderList(mutualsCache);
+            }
+
+            try {
+                const activeSnap = await getDocs(query(collection(lobbyDb, 'pulse_active'), orderBy('lastSeen', 'desc'), limit(9)));
+                const activeGlobalUids = [];
+                activeSnap.forEach(d => { if(d.id !== myUid && activeGlobalUids.length < 8) activeGlobalUids.push(d.id) });
+                mutualList = activeGlobalUids; 
+
+                if (mutualList.length === 0) {
+                    document.getElementById('mutuals-container').innerHTML = 
+                        `<div style="text-align:center; padding:50px; color:var(--text-dim); font-size:13px;">No active connections found on the network.</div>`;
+                    return;
+                }
+
+                loadedCount = 0;
+                await loadMoreMutuals(); 
+
+                // LISTEN FOR ACTIVE USERS (Realtime Presence)
+                const fiveMinsAgo = new Date(Date.now() - 1000 * 60 * 5);
+                activePresenceListener = onSnapshot(query(collection(lobbyDb, 'pulse_active'), where('lastSeen', '>', fiveMinsAgo)), snapshot => {
+                    const activeUids = new Set();
+                    snapshot.forEach(docSnap => activeUids.add(docSnap.id));
+                    updateActiveStatus(activeUids);
+                });
+
+                const container = document.getElementById('mutuals-container');
+                container.addEventListener('scroll', () => {
+                    if (container.scrollTop + container.clientHeight >= container.scrollHeight - 20) {
+                        loadMoreMutuals();
+                    }
+                });
+
+                // Search setup 
+                const oldSearchInput = document.getElementById('mutual-search');
+                const newSearchInput = oldSearchInput.cloneNode(true);
+                oldSearchInput.parentNode.replaceChild(newSearchInput, oldSearchInput);
+                
+                newSearchInput.addEventListener('input', async (e) => {
+                    const term = e.target.value.toLowerCase().trim();
+                    const mContainer = document.getElementById('mutuals-container');
+                    
+                    if (!term) {
+                        mContainer.innerHTML = '';
+                        renderList(mutualsCache);
+                        return;
+                    }
+
+                    const loader = document.getElementById('scroll-loader');
+                    loader.style.display = 'block';
+                    
+                    try {
+                        const q1 = getDocs(query(collection(lobbyDb, 'users'), where('username', '>=', term), where('username', '<=', term + '\uf8ff'), limit(6)));
+                        const q2 = getDocs(query(collection(lobbyDb, 'users'), where('name_lower', '>=', term), where('name_lower', '<=', term + '\uf8ff'), limit(6)));
+                        const q3 = getDocs(query(collection(lobbyDb, 'users'), where('name', '>=', term), where('name', '<=', term + '\uf8ff'), limit(6)));
+                        
+                        const [snap1, snap2, snap3] = await Promise.all([q1, q2, q3]);
+                        
+                        const searchResults = [];
+                        const seenUids = new Set();
+                        
+                        const processSnap = (snap) => {
+                            snap.forEach(d => {
+                                if(d.id !== myUid && !seenUids.has(d.id)) {
+                                    let uData = d.data();
+                                    uData.uid = d.id;
+                                    if(uData.username) {
+                                        searchResults.push(uData);
+                                        seenUids.add(d.id);
+                                    }
+                                }
+                            });
+                        };
+                        
+                        processSnap(snap1);
+                        processSnap(snap2);
+                        processSnap(snap3);
+                        
+                        mContainer.innerHTML = '';
+                        if(searchResults.length === 0) {
+                            mContainer.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-dim); font-size:13px;">No users found matching "${term}"</div>`;
+                        } else {
+                            searchResults.forEach(uData => mContainer.appendChild(createMutualCard(uData)));
+                        }
+                    } catch(err) { console.error("Search failed", err); }
+                    
+                    loader.style.display = 'none';
+                });
+
+            } catch (e) { console.error(e); }
+        }
+
+        function listenForIncomingPulses() {
+            inviteListener = onSnapshot(query(collection(lobbyDb, 'pulse_rooms'), orderBy('lastActive', 'desc'), limit(10)), snapshot => {
+                snapshot.forEach(docSnap => {
+                    const roomId = docSnap.id; 
+                    
+                    if (roomId.includes(myUid)) {
+                        const data = docSnap.data();
+                        const ids = roomId.split('_');
+                        const otherUid = (ids[0] === myUid) ? ids[1] : ids[0];
+                        const myField = (ids[0] === myUid) ? 'userA' : 'userB';
+                        const otherField = (ids[0] === myUid) ? 'userB' : 'userA';
+                        
+                        if (data[otherField] === 'online' && (!data[myField] || data[myField] === 'offline')) {
+                            let otherUser = mutualsCache.find(u => u.uid === otherUid);
+                            if (otherUser) {
+                                showInviteModal(otherUser);
+                            } else {
+                                getDoc(doc(lobbyDb, 'users', otherUid)).then(uDoc => {
+                                    if(uDoc.exists()) showInviteModal(uDoc.data());
+                                });
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        function showInviteModal(user) {
+            if (document.getElementById('invite-modal').classList.contains('active')) return;
+            history.pushState({modal: 'invite'}, null, window.location.href);
+
+            if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
+            document.getElementById('inviter-img').src = user.photoURL || 'https://via.placeholder.com/150';
+            document.getElementById('inviter-name').innerText = user.name || 'Friend';
+            
+            const badgeEl = document.getElementById('inviter-badge');
+            if (user.verified) badgeEl.style.display = 'inline-block';
+            else badgeEl.style.display = 'none';
+            
+            const declineBtn = document.querySelector('.btn-decline');
+            declineBtn.onclick = () => {
+                window.closeInviteModalWithBack();
+                const r1 = `${myUid}_${user.uid}`;
+                const r2 = `${user.uid}_${myUid}`;
+                deleteDoc(doc(lobbyDb, 'pulse_rooms', r1)).catch(()=>{});
+                deleteDoc(doc(lobbyDb, 'pulse_rooms', r2)).catch(()=>{});
+            };
+
+            const btn = document.getElementById('btn-accept-pulse');
+            btn.onclick = () => {
+                window.location.assign(`pulse.html?user=${user.username}`);
+            };
+
+            document.getElementById('invite-modal').classList.add('active');
+        }
+
+        window.closeInviteModal = function() {
+            document.getElementById('invite-modal').classList.remove('active');
+        }
+
+        window.closeInviteModalWithBack = function() {
+            window.closeInviteModal();
+            if (history.state && history.state.modal === 'invite') {
+                history.back();
+            }
+        }
+
+        function updateActiveStatus(activeSet) {
+            const container = document.getElementById('mutuals-container');
+            const cards = Array.from(container.children);
+            let activeCount = 0;
+
+            cards.forEach(card => {
+                const uid = card.dataset.uid;
+                if (activeSet.has(uid)) {
+                    card.classList.add('is-active');
+                    card.querySelector('.m-btn span').innerText = 'graphic_eq'; 
+                    activeCount++;
+                } else {
+                    card.classList.remove('is-active');
+                    card.querySelector('.m-btn span').innerText = 'bolt';
+                }
+            });
+
+            const sortedCards = cards.sort((a, b) => {
+                const aActive = a.classList.contains('is-active') ? 1 : 0;
+                const bActive = b.classList.contains('is-active') ? 1 : 0;
+                return bActive - aActive;
+            });
+
+            sortedCards.forEach(card => container.appendChild(card));
+
+            const countEl = document.getElementById('active-count');
+            if (activeCount > 0) {
+                countEl.innerText = `${activeCount} ACTIVE NOW`; 
+                countEl.style.opacity = '1';
+            } else {
+                countEl.style.opacity = '0';
+            }
+        }
+
+        function renderList(list) {
+            const container = document.getElementById('mutuals-container');
+            if (loadedCount === 0) container.innerHTML = ''; 
+            
+            list.forEach(uData => {
+                const existing = document.querySelector(`.m-card[data-uid="${uData.uid}"]`);
+                if(!existing && uData.username) { 
+                    container.appendChild(createMutualCard(uData));
+                }
+            });
+        }
+
+        async function loadMoreMutuals() {
+            if (loadedCount >= mutualList.length) return;
+
+            const loader = document.getElementById('scroll-loader');
+            loader.style.display = 'block';
+
+            const nextBatchIds = mutualList.slice(loadedCount, loadedCount + BATCH_SIZE);
+            let fetchedData = [];
+
+            if(nextBatchIds.length > 0) {
+                try {
+                    const chunks = [];
+                    for (let i=0; i<nextBatchIds.length; i+=10) {
+                         chunks.push(nextBatchIds.slice(i, i+10));
+                    }
+
+                    for (const chunk of chunks) {
+                        const snap = await getDocs(query(collection(lobbyDb, 'users'), where(FieldPath.documentId(), 'in', chunk)));
+                        snap.forEach(docSnap => {
+                            const d = docSnap.data();
+                            d.uid = docSnap.id;
+                            fetchedData.push(d);
+                        });
+                    }
+                } catch(e) { console.log(e); }
+            }
+
+            if(loadedCount === 0) {
+                mutualsCache = fetchedData;
+            } else {
+                const newItems = fetchedData.filter(newU => !mutualsCache.some(oldU => oldU.uid === newU.uid));
+                mutualsCache = [...mutualsCache, ...newItems];
+            }
+            
+            localStorage.setItem('pulse_mutuals_cache', JSON.stringify(mutualsCache));
+            renderList(fetchedData); 
+
+            loadedCount += nextBatchIds.length;
+            loader.style.display = 'none';
+        }
+
+        function createMutualCard(uData) {
+            const div = document.createElement('div');
+            div.className = 'm-card';
+            div.dataset.uid = uData.uid;
+            div.dataset.name = (uData.name || '') + (uData.username || '');
+            
+            const verifiedHtml = uData.verified ? `<span class="material-icons-round verified-badge">verified</span>` : '';
+
+            div.innerHTML = `
+                <img src="${uData.photoURL || 'https://via.placeholder.com/150'}" class="m-img">
+                <div class="m-details">
+                    <div class="m-name">
+                        ${uData.name || 'User'} ${verifiedHtml} 
+                        <span class="live-tag">READY</span>
+                    </div>
+                    <div class="m-handle">@${uData.username || 'unknown'}</div>
+                </div>
+                <div class="m-btn">
+                    <span class="material-icons-round">bolt</span>
+                </div>
+            `;
+
+            div.onclick = () => {
+                if(navigator.vibrate) navigator.vibrate(10);
+                window.location.assign(`pulse.html?user=${uData.username}`); 
+            };
+            return div;
+        }
+
+        function cleanupGhostRooms(uid) {
+            try {
+                getDocs(query(collection(lobbyDb, 'pulse_rooms'), where('userA', '==', uid))).then(snap => snap.forEach(docSnap => updateDoc(docSnap.ref, {userA: 'offline'})));
+                getDocs(query(collection(lobbyDb, 'pulse_rooms'), where('userB', '==', uid))).then(snap => snap.forEach(docSnap => updateDoc(docSnap.ref, {userB: 'offline'})));
+            } catch(e) {}
+        }
+
+        window.cleanupLobbyAndExit = function() {
             setMyPresence(false);
             if (activePresenceListener) activePresenceListener();
             if (inviteListener) inviteListener();
