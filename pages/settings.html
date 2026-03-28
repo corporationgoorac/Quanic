@@ -30,8 +30,7 @@
 
         .app-container {
             display: flex; flex-direction: column; height: 100%; width: 100%;
-            background: #121212; /* Matched home page solid dark background */
-            /* GPU Acceleration */
+            background: #121212; 
             transform: translateZ(0); 
             -webkit-transform: translate3d(0,0,0);
         }
@@ -45,30 +44,29 @@
             height: calc(60px + env(safe-area-inset-top));
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 20px; padding-top: calc(env(safe-area-inset-top) + 6px);
-            background: #121212; /* Merged with background to eliminate line exactly like home */
+            background: #121212; 
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border-bottom: none !important; /* Removed border to match home header */
+            border-bottom: none !important; 
             z-index: 2000;
         }
 
         .header-left { display: flex; align-items: center; gap: 15px; }
         
         .icon-btn {
-            background: none; border: none; /* Matched home page menu-btn style */
+            background: none; border: none; 
             color: #ffffff; display: flex; align-items: center; justify-content: center; 
             padding: 5px; border-radius: 50%; cursor: pointer; transition: background 0.3s ease;
         }
         .icon-btn:hover { background: rgba(255, 255, 255, 0.1); }
         .icon-btn:active { background: rgba(255, 255, 255, 0.15); transform: scale(0.92); }
 
-        .page-title { font-size: 1.15rem; font-weight: 600; letter-spacing: 0.3px; background: linear-gradient(90deg, #E1306C, #FF7A00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; } /* Matched home brand-title gradient */
+        .page-title { font-size: 1.15rem; font-weight: 600; letter-spacing: 0.3px; background: linear-gradient(90deg, #E1306C, #FF7A00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
         /* MAIN CONTENT */
         main {
             flex: 1; margin-top: calc(60px + env(safe-area-inset-top));
             padding: 20px; overflow-y: auto; scroll-behavior: smooth;
             display: flex; flex-direction: column;
-            /* GPU Acceleration */
             transform: translateZ(0); 
             -webkit-transform: translate3d(0,0,0);
             will-change: transform;
@@ -77,7 +75,7 @@
         /* PROFILE SECTION - Modern Gradient Ring */
         .profile-section {
             display: flex; flex-direction: column; align-items: center;
-            margin-bottom: 45px; margin-top: 25px;
+            margin-bottom: 35px; margin-top: 15px;
             width: 100%;
             padding: 0 10px;
         }
@@ -85,11 +83,10 @@
         .profile-pic {
             width: 105px; height: 105px; border-radius: 50%; object-fit: cover;
             padding: 3px; background: linear-gradient(135deg, #E1306C, #FF7A00);
-            box-shadow: 0 0 30px rgba(225, 48, 108, 0.4); /* Matched home page floating logo glow */
+            box-shadow: 0 0 30px rgba(225, 48, 108, 0.4); 
             margin-bottom: 18px;
         }
         
-        /* Updated Name style for One-Line enforcement */
         .user-name { 
             font-size: 1.5rem; 
             font-weight: 700; 
@@ -103,89 +100,109 @@
             display: block;
         }
 
-        /* MEMORY CARD SECTION */
+        .user-username {
+            font-size: 0.95rem;
+            color: #b466ff;
+            font-family: 'Orbitron', 'Inter', sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        /* NEW EDIT PROFILE BUTTON */
+        .main-edit-btn {
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.05); 
+            color: #ffffff; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            padding: 8px 22px; 
+            border-radius: 20px; 
+            font-size: 0.85rem; 
+            font-weight: 600;
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            transition: all 0.2s ease;
+        }
+        .main-edit-btn:hover { 
+            background: rgba(255, 255, 255, 0.1); 
+            border-color: rgba(225, 48, 108, 0.4); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+        }
+        .main-edit-btn:active { transform: scale(0.95); }
+        .main-edit-btn .svg-icon { width: 16px; height: 16px; color: #E1306C; }
+
+        /* RECENTLY PLAYED SECTION */
         .section-title {
             font-size: 0.85rem; color: #a0a0ab;
             text-transform: uppercase; letter-spacing: 1.2px; font-weight: 600;
-            margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
             padding: 0 4px;
         }
 
-        .edit-btn {
-            background: rgba(255, 255, 255, 0.03); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.08); /* Matched suggestion-chip style */
-            padding: 6px 14px; border-radius: 15px; font-size: 0.8rem; font-weight: 600;
-            cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;
-        }
-        .edit-btn:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(225, 48, 108, 0.4); color: #ffffff; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .edit-btn:active { transform: scale(0.95); }
-        .edit-btn .svg-icon { width: 16px; height: 16px; color: #E1306C; } /* Match icon color theme */
-
-        .memory-card {
-            background: rgba(255, 255, 255, 0.03); /* Matched suggestion-chip style */
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 15px; padding: 22px; color: rgba(255, 255, 255, 0.85);
-            line-height: 1.65; font-size: 0.95rem; min-height: 80px; margin-bottom: 30px;
-            box-shadow: none; 
-            word-wrap: break-word; font-weight: 400;
-            transition: all 0.2s ease;
-        }
-
-        /* NEW: RECENTLY PLAYED GRID (Copied from home.html) */
+        /* UPGRADED RECENT GRID (6 Songs, Sleeker UI) */
         .recent-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px;
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+            margin-bottom: 30px;
         }
         .recent-grid-item {
-            background: rgba(255,255,255,0.08); border-radius: 8px; display: flex; align-items: center; 
-            overflow: hidden; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            overflow: hidden; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            backdrop-filter: blur(10px);
+            padding-right: 8px; 
         }
-        .recent-grid-item:active { background: rgba(255,255,255,0.15); transform: scale(0.98); }
-        .recent-grid-item img { width: 56px; height: 56px; object-fit: cover; }
-        .recent-grid-item span { 
-            font-size: 0.85rem; font-weight: 600; padding: 0 10px; white-space: nowrap; 
-            overflow: hidden; text-overflow: ellipsis; flex: 1; color: #fff; transition: color 0.3s;
+        .recent-grid-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(225, 48, 108, 0.3);
+            transform: translateY(-2px);
+        }
+        .recent-grid-item:active { transform: scale(0.96); }
+        
+        .recent-grid-item img { 
+            width: 50px; 
+            height: 50px; 
+            object-fit: cover; 
+            border-radius: 8px;
+            margin: 6px; /* Floating image look */
+        }
+        
+        .recent-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex: 1;
+            margin-left: 4px;
+        }
+        
+        .recent-grid-item .song-title { 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            color: #fff; 
+        }
+        
+        .recent-grid-item .song-artist {
+            font-size: 0.7rem;
+            color: #a0a0ab;
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+            margin-top: 2px;
         }
 
-        /* SIDE MODAL (For Editing Memory) */
-        #edit-modal {
-            position: fixed; top: 0; right: -100%; width: 100%; height: 100%;
-            background: #121212; z-index: 3000; display: flex; flex-direction: column;
-            transition: right 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-        #edit-modal.open { right: 0; box-shadow: -10px 0 40px rgba(0,0,0,0.5); }
-
-        .modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 20px; padding-top: calc(env(safe-area-inset-top) + 10px);
-            height: calc(60px + env(safe-area-inset-top));
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            background: #121212; backdrop-filter: blur(10px);
-        }
-
-        .save-btn {
-            background: linear-gradient(135deg, #E1306C, #FF7A00); /* Matched home send-btn gradient */
-            color: white; border: none; padding: 9px 18px; border-radius: 20px;
-            font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease;
-            box-shadow: inset 0 1px 2px rgba(255,255,255,0.3), 0 4px 15px rgba(225, 48, 108, 0.3); /* Premium inner glow */
-        }
-        .save-btn:active { transform: scale(0.92); box-shadow: 0 2px 8px rgba(225, 48, 108, 0.2); }
-        .save-btn:disabled { opacity: 0.6; pointer-events: none; filter: grayscale(50%); }
-
-        .modal-body {
-            flex: 1; padding: 20px; display: flex; flex-direction: column;
-            background: transparent;
-            /* INJECTED: Ensure scrolling if content is long */
-            overflow-y: auto;
-        }
-
-        .memory-textarea {
-            width: 100%; flex: 1; background: transparent; border: none;
-            color: #ffffff; font-family: 'Inter', sans-serif; font-size: 1.05rem; line-height: 1.6;
-            resize: none; outline: none; -webkit-user-select: auto; user-select: auto;
-            padding: 10px 0;
-        }
-        .memory-textarea::placeholder { color: rgba(255,255,255,0.25); font-weight: 400; }
-
-        /* ENHANCED TOAST - Matched home page global toast */
+        /* ENHANCED TOAST */
         .toast {
             position: fixed; top: calc(env(safe-area-inset-top) + 80px); left: 50%; 
             transform: translateX(-50%) translateY(-20px) scale(0.95);
@@ -196,15 +213,14 @@
         }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 
-        /* LOGOUT BUTTON STYLES (UPGRADED FOR PWA & GPU ACCELERATION) */
+        /* LOGOUT BUTTON STYLES */
         .logout-container {
             margin-top: auto; 
             padding-top: 20px;
-            padding-bottom: calc(80px + env(safe-area-inset-bottom, 30px)) !important; /* Force lifted safely for PWA gestures */
+            padding-bottom: calc(80px + env(safe-area-inset-bottom, 30px)) !important; 
             width: 100%;
             display: flex;
             justify-content: center;
-            /* GPU Acceleration */
             transform: translateZ(0);
             -webkit-transform: translate3d(0,0,0);
             will-change: transform;
@@ -213,8 +229,8 @@
             background: rgba(255, 69, 0, 0.08);
             color: #ff4500;
             border: 1px solid rgba(255, 69, 0, 0.3);
-            padding: 16px 24px; /* Increased padding for better touch target */
-            border-radius: 25px; /* Softer pill shape */
+            padding: 16px 24px; 
+            border-radius: 25px; 
             font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
@@ -223,9 +239,8 @@
             justify-content: center;
             gap: 10px;
             transition: all 0.2s ease;
-            width: 90%; /* Stops overflowing layout bounds */
-            max-width: 350px; /* Restricts stretching on tablets */
-            /* GPU Acceleration */
+            width: 90%; 
+            max-width: 350px; 
             transform: translateZ(0);
             -webkit-transform: translate3d(0,0,0);
             will-change: transform, background, box-shadow;
@@ -237,70 +252,6 @@
         .logout-btn:active {
             transform: scale(0.96);
         }
-
-        /* =========================================================
-           INJECTED CSS FOR NEW PROFILE & EDIT MODAL REDESIGN 
-           ========================================================= */
-        .user-username {
-            font-size: 0.95rem;
-            color: #b466ff;
-            font-family: 'Orbitron', 'Inter', sans-serif;
-            font-weight: 600;
-            letter-spacing: 1px;
-            margin-top: 5px;
-        }
-
-        .edit-profile-hero {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .edit-profile-hero img {
-            width: 85px; height: 85px; border-radius: 50%; object-fit: cover;
-            border: 2px solid rgba(225, 48, 108, 0.5);
-            box-shadow: 0 0 20px rgba(225, 48, 108, 0.3);
-            margin-bottom: 12px;
-        }
-        .edit-profile-hero span {
-            font-size: 0.75rem; color: #a0a0ab; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
-        }
-
-        .edit-input-group {
-            display: flex; flex-direction: column; margin-bottom: 20px;
-        }
-        .edit-label {
-            font-size: 0.8rem; color: #a0a0ab; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-left: 4px;
-        }
-        .edit-input {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
-            padding: 14px 18px; border-radius: 12px;
-            color: white; font-size: 1rem; outline: none; font-family: 'Inter', sans-serif;
-            transition: all 0.3s;
-        }
-        .edit-input:focus { 
-            border-color: #E1306C; 
-            background: rgba(0,0,0,0.2); 
-            box-shadow: 0 0 10px rgba(225, 48, 108, 0.2);
-        }
-        
-        /* Safely override memory-textarea to match the new sleek inputs without deleting */
-        .memory-textarea {
-            background: rgba(255,255,255,0.03) !important;
-            border: 1px solid rgba(255,255,255,0.08) !important;
-            padding: 14px 18px !important; border-radius: 12px !important;
-            min-height: 120px; font-size: 0.95rem !important;
-            transition: all 0.3s;
-        }
-        .memory-textarea:focus { 
-            border-color: #E1306C !important; 
-            background: rgba(0,0,0,0.2) !important; 
-            box-shadow: 0 0 10px rgba(225, 48, 108, 0.2);
-        }
-
     </style>
 </head>
 <body>
@@ -320,7 +271,6 @@
         window.SVGS = {
             arrow_back: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>',
             edit: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
-            close: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>',
             logout: '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>'
         };
     </script>
@@ -341,19 +291,13 @@
                 <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';" alt="Profile" class="profile-pic" id="profile-img">
                 <h2 class="user-name" id="display-name">Loading...</h2>
                 <p class="user-username" id="display-username">@loading</p>
-            </div>
-
-            <div class="section-title">
-                <span>Music Taste & Vibe</span>
-                <button class="edit-btn" id="open-edit-btn">
-                    <script>document.write(window.SVGS.edit);</script> Edit
+                
+                <button class="main-edit-btn" onclick="if(window.vibrateLight) window.vibrateLight(); window.location.href='setup.html'">
+                    <script>document.write(window.SVGS.edit);</script> Edit Profile
                 </button>
             </div>
-            <div class="memory-card" id="memory-display">
-                Loading your profile...
-            </div>
             
-            <div class="section-title" style="margin-top: 10px;">
+            <div class="section-title">
                 <span>Recently Played</span>
             </div>
             <div class="recent-grid" id="recent-history-grid">
@@ -366,87 +310,39 @@
             </div>
         </main>
 
-        <div id="edit-modal">
-            <div class="modal-header">
-                <div class="header-left">
-                    <button class="icon-btn" id="close-modal-btn">
-                        <script>document.write(window.SVGS.close);</script>
-                    </button>
-                    <span class="page-title">Edit Profile</span>
-                </div>
-                <button class="save-btn" id="save-memory-btn">Save</button>
-            </div>
-            <div class="modal-body">
-                <div class="edit-profile-hero">
-                    <img id="edit-profile-img" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Avatar Preview">
-                    <span>Google Avatar</span>
-                </div>
-                
-                <div class="edit-input-group">
-                    <label class="edit-label">Display Name</label>
-                    <input type="text" class="edit-input" id="edit-name-input" placeholder="Your Name" autocomplete="off">
-                </div>
-                
-                <div class="edit-input-group">
-                    <label class="edit-label">Username</label>
-                    <input type="text" class="edit-input" id="edit-username-input" placeholder="username" autocomplete="off">
-                </div>
-                
-                <div class="edit-input-group">
-                    <label class="edit-label">Music Vibe & Bio</label>
-                <textarea class="memory-textarea" id="memory-input" placeholder="What music do you love? (e.g. I am a huge fan of A.R. Rahman melodies...)"></textarea>
-                </div>
-            </div>
-        </div>
-
-        <div id="toast" class="toast">Saved successfully!</div>
+        <div id="toast" class="toast">Action successful!</div>
     </div>
 
     <script type="module">
         import { auth, db } from '../config.js';
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         // ADDED HAPTIC FEEDBACK GLOBAL FUNCTIONS
         window.vibrateLight = () => { if(navigator.vibrate) navigator.vibrate(2); };
         window.vibrateMedium = () => { if(navigator.vibrate) navigator.vibrate(20); };
-        window.vibrateSuccess = () => { if(navigator.vibrate) navigator.vibrate([15, 20, 15]); };
 
         // DOM Elements
         const profileImg = document.getElementById('profile-img');
         const displayName = document.getElementById('display-name');
-        const memoryDisplay = document.getElementById('memory-display');
-        
-        const editModal = document.getElementById('edit-modal');
-        const openEditBtn = document.getElementById('open-edit-btn');
-        const closeModalBtn = document.getElementById('close-modal-btn');
-        const saveMemoryBtn = document.getElementById('save-memory-btn');
-        const memoryInput = document.getElementById('memory-input');
         const toast = document.getElementById('toast');
         const logoutBtn = document.getElementById('logout-btn');
 
         let currentUser = null;
 
         // 1. INSTANT UI HYDRATION (From LocalStorage to prevent flicker)
-        // Updated keys to match Quanic standards
         const cachedPhoto = localStorage.getItem('quanic_user_photo');
         const cachedName = localStorage.getItem('quanic_user_name');
-        const cachedMemory = localStorage.getItem('quanic_user_memory');
-        // INJECTED: Fetch cached username
         const cachedUsername = localStorage.getItem('quanic_user_username');
 
         // QUICK HYDRATION (Pre-Firebase Load)
         if (cachedPhoto && cachedPhoto.length > 5) {
             profileImg.src = cachedPhoto;
-            document.getElementById('edit-profile-img').src = cachedPhoto; // Hydrate preview
         }
         if (cachedName) {
             displayName.innerText = cachedName;
             adjustFontSize(cachedName);
         }
-        if (cachedMemory) memoryDisplay.innerText = cachedMemory;
-        
-        // INJECTED: Hydrate Username
         if (cachedUsername) {
             document.getElementById('display-username').innerText = '@' + cachedUsername;
         }
@@ -468,14 +364,17 @@
             }
         }
 
-        // RECENT HISTORY RENDER ENGINE
+        // RECENT HISTORY RENDER ENGINE (Upgraded to 6 songs)
         function loadRecentHistoryGrid() {
             const historyContainer = document.getElementById('recent-history-grid');
             if(!historyContainer) return;
 
             try {
                 // Pull directly from the 0ms local storage synced by home.html
-                const historyArr = JSON.parse(localStorage.getItem('quanic_history')) || [];
+                let historyArr = JSON.parse(localStorage.getItem('quanic_history')) || [];
+                
+                // Filter out any potential null/undefined objects first
+                historyArr = historyArr.filter(track => track && track.title);
                 
                 if(historyArr.length === 0) {
                     historyContainer.innerHTML = '<p style="color: rgba(255,255,255,0.4); font-size: 0.9rem; grid-column: span 2; text-align: center; margin-top: 10px;">No recent songs found.</p>';
@@ -483,14 +382,23 @@
                 }
                 
                 historyContainer.innerHTML = '';
-                // Take only the top 4 songs
-                const top4 = historyArr.slice(0, 4);
                 
-                top4.forEach(track => {
-                    if(!track) return;
+                // Take the top 6 songs instead of 4
+                const top6 = historyArr.slice(0, 6);
+                
+                top6.forEach(track => {
+                    const artistName = track.artist || 'Unknown Artist';
                     const div = document.createElement('div');
                     div.className = 'recent-grid-item';
-                    div.innerHTML = `<img src="${track.imgUrl}" onerror="this.src='../images/icon.png'" alt="cover"><span>${track.title}</span>`;
+                    
+                    // Added artist name block for better UI flow
+                    div.innerHTML = `
+                        <img src="${track.imgUrl}" onerror="this.src='../images/icon.png'" alt="cover">
+                        <div class="recent-info">
+                            <span class="song-title">${track.title}</span>
+                            <span class="song-artist">${artistName}</span>
+                        </div>
+                    `;
                     
                     // Tap to play integration via Deep Link Redirect
                     div.onclick = () => {
@@ -531,29 +439,19 @@
                     
                     // Update UI and Cache
                     const name = data.name || user.displayName || "User";
-                    const memory = data.memory || "No music vibe set. Tap edit to update your tastes.";
-                    // INJECTED: Safely get username
                     const username = data.username || "unknown";
                     
                     displayName.innerText = name;
                     adjustFontSize(name);
-                    memoryDisplay.innerText = memory;
-                    memoryInput.value = data.memory || ""; // Populate input if it exists
-                    
-                    // INJECTED: Populate Modal Inputs and Display
                     document.getElementById('display-username').innerText = '@' + username;
-                    document.getElementById('edit-name-input').value = name;
-                    document.getElementById('edit-username-input').value = username;
                     
                     localStorage.setItem('quanic_user_name', name);
-                    localStorage.setItem('quanic_user_memory', memory);
                     localStorage.setItem('quanic_user_username', username);
                     
-                    // Profile Pic Fallback (Check user object first, then DB, then cache)
+                    // Profile Pic Fallback
                     const photoToUse = user.photoURL || data.photoURL || cachedPhoto;
                     if (photoToUse && photoToUse.length > 5) {
                         profileImg.src = photoToUse;
-                        document.getElementById('edit-profile-img').src = photoToUse; // Update edit preview
                         localStorage.setItem('quanic_user_photo', photoToUse);
                     }
                 }
@@ -562,95 +460,7 @@
             }
         });
 
-        // 3. MODAL & NATIVE BACK BUTTON LOGIC
-        function openModal() {
-            window.vibrateLight(); // Added haptics
-            editModal.classList.add('open');
-            // Push state to browser history so the back button knows we are in a modal
-            history.pushState({ modalOpen: true }, "");
-            memoryInput.focus();
-        }
-
-        function closeModal() {
-            window.vibrateLight(); // Added haptics
-            editModal.classList.remove('open');
-            memoryInput.blur();
-        }
-
-        openEditBtn.addEventListener('click', openModal);
-
-        // If the user clicks our custom X button, trigger the back action to keep history clean
-        closeModalBtn.addEventListener('click', () => {
-            if (history.state && history.state.modalOpen) {
-                history.back(); // This will trigger 'popstate' naturally
-            } else {
-                closeModal();
-            }
-        });
-
-        // The magic listener that catches the Native Android swipe-back or physical back button
-        window.addEventListener('popstate', (e) => {
-            if (editModal.classList.contains('open')) {
-                closeModal();
-            }
-        });
-
-        // 4. SAVE MEMORY LOGIC
-        saveMemoryBtn.addEventListener('click', async () => {
-            if (!currentUser) return;
-            
-            window.vibrateMedium(); // Added haptics
-
-            const newMemory = memoryInput.value.trim();
-            saveMemoryBtn.innerText = "Saving...";
-            saveMemoryBtn.disabled = true;
-
-            try {
-                const userRef = doc(db, "users", currentUser.uid);
-                await setDoc(userRef, { memory: newMemory }, { merge: true });
-                
-                // --- INJECTED: SAVE NAME AND USERNAME ALONGSIDE ORIGINAL SAVE ---
-                const newName = document.getElementById('edit-name-input').value.trim();
-                // Enforce strictly lowercase alphanumeric and underscores for safety
-                const newUsername = document.getElementById('edit-username-input').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-                
-                if (newName || newUsername) {
-                    await setDoc(userRef, { name: newName, username: newUsername }, { merge: true });
-                    
-                    if (newName) {
-                        document.getElementById('display-name').innerText = newName;
-                        localStorage.setItem('quanic_user_name', newName);
-                        adjustFontSize(newName);
-                    }
-                    if (newUsername) {
-                        document.getElementById('display-username').innerText = '@' + newUsername;
-                        localStorage.setItem('quanic_user_username', newUsername);
-                    }
-                }
-                // --------------------------------------------------------------
-                
-                // Update UI and Cache
-                memoryDisplay.innerText = newMemory || "No music vibe set. Tap edit to update your tastes.";
-                localStorage.setItem('quanic_user_memory', newMemory);
-                
-                showToast("Profile Updated");
-                
-                // Close modal via history API
-                if (history.state && history.state.modalOpen) {
-                    history.back();
-                } else {
-                    closeModal();
-                }
-            } catch (error) {
-                console.error("Error saving memory:", error);
-                showToast("Error updating profile.");
-            } finally {
-                saveMemoryBtn.innerText = "Save";
-                saveMemoryBtn.disabled = false;
-            }
-        });
-
-        // 5. LOGOUT LOGIC
+        // 3. LOGOUT LOGIC
         logoutBtn.addEventListener('click', async () => {
             window.vibrateMedium();
             try {
@@ -659,7 +469,7 @@
                 localStorage.removeItem('quanic_user_name');
                 localStorage.removeItem('quanic_user_photo');
                 localStorage.removeItem('quanic_user_memory');
-                localStorage.removeItem('quanic_user_username'); // Injected clear call
+                localStorage.removeItem('quanic_user_username'); 
                 localStorage.removeItem('quanic_has_profile');
                 localStorage.removeItem('quanic_history');
                 localStorage.removeItem('quanic_playlists');
@@ -673,7 +483,7 @@
             }
         });
 
-        // 6. STORE WHOLE PAGE TO LOCAL STORAGE (AS REQUESTED)
+        // 4. STORE WHOLE PAGE TO LOCAL STORAGE
         function cacheWholePage() {
             const mainContent = document.getElementById('settings-main-content');
             if (mainContent) {
@@ -683,11 +493,6 @@
         
         // Execute the cache after a slight delay to ensure dynamic data is loaded
         setTimeout(cacheWholePage, 2500);
-        
-        // Update cache whenever memory is saved
-        saveMemoryBtn.addEventListener('click', () => {
-            setTimeout(cacheWholePage, 1000); 
-        });
 
     </script>
 </body>
