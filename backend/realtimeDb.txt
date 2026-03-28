@@ -1,14 +1,45 @@
 {
   "rules": {
+    // 1. Global Read: Allows any logged-in user to see active users, live chats, and typing dots
+    ".read": "auth != null",
+    
+    // 2. User Presence Engine (pulseLobby.html & admin.html)
     "users": {
-      // ANY logged-in user can read the live presence/now playing data.
-      // This allows your Admin panel to pull the data without needing a special RTDB admin flag.
-      ".read": "auth != null",
-      
       "$uid": {
-        // STRICT SECURITY: A user can ONLY update their own online status and currently playing song.
+        // Users can only update their own online/offline status and 'Now Playing' data
         ".write": "auth != null && auth.uid === $uid"
       }
+    },
+    
+    // 3. Room Presence Engine (pulse.html)
+    "pulse_presence": {
+      "$roomId": {
+        // Allows users to set their room status and allows the app to clean up ghost users
+        ".write": "auth != null"
+      }
+    },
+    
+    // 4. High-Speed Chat Engine (pulse.html)
+    "pulse_chat": {
+      "$roomId": {
+        // Allows users to push new messages to the room
+        // Also allows the app to completely delete the chat node when the session ends
+        ".write": "auth != null"
+      }
+    },
+    
+    // 5. Live Typing Indicators (pulse.html)
+    "typing": {
+      "$roomName": {
+        // Allows users to toggle their typing dots and clear them when exiting
+        ".write": "auth != null"
+      }
+    },
+
+    // Legacy Fallback (Just in case older versions of your app still query this)
+    "status": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     }
   }
 }
