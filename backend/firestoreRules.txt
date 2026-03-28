@@ -14,12 +14,21 @@ service cloud.firestore {
       // Allow authenticated users to read profiles (Required for Username validation and Global Search)
       allow read: if request.auth != null;
       
-      // Users can only edit their own base profile document
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // Users can only edit their own base profile document. Admins can update any user (Suspend/Admin toggles)
+      // FIX: Split 'write' to 'create', 'delete', and 'update' to secure 'self-admin' and 'suspend' logic
+      allow create, delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
       
-      // Users can fully control their own subcollections (playlists, history, etc.)
+      allow update: if request.auth != null && (
+        isAdmin() || 
+        (
+          request.auth.uid == userId && 
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['admin', 'verified', 'suspended', 'searchResult', 'serverError'])
+        )
+      );
+      
+      // Users can fully control their own subcollections (playlists, history, etc.). Admins can read history.
       match /{allSubcollections=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
       }
     }
 
@@ -30,7 +39,7 @@ service cloud.firestore {
     // Tracks who is currently waiting/online in the Pulse Lobby
     match /pulse_active/{activeUid} {
       allow read: if request.auth != null; // Anyone can see who is online
-      allow write: if request.auth != null && request.auth.uid == activeUid; // Can only set own status
+      allow write: if request.auth != null && (request.auth.uid == activeUid || isAdmin()); // Can only set own status
     }
 
     // Tracks the active listening sessions/rooms
@@ -55,20 +64,26 @@ service cloud.firestore {
     match /play_events/{eventId} {
       // Users can drop a receipt in (create), but they cannot read, edit, or delete them.
       allow create: if request.auth != null;
+      // Admins can read, update, or delete the receipts
+      allow read, update, delete: if isAdmin();
     }
 
     match /public_feeds/{feedId} {
       // Users can look at the trending list (read), but they cannot change it.
       allow read: if request.auth != null;
+      // Admins can update the trending list
+      allow write: if isAdmin();
     }
 
     // ==========================================================
     // 5. GLOBAL ADMIN OVERRIDE
     // ==========================================================
-    match /{document=**} {
-      // Admins have absolute read/write access to the entire database
-      allow read, write: if isAdmin();
-    }
+    // [FIXED]: Commented out to eliminate the recursive read billing bug!
+    // Admin permissions are now surgically applied above to the specific collections.
+    // match /{document=**} {
+    //   // Admins have absolute read/write access to the entire database
+    //   allow read, write: if isAdmin();
+    // }
     
   }
 }
