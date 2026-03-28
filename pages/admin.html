@@ -167,6 +167,19 @@
         }
         .broadcast-send-btn:active { transform: scale(0.9); }
 
+        /* ==========================================================================
+           7. SUSPEND TOGGLE & BADGE STYLES (NEW)
+           ========================================================================== */
+        .action-section { padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); margin-top: 10px; }
+        .toggle-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; cursor: pointer; transition: 0.2s; }
+        .toggle-text { font-weight: 600; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;}
+        .toggle-track { width: 50px; height: 26px; background: rgba(255,255,255,0.1); border-radius: 13px; position: relative; transition: 0.3s; }
+        .toggle-knob { width: 22px; height: 22px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .toggle-item.active .toggle-track { background: #ff4444; box-shadow: 0 0 10px rgba(255,68,68,0.3); }
+        .toggle-item.active .toggle-knob { transform: translateX(24px); }
+        .toggle-item:active { transform: scale(0.98); }
+        .badge.ban { background: rgba(255,68,68,0.15); color: #ff4444; border: 1px solid rgba(255,68,68,0.3); font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; font-weight: 800; text-transform: uppercase; margin-left: 8px; vertical-align: middle; }
+
     </style>
 </head>
 <body>
@@ -278,6 +291,13 @@
                 </div>
             </div>
 
+            <div class="action-section">
+                <div class="toggle-item" id="suspend-toggle" onclick="toggleSuspend()">
+                    <span class="toggle-text" style="color:#ff4444;"><span class="material-symbols-rounded" style="font-size: 18px; color: #ff4444;">block</span> Suspend Account</span>
+                    <div class="toggle-track"><div class="toggle-knob"></div></div>
+                </div>
+            </div>
+
             <div class="section-title">Recent Listening History</div>
             <div class="history-list" id="modal-history-list">
                 </div>
@@ -295,6 +315,8 @@
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { collection, query, limit, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        // NEW: Added updateDoc import without modifying existing lines
+        import { updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         // Initialize RTDB natively 
         let rtdb;
@@ -537,6 +559,7 @@
                         <div class="user-name">
                             ${user.name || 'Unknown User'}
                             ${user.admin ? `<span class="admin-badge">Admin</span>` : ''}
+                            ${user.suspended ? `<span class="badge ban">BAN</span>` : ''}
                         </div>
                         <div class="user-sub" style="${(isOnline && liveData.nowPlaying && liveData.nowPlaying.isPlaying) ? 'color:#E1306C; font-weight:600;' : ''}">${subText}</div>
                     </div>
@@ -560,6 +583,14 @@
             document.getElementById('modal-avatar').src = user.photoURL || '../images/icon.png';
             document.getElementById('modal-name').innerText = user.name || 'Unknown User';
             document.getElementById('modal-uid').innerText = user.id;
+
+            // Handle Suspend Toggle UI State
+            const suspendToggle = document.getElementById('suspend-toggle');
+            if(user.suspended) {
+                suspendToggle.classList.add('active');
+            } else {
+                suspendToggle.classList.remove('active');
+            }
 
             // Initialize Live Data UI
             updateActiveModalLive();
@@ -645,7 +676,7 @@
         });
 
         // =========================================================
-        // 5. GLOBAL NOTIFICATION SYSTEM (NEW)
+        // 5. GLOBAL NOTIFICATION SYSTEM 
         // =========================================================
         window.sendGlobalNotification = async () => {
             const input = document.getElementById('broadcast-input');
@@ -681,6 +712,44 @@
             } finally {
                 btn.innerHTML = originalContent;
                 btn.style.pointerEvents = 'auto';
+            }
+        };
+
+        // =========================================================
+        // 6. ADVANCED ACCOUNT ACTIONS (SUSPEND)
+        // =========================================================
+        window.toggleSuspend = async () => {
+            if(!activeModalUserId) return;
+            const toggleEl = document.getElementById('suspend-toggle');
+            const isCurrentlySuspended = toggleEl.classList.contains('active');
+            const newState = !isCurrentlySuspended;
+            
+            // Optimistic UI update (Instant Feedback)
+            if(newState) toggleEl.classList.add('active');
+            else toggleEl.classList.remove('active');
+            window.vibrate([15, 30, 15]);
+            
+            try {
+                // Update Firestore
+                await updateDoc(doc(db, 'users', activeModalUserId), {
+                    suspended: newState
+                });
+                
+                // Update Local Cache Memory
+                const userIdx = firestoreUsers.findIndex(u => u.id === activeModalUserId);
+                if(userIdx > -1) firestoreUsers[userIdx].suspended = newState;
+                
+                // Force UI Re-render to show/hide the "BAN" badge
+                renderUsersList();
+                
+                window.showToast(newState ? "Account Suspended" : "Account Restored");
+            } catch(e) {
+                console.error("Suspend Error:", e);
+                // Revert UI on failure
+                if(isCurrentlySuspended) toggleEl.classList.add('active');
+                else toggleEl.classList.remove('active');
+                window.showToast("Failed to update status", true);
+                window.vibrate(50);
             }
         };
 
