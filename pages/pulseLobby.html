@@ -18,7 +18,8 @@
             
             // OLD BUGGY LINE DISABLED: document.body.appendChild(box);
             // NEW FIX: Ensures body exists before appending to prevent crash loop!
-            if (document.body) document.body.appendChild(box);
+            // -- DISABLED ENTIRELY AS PER REQUEST TO HIDE ALL ERROR POPUPS ON UI --
+            // if (document.body) document.body.appendChild(box); 
             
             console.error("Global Error Caught:", error);
             return false;
@@ -1064,7 +1065,7 @@
                 oldSearchInput.parentNode.replaceChild(newSearchInput, oldSearchInput);
                 
                 newSearchInput.addEventListener('input', async (e) => {
-                    const term = e.target.value.toLowerCase().trim();
+                    const term = e.target ? (e.target.value || '').toLowerCase().trim() : '';
                     const mContainer = document.getElementById('mutuals-container');
                     
                     if (!term) {
