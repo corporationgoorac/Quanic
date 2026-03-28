@@ -598,7 +598,10 @@
 
     <header>
         <h1 class="brand-title">Quanic</h1>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span class="material-symbols-rounded" onclick="window.location.href='pulseLobby.html'" style="font-size: 28px; cursor: pointer; background: linear-gradient(90deg, #E1306C, #FF7A00); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">graphic_eq</span>
         <img id="header-profile-pic" class="profile-pic" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Profile" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';" onclick="window.location.href='settings.html'">
+        </div>
     </header>
 
     <div id="install-banner" style="display: none; background: linear-gradient(90deg, #E1306C, #FF7A00); padding: 12px 20px; justify-content: space-between; align-items: center; position: fixed; top: 70px; width: 100%; z-index: 79; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
@@ -1309,6 +1312,32 @@
             try {
                 const res = await fetch(`${API_SERVER}/search/songs?query=${encodeURIComponent(query)}`);
                 const data = await res.json();
+                
+                // --- NEW ADVANCED ENGLISH API INJECTION (ITUNES) ---
+                try {
+                    const itunesRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=15`);
+                    const itunesData = await itunesRes.json();
+                    if(itunesData.results && itunesData.results.length > 0) {
+                        const formattedItunes = itunesData.results.filter(s => s.previewUrl).map(s => ({
+                            id: s.trackId.toString(),
+                            name: s.trackName,
+                            primaryArtists: s.artistName,
+                            image: [{url: s.artworkUrl100.replace('100x100bb', '500x500bb')}],
+                            downloadUrl: [{url: s.previewUrl}]
+                        }));
+                        if(!data.data) data.data = { results: [] };
+                        data.data.results = [...formattedItunes, ...(data.data.results || [])];
+                        const seen = new Set();
+                        data.data.results = data.data.results.filter(s => {
+                            const key = s.name.toLowerCase().trim();
+                            if(seen.has(key)) return false;
+                            seen.add(key);
+                            return true;
+                        });
+                    }
+                } catch(e) { console.log("English API Fallback failed", e); }
+                // ---------------------------------------------------
+
                 if(resultsDiv) resultsDiv.innerHTML = '';
                 
                 if (data.data.results.length > 0) {
