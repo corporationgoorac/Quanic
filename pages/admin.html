@@ -148,6 +148,25 @@
         .toast.show { top: calc(env(safe-area-inset-top) + 20px); }
         .toast.error { border-color: #ff4444; color: #ff4444; }
 
+        /* ==========================================================================
+           6. BOTTOM BROADCAST BAR (NEW SYSTEM LOGIC)
+           ========================================================================== */
+        .bottom-broadcast-bar {
+            width: 100%; padding: 15px 20px; padding-bottom: calc(15px + env(safe-area-inset-bottom));
+            background: rgba(18,18,18,0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; display: flex; align-items: center; gap: 12px;
+        }
+        .broadcast-input-wrapper {
+            flex: 1; display: flex; background: rgba(255,255,255,0.05); border-radius: 20px; padding: 12px 18px; align-items: center; border: 1px solid rgba(255,255,255,0.02); transition: 0.3s;
+        }
+        .broadcast-input-wrapper:focus-within { border-color: #E1306C; background: rgba(225, 48, 108, 0.05); box-shadow: 0 0 15px rgba(225, 48, 108, 0.1); }
+        .broadcast-input-wrapper input { background: none; border: none; color: white; outline: none; width: 100%; font-size: 0.95rem; }
+        .broadcast-input-wrapper input::placeholder { color: rgba(255,255,255,0.3); }
+        .broadcast-send-btn {
+            background: linear-gradient(135deg, #E1306C, #FF7A00); border: none; width: 45px; height: 45px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(225,48,108,0.3); flex-shrink: 0;
+        }
+        .broadcast-send-btn:active { transform: scale(0.9); }
+
     </style>
 </head>
 <body>
@@ -214,6 +233,16 @@
 
         <div class="users-list" id="users-list-container">
             </div>
+
+        <div class="bottom-broadcast-bar">
+            <div class="broadcast-input-wrapper">
+                <span class="material-symbols-rounded" style="color:#A7A7A7; font-size: 20px; margin-right: 10px;">campaign</span>
+                <input type="text" id="broadcast-input" placeholder="Broadcast system notification..." autocomplete="off">
+            </div>
+            <button class="broadcast-send-btn" id="broadcast-send-btn" onclick="sendGlobalNotification()">
+                <span class="material-symbols-rounded">send</span>
+            </button>
+        </div>
     </div>
 
     <div id="user-modal">
@@ -265,6 +294,7 @@
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { collection, query, limit, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         // Initialize RTDB natively 
         let rtdb;
@@ -613,6 +643,46 @@
                 activeModalUserId = null;
             }
         });
+
+        // =========================================================
+        // 5. GLOBAL NOTIFICATION SYSTEM (NEW)
+        // =========================================================
+        window.sendGlobalNotification = async () => {
+            const input = document.getElementById('broadcast-input');
+            const msg = input.value.trim();
+            
+            if (!msg) {
+                window.showToast("Please enter a message to broadcast", true);
+                window.vibrate(50);
+                return;
+            }
+
+            const btn = document.getElementById('broadcast-send-btn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<div class="loader-spinner" style="width:20px; height:20px; border-width:2px; margin: 0 auto;"></div>';
+            btn.style.pointerEvents = 'none';
+
+            try {
+                // Deploying to a global system notification document (matching your Goorac logic style)
+                await setDoc(doc(db, 'system', 'global_notification'), {
+                    message: msg,
+                    timestamp: serverTimestamp(),
+                    sentBy: currentUserAdmin ? currentUserAdmin.uid : 'admin_system',
+                    active: true
+                });
+
+                window.showToast("Global Notification Broadcasted!");
+                window.vibrate([15, 30, 15]); // Success double vibration
+                input.value = ''; // Clear input
+            } catch(e) {
+                console.error("Broadcast Error:", e);
+                window.showToast("Failed to broadcast notification", true);
+                window.vibrate(50);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.style.pointerEvents = 'auto';
+            }
+        };
 
     </script>
 </body>
