@@ -337,6 +337,14 @@
             background: linear-gradient(90deg, transparent, #E1306C, transparent) !important;
         }
 
+        /* --- NEW CSS INJECTION: ENHANCED USERNAME HIGHLIGHT --- */
+        .m-handle {
+            color: var(--accent) !important;
+            font-weight: 700 !important;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+        }
+
     </style>
 </head>
 <body>
@@ -976,6 +984,19 @@
                 activeSnap.forEach(d => { if(d.id !== myUid && activeGlobalUids.length < 8) activeGlobalUids.push(d.id) });
                 mutualList = activeGlobalUids; 
 
+                // --- NEW INJECT: Pad the list to guarantee 8 users are shown even if offline ---
+                try {
+                    if (mutualList.length < 8) {
+                        const fallbackSnap = await getDocs(query(collection(lobbyDb, 'users'), limit(15)));
+                        fallbackSnap.forEach(d => {
+                            if (d.id !== myUid && !mutualList.includes(d.id) && mutualList.length < 8) {
+                                mutualList.push(d.id);
+                            }
+                        });
+                    }
+                } catch(ePad) { console.error("Padding error", ePad); }
+                // -------------------------------------------------------------------------------
+
                 if (mutualList.length === 0) {
                     document.getElementById('mutuals-container').innerHTML = 
                         `<div style="text-align:center; padding:50px; color:var(--text-dim); font-size:13px;">No active connections found on the network.</div>`;
@@ -990,6 +1011,8 @@
                 activePresenceListener = onSnapshot(query(collection(lobbyDb, 'pulse_active'), where('lastSeen', '>', fiveMinsAgo)), snapshot => {
                     const activeUids = new Set();
                     snapshot.forEach(docSnap => activeUids.add(docSnap.id));
+                    // --- NEW INJECT: Expose globally for search syncing ---
+                    window.currentPulseActiveUids = activeUids;
                     updateActiveStatus(activeUids);
                 });
 
@@ -1050,6 +1073,10 @@
                             mContainer.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-dim); font-size:13px;">No users found matching "${term}"</div>`;
                         } else {
                             searchResults.forEach(uData => mContainer.appendChild(createMutualCard(uData)));
+                            // --- NEW INJECT: Update real-time status for searched users! ---
+                            if(window.currentPulseActiveUids) {
+                                updateActiveStatus(window.currentPulseActiveUids);
+                            }
                         }
                     } catch(err) { console.error("Search failed", err); }
                     
@@ -1171,6 +1198,8 @@
                     container.appendChild(createMutualCard(uData));
                 }
             });
+            // --- NEW INJECT: Sync styling for freshly rendered cached users ---
+            if (window.currentPulseActiveUids) updateActiveStatus(window.currentPulseActiveUids);
         }
 
         async function loadMoreMutuals() {
