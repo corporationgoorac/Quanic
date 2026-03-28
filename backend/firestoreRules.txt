@@ -14,10 +14,12 @@ service cloud.firestore {
       // Allow authenticated users to read profiles (Required for Username validation and Global Search)
       allow read: if request.auth != null;
       
-      // Users can only edit their own base profile document. Admins can update any user (Suspend/Admin toggles)
-      // FIX: Split 'write' to 'create', 'delete', and 'update' to secure 'self-admin' and 'suspend' logic
+      // Users can only create or delete their own base profile document. Admins can manage any user.
+      // [FIXED]: Changed from 'write' to 'create, delete' to allow the strict 'update' logic below to work.
       allow create, delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
       
+      // [FIXED]: Admin can suspend, verify, or grant admin status. 
+      // Regular users are strictly BLOCKED from touching these fields.
       allow update: if request.auth != null && (
         isAdmin() || 
         (
@@ -26,7 +28,8 @@ service cloud.firestore {
         )
       );
       
-      // Users can fully control their own subcollections (playlists, history, etc.). Admins can read history.
+      // Users can fully control their own subcollections (playlists, history, etc.). 
+      // Admins can read history and playlists to power the Admin User Intelligence panel.
       match /{allSubcollections=**} {
         allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
       }
@@ -34,7 +37,7 @@ service cloud.firestore {
 
     // ==========================================================
     // 2. PULSE NETWORK (Lobby, Active Status & Rooms)
-    // ==========================================================
+    // ==========================================
     
     // Tracks who is currently waiting/online in the Pulse Lobby
     match /pulse_active/{activeUid} {
@@ -54,7 +57,7 @@ service cloud.firestore {
     match /system/{docId} {
       // All users need to be able to read system broadcasts and global popups
       allow read: if request.auth != null;
-      // Only Admins can deploy popups/broadcasts
+      // Only Admins can deploy popups/broadcasts from the Quanic Admin Panel
       allow write: if isAdmin();
     }
 
@@ -64,7 +67,7 @@ service cloud.firestore {
     match /play_events/{eventId} {
       // Users can drop a receipt in (create), but they cannot read, edit, or delete them.
       allow create: if request.auth != null;
-      // Admins can read, update, or delete the receipts
+      // Admins can read, update, or delete the receipts for the Analytics Dashboard
       allow read, update, delete: if isAdmin();
     }
 
