@@ -15,7 +15,11 @@
             const box = document.createElement('div');
             box.style.cssText = "position:fixed; top:10px; left:10px; right:10px; z-index:99999; background:var(--surface); color:var(--text); padding:15px; border:1px solid var(--accent); border-radius:8px; font-family:monospace; font-size:12px; box-shadow:0 10px 40px var(--bg);";
             box.innerHTML = `<strong>System Error:</strong><br>${msg}<br><br><em>Line: ${line}</em>`;
-            document.body.appendChild(box);
+            
+            // OLD BUGGY LINE DISABLED: document.body.appendChild(box);
+            // NEW FIX: Ensures body exists before appending to prevent crash loop!
+            if (document.body) document.body.appendChild(box);
+            
             console.error("Global Error Caught:", error);
             return false;
         };
@@ -172,7 +176,15 @@
             display: flex; align-items: center; gap: 4px;
         }
         .verified-badge { font-size: 14px; color: var(--verified-color); }
-        .m-handle { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+        
+        /* --- ENHANCED CSS INJECTION: HIGH VISIBILITY USERNAME --- */
+        .m-handle { 
+            font-size: 13px !important; 
+            color: #b466ff !important; 
+            font-weight: 800 !important; 
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+        }
         
         .m-btn {
             width: 32px; height: 32px; border-radius: 50%;
@@ -335,14 +347,6 @@
         }
         .data-stream::after {
             background: linear-gradient(90deg, transparent, #E1306C, transparent) !important;
-        }
-
-        /* --- NEW CSS INJECTION: ENHANCED USERNAME HIGHLIGHT --- */
-        .m-handle {
-            color: var(--accent) !important;
-            font-weight: 700 !important;
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 1px;
         }
 
     </style>
@@ -565,10 +569,11 @@
                 const followers = (data.followers || []).map(u => typeof u === 'string' ? u : u.uid);
                 mutualList = following.filter(id => followers.includes(id));
                 
-                const activeSnap = await lobbyDb.collection('pulse_active').orderBy('lastSeen', 'desc').limit(9).get();
-                const activeGlobalUids = [];
-                activeSnap.forEach(d => { if(d.id !== myUid && activeGlobalUids.length < 8) activeGlobalUids.push(d.id) });
-                mutualList = activeGlobalUids; 
+                // OLD BUGGY CODE DISABLED TO PREVENT CRASH
+                // const activeSnap = await getDocs(query(collection(lobbyDb, 'pulse_active'), orderBy('lastSeen', 'desc'), limit(9)));
+                // const activeGlobalUids = [];
+                // activeSnap.forEach(d => { if(d.id !== myUid && activeGlobalUids.length < 8) activeGlobalUids.push(d.id) });
+                // mutualList = activeGlobalUids; 
 
                 if (mutualList.length === 0) {
                     document.getElementById('mutuals-container').innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-dim); font-size:13px;">No active connections found on the network.</div>`;
@@ -578,13 +583,14 @@
                 loadedCount = 0;
                 await loadMoreMutuals(); 
 
-                activePresenceListener = lobbyDb.collection('pulse_active')
-                    .where('lastSeen', '>', new Date(Date.now() - 1000 * 60 * 5)) 
-                    .onSnapshot(snapshot => {
-                        const activeUids = new Set();
-                        snapshot.forEach(doc => activeUids.add(doc.id));
-                        updateActiveStatus(activeUids);
-                    });
+                // OLD BUGGY LISTENER DISABLED
+                // const fiveMinsAgo = new Date(Date.now() - 1000 * 60 * 5);
+                // activePresenceListener = onSnapshot(query(collection(lobbyDb, 'pulse_active'), where('lastSeen', '>', fiveMinsAgo)), snapshot => {
+                //     const activeUids = new Set();
+                //     snapshot.forEach(doc => activeUids.add(doc.id));
+                //     window.currentPulseActiveUids = activeUids;
+                //     updateActiveStatus(activeUids);
+                // });
 
                 const container = document.getElementById('mutuals-container');
                 container.addEventListener('scroll', () => {
@@ -798,7 +804,9 @@
                     }
 
                     for (const chunk of chunks) {
-                        const snap = await lobbyDb.collection('users').where(firebase.firestore.FieldPath.documentId(), 'in', chunk).get();
+                        // OLD BUGGY LINE DISABLED TO PREVENT CRASH
+                        // const snap = await getDocs(query(collection(lobbyDb, 'users'), where(FieldPath.documentId(), 'in', chunk)));
+                        const snap = await getDocs(query(collection(lobbyDb, 'users'), where(documentId(), 'in', chunk)));
                         snap.forEach(doc => {
                             const d = doc.data();
                             d.uid = doc.id;
@@ -870,7 +878,8 @@
     <script type="module">
         import { auth, db } from '../config.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, orderBy, limit, deleteDoc, updateDoc, FieldPath } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        // OLD BUGGY IMPORT DISABLED: import { doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, orderBy, limit, deleteDoc, updateDoc, FieldPath } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, orderBy, limit, deleteDoc, updateDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         
         // BLOCK COPY AND SELECTION
         document.oncontextmenu = () => false;
@@ -979,10 +988,24 @@
             }
 
             try {
-                const activeSnap = await getDocs(query(collection(lobbyDb, 'pulse_active'), orderBy('lastSeen', 'desc'), limit(9)));
-                const activeGlobalUids = [];
-                activeSnap.forEach(d => { if(d.id !== myUid && activeGlobalUids.length < 8) activeGlobalUids.push(d.id) });
-                mutualList = activeGlobalUids; 
+                // OLD BUGGY CODE DISABLED TO PREVENT CRASH
+                // const activeSnap = await getDocs(query(collection(lobbyDb, 'pulse_active'), orderBy('lastSeen', 'desc'), limit(9)));
+                // const activeGlobalUids = [];
+                // activeSnap.forEach(d => { if(d.id !== myUid && activeGlobalUids.length < 8) activeGlobalUids.push(d.id) });
+                // mutualList = activeGlobalUids; 
+
+                // --- NEW INJECT: Fixed Active Users Query without index errors ---
+                const activeSnap = await getDocs(collection(lobbyDb, 'pulse_active'));
+                const activeDocs = [];
+                activeSnap.forEach(d => {
+                    if (d.id !== myUid) {
+                        const data = d.data();
+                        const last = data.lastSeen ? (data.lastSeen.toMillis ? data.lastSeen.toMillis() : (data.lastSeen.seconds ? data.lastSeen.seconds * 1000 : Date.now())) : 0;
+                        if (Date.now() - last < 5 * 60 * 1000) activeDocs.push({ id: d.id, last });
+                    }
+                });
+                activeDocs.sort((a, b) => b.last - a.last);
+                mutualList = activeDocs.slice(0, 8).map(x => x.id);
 
                 // --- NEW INJECT: Pad the list to guarantee 8 users are shown even if offline ---
                 try {
@@ -1006,12 +1029,24 @@
                 loadedCount = 0;
                 await loadMoreMutuals(); 
 
-                // LISTEN FOR ACTIVE USERS (Realtime Presence)
-                const fiveMinsAgo = new Date(Date.now() - 1000 * 60 * 5);
-                activePresenceListener = onSnapshot(query(collection(lobbyDb, 'pulse_active'), where('lastSeen', '>', fiveMinsAgo)), snapshot => {
+                // OLD BUGGY LISTENER DISABLED
+                // const fiveMinsAgo = new Date(Date.now() - 1000 * 60 * 5);
+                // activePresenceListener = onSnapshot(query(collection(lobbyDb, 'pulse_active'), where('lastSeen', '>', fiveMinsAgo)), snapshot => {
+                //     const activeUids = new Set();
+                //     snapshot.forEach(docSnap => activeUids.add(docSnap.id));
+                //     // --- NEW INJECT: Expose globally for search syncing ---
+                //     window.currentPulseActiveUids = activeUids;
+                //     updateActiveStatus(activeUids);
+                // });
+
+                activePresenceListener = onSnapshot(collection(lobbyDb, 'pulse_active'), snapshot => {
                     const activeUids = new Set();
-                    snapshot.forEach(docSnap => activeUids.add(docSnap.id));
-                    // --- NEW INJECT: Expose globally for search syncing ---
+                    const now = Date.now();
+                    snapshot.forEach(docSnap => {
+                        const d = docSnap.data();
+                        const last = d.lastSeen ? (d.lastSeen.toMillis ? d.lastSeen.toMillis() : (d.lastSeen.seconds ? d.lastSeen.seconds * 1000 : now)) : 0;
+                        if (now - last < 5 * 60 * 1000) activeUids.add(docSnap.id);
+                    });
                     window.currentPulseActiveUids = activeUids;
                     updateActiveStatus(activeUids);
                 });
@@ -1219,7 +1254,9 @@
                     }
 
                     for (const chunk of chunks) {
-                        const snap = await getDocs(query(collection(lobbyDb, 'users'), where(FieldPath.documentId(), 'in', chunk)));
+                        // OLD BUGGY LINE DISABLED TO PREVENT CRASH
+                        // const snap = await getDocs(query(collection(lobbyDb, 'users'), where(FieldPath.documentId(), 'in', chunk)));
+                        const snap = await getDocs(query(collection(lobbyDb, 'users'), where(documentId(), 'in', chunk)));
                         snap.forEach(docSnap => {
                             const d = docSnap.data();
                             d.uid = docSnap.id;
