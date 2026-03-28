@@ -171,14 +171,65 @@
            7. SUSPEND TOGGLE & BADGE STYLES (NEW)
            ========================================================================== */
         .action-section { padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); margin-top: 10px; }
-        .toggle-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; cursor: pointer; transition: 0.2s; }
+        .toggle-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; cursor: pointer; transition: 0.2s; margin-bottom: 8px; }
         .toggle-text { font-weight: 600; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;}
         .toggle-track { width: 50px; height: 26px; background: rgba(255,255,255,0.1); border-radius: 13px; position: relative; transition: 0.3s; }
         .toggle-knob { width: 22px; height: 22px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        .toggle-item.active .toggle-track { background: #ff4444; box-shadow: 0 0 10px rgba(255,68,68,0.3); }
+        
+        .toggle-item.active.red .toggle-track { background: #ff4444; box-shadow: 0 0 10px rgba(255,68,68,0.3); }
+        .toggle-item.active.pink .toggle-track { background: #E1306C; box-shadow: 0 0 10px rgba(225,48,108,0.3); }
         .toggle-item.active .toggle-knob { transform: translateX(24px); }
+        
         .toggle-item:active { transform: scale(0.98); }
         .badge.ban { background: rgba(255,68,68,0.15); color: #ff4444; border: 1px solid rgba(255,68,68,0.3); font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; font-weight: 800; text-transform: uppercase; margin-left: 8px; vertical-align: middle; }
+
+        /* ==========================================================================
+           8. SYSTEM POPUP DEPLOY MODAL (SCREENSHOT EXACT MATCH)
+           ========================================================================== */
+        #deploy-modal-wrapper {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
+            background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        #deploy-modal-wrapper.active { opacity: 1; pointer-events: auto; }
+        
+        .deploy-card {
+            background: #1c1c1e; width: 90%; max-width: 420px; border-radius: 16px; padding: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.05);
+            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; flex-direction: column;
+        }
+        #deploy-modal-wrapper.active .deploy-card { transform: scale(1); }
+
+        .deploy-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; margin-bottom: 20px; }
+        .deploy-title { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; color: #fff; }
+        .deploy-close { color: #A7A7A7; cursor: pointer; transition: 0.2s; }
+        .deploy-close:active { color: #fff; transform: scale(0.9); }
+
+        .deploy-tag { 
+            display: inline-block; font-size: 0.75rem; font-weight: 800; color: #b466ff; 
+            background: rgba(157, 0, 255, 0.15); padding: 8px 14px; border-radius: 8px; 
+            letter-spacing: 0.5px; margin-bottom: 20px; text-transform: uppercase; align-self: flex-start;
+        }
+
+        .deploy-input {
+            width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; padding: 15px; color: #fff; font-size: 0.95rem; outline: none; margin-bottom: 15px;
+            transition: border-color 0.2s; font-family: 'Inter', sans-serif;
+        }
+        .deploy-input:focus { border-color: rgba(157, 0, 255, 0.5); background: rgba(0,0,0,0.2); }
+        .deploy-input::placeholder { color: rgba(255,255,255,0.3); }
+        
+        textarea.deploy-input { min-height: 100px; resize: none; line-height: 1.5; }
+        
+        .deploy-footer-text { font-family: monospace; font-size: 0.65rem; color: #666; margin-bottom: 20px; line-height: 1.6; text-transform: uppercase; }
+        
+        .deploy-btn {
+            width: 100%; background: #ffffff; color: #000000; border: none; padding: 16px; 
+            border-radius: 12px; font-weight: 800; font-size: 1.05rem; cursor: pointer; 
+            transition: transform 0.1s; box-shadow: 0 4px 15px rgba(255,255,255,0.1);
+        }
+        .deploy-btn:active { transform: scale(0.98); }
 
     </style>
 </head>
@@ -223,6 +274,7 @@
     <div id="dashboard-screen" class="screen">
         <header>
             <div class="header-title brand-text">Quanic Admin</div>
+            <span class="material-symbols-rounded" onclick="openDeployModal()" style="font-size: 28px; color: #fff; cursor: pointer; transition: transform 0.2s; padding: 5px;">campaign</span>
         </header>
 
         <div class="metrics-bar">
@@ -247,7 +299,7 @@
         <div class="users-list" id="users-list-container">
             </div>
 
-        <div class="bottom-broadcast-bar">
+        <div class="bottom-broadcast-bar" style="display: none !important;">
             <div class="broadcast-input-wrapper">
                 <span class="material-symbols-rounded" style="color:#A7A7A7; font-size: 20px; margin-right: 10px;">campaign</span>
                 <input type="text" id="broadcast-input" placeholder="Broadcast system notification..." autocomplete="off">
@@ -292,7 +344,11 @@
             </div>
 
             <div class="action-section">
-                <div class="toggle-item" id="suspend-toggle" onclick="toggleSuspend()">
+                <div class="toggle-item pink" id="admin-toggle" onclick="toggleAdmin()">
+                    <span class="toggle-text" style="color:#E1306C;"><span class="material-symbols-rounded" style="font-size: 18px; color: #E1306C;">admin_panel_settings</span> Admin Privileges</span>
+                    <div class="toggle-track"><div class="toggle-knob"></div></div>
+                </div>
+                <div class="toggle-item red" id="suspend-toggle" onclick="toggleSuspend()">
                     <span class="toggle-text" style="color:#ff4444;"><span class="material-symbols-rounded" style="font-size: 18px; color: #ff4444;">block</span> Suspend Account</span>
                     <div class="toggle-track"><div class="toggle-knob"></div></div>
                 </div>
@@ -301,6 +357,31 @@
             <div class="section-title">Recent Listening History</div>
             <div class="history-list" id="modal-history-list">
                 </div>
+        </div>
+    </div>
+
+    <div id="deploy-modal-wrapper" onclick="history.back()">
+        <div class="deploy-card" onclick="event.stopPropagation()">
+            <div class="deploy-header">
+                <div class="deploy-title">
+                    <span class="material-symbols-rounded" style="color: #b466ff;">call_to_action</span> System Popup Deploy
+                </div>
+                <span class="material-symbols-rounded deploy-close" onclick="history.back()">close</span>
+            </div>
+            
+            <div class="deploy-tag">TARGET: HOME PAGE (GLOBAL)</div>
+            
+            <input type="text" class="deploy-input" id="deploy-version" placeholder="Version Number (e.g. v9.1.0)" autocomplete="off">
+            <input type="text" class="deploy-input" id="deploy-title" placeholder="Popup Title" autocomplete="off">
+            <input type="text" class="deploy-input" id="deploy-heading" placeholder="Headings Content" autocomplete="off">
+            <textarea class="deploy-input" id="deploy-lines" placeholder="Lines / Description text..."></textarea>
+            <input type="text" class="deploy-input" id="deploy-btn-text" placeholder="Button Text (e.g. Acknowledge)" autocomplete="off">
+            
+            <div class="deploy-footer-text">
+                SYSTEM: QUANTUM OVERRIDE<br>DESTINATION: CLIENT_HOME
+            </div>
+            
+            <button class="deploy-btn" id="deploy-trigger-btn" onclick="deploySystemPopup()">Deploy to Global Home</button>
         </div>
     </div>
 
@@ -592,6 +673,14 @@
                 suspendToggle.classList.remove('active');
             }
 
+            // NEW: Handle Admin Toggle UI State (Without removing old lines)
+            const adminToggle = document.getElementById('admin-toggle');
+            if(user.admin) {
+                adminToggle.classList.add('active');
+            } else {
+                adminToggle.classList.remove('active');
+            }
+
             // Initialize Live Data UI
             updateActiveModalLive();
 
@@ -666,7 +755,7 @@
             }
         }
 
-        // Hardware back button mapping
+        // Hardware back button mapping (Preserved perfectly, extended safely below)
         window.addEventListener('popstate', (e) => {
             const state = e.state ? e.state.modalOpen : null;
             if (!state || state !== 'user_details') {
@@ -750,6 +839,108 @@
                 else toggleEl.classList.remove('active');
                 window.showToast("Failed to update status", true);
                 window.vibrate(50);
+            }
+        };
+
+        // =========================================================
+        // 7. NEW SYSTEM LOGIC (DEPLOY, ADMIN TOGGLE & SAFE POPSTATE)
+        // =========================================================
+
+        // Safely extended Popstate specifically for the Deploy Modal to guarantee no modified lines
+        window.addEventListener('popstate', (e) => {
+            const state = e.state ? e.state.modalOpen : null;
+            if (state !== 'deploy_modal') {
+                document.getElementById('deploy-modal-wrapper').classList.remove('active');
+            }
+        });
+
+        window.openDeployModal = () => {
+            if(window.vibrate) window.vibrate(10);
+            document.getElementById('deploy-modal-wrapper').classList.add('active');
+            history.pushState({ modalOpen: 'deploy_modal' }, "", "#deploy");
+        };
+
+        window.toggleAdmin = async () => {
+            if(!activeModalUserId) return;
+            const toggleEl = document.getElementById('admin-toggle');
+            const isCurrentlyAdmin = toggleEl.classList.contains('active');
+            const newState = !isCurrentlyAdmin;
+            
+            // Optimistic UI update
+            if(newState) toggleEl.classList.add('active');
+            else toggleEl.classList.remove('active');
+            window.vibrate([15, 30, 15]);
+            
+            try {
+                // Update Firestore
+                await updateDoc(doc(db, 'users', activeModalUserId), {
+                    admin: newState
+                });
+                
+                // Update Local Cache Memory
+                const userIdx = firestoreUsers.findIndex(u => u.id === activeModalUserId);
+                if(userIdx > -1) firestoreUsers[userIdx].admin = newState;
+                
+                renderUsersList();
+                window.showToast(newState ? "Admin Privileges Granted" : "Admin Privileges Revoked");
+            } catch(e) {
+                console.error("Admin Toggle Error:", e);
+                if(isCurrentlyAdmin) toggleEl.classList.add('active');
+                else toggleEl.classList.remove('active');
+                window.showToast("Failed to update admin status", true);
+                window.vibrate(50);
+            }
+        };
+
+        window.deploySystemPopup = async () => {
+            const version = document.getElementById('deploy-version').value.trim();
+            const title = document.getElementById('deploy-title').value.trim();
+            const heading = document.getElementById('deploy-heading').value.trim();
+            const lines = document.getElementById('deploy-lines').value.trim();
+            const btnText = document.getElementById('deploy-btn-text').value.trim();
+
+            if (!lines) {
+                window.showToast("Description lines are required to deploy", true);
+                window.vibrate(50);
+                return;
+            }
+
+            const deployBtn = document.getElementById('deploy-trigger-btn');
+            const originalContent = deployBtn.innerHTML;
+            deployBtn.innerHTML = '<div class="loader-spinner" style="width:20px; height:20px; border-width:2px; margin: 0 auto; border-top-color: #000;"></div>';
+            deployBtn.style.pointerEvents = 'none';
+
+            try {
+                // Deploy identical full object to Quanic system/global_notification
+                await setDoc(doc(db, 'system', 'global_notification'), {
+                    version: version,
+                    title: title,
+                    heading: heading,
+                    message: lines, // This powers the standard broadcast text simultaneously
+                    buttonText: btnText,
+                    timestamp: serverTimestamp(),
+                    sentBy: currentUserAdmin ? currentUserAdmin.uid : 'admin_system',
+                    active: true
+                });
+
+                window.showToast("Global UI Override Deployed!");
+                window.vibrate([20, 40, 20]); 
+                
+                // Reset Fields
+                document.getElementById('deploy-version').value = '';
+                document.getElementById('deploy-title').value = '';
+                document.getElementById('deploy-heading').value = '';
+                document.getElementById('deploy-lines').value = '';
+                document.getElementById('deploy-btn-text').value = '';
+                
+                setTimeout(() => history.back(), 300);
+            } catch(e) {
+                console.error("Deploy Error:", e);
+                window.showToast("Deployment Failed", true);
+                window.vibrate(50);
+            } finally {
+                deployBtn.innerHTML = originalContent;
+                deployBtn.style.pointerEvents = 'auto';
             }
         };
 
