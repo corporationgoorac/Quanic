@@ -540,6 +540,51 @@
             transition: all 0.2s;
         }
         .playlist-selector-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.15); }
+
+        /* ==========================================================================
+           18. SUSPENDED & BROADCAST MODALS (NEW FEATURES)
+           ========================================================================== */
+        #suspended-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
+            background: #121212; z-index: 999999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; padding: 30px;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+        }
+        #suspended-screen.active {
+            opacity: 1; pointer-events: auto;
+        }
+        .suspended-icon {
+            font-size: 80px; color: #ff4444; margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px rgba(255, 68, 68, 0.4));
+        }
+        .suspended-title {
+            font-size: 2.2rem; font-weight: 800; margin-bottom: 15px;
+            background: linear-gradient(90deg, #ff4444, #ff7a00); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .suspended-text {
+            color: #A7A7A7; font-size: 1.05rem; line-height: 1.6; margin-bottom: 40px; max-width: 400px;
+        }
+        .suspended-contact-btn {
+            background: rgba(255, 68, 68, 0.15); border: 1px solid rgba(255, 68, 68, 0.4); color: #ff4444;
+            padding: 16px 36px; border-radius: 30px; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.2s;
+        }
+        .suspended-contact-btn:active { transform: scale(0.95); }
+
+        #broadcast-modal {
+            position: fixed; bottom: calc(env(safe-area-inset-bottom) + 20px); left: 20px; right: 20px;
+            background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 24px; padding: 24px;
+            z-index: 99999; transform: translateY(150%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 15px;
+        }
+        #broadcast-modal.open { transform: translateY(0); }
+        .broadcast-header { display: flex; align-items: center; gap: 10px; color: #E1306C; font-weight: 800; font-size: 1.15rem; }
+        .broadcast-body { color: rgba(255,255,255,0.9); font-size: 1rem; line-height: 1.5; font-weight: 500; }
+        .broadcast-close-btn {
+            align-self: flex-end; background: linear-gradient(90deg, #E1306C, #FF7A00); border: none;
+            color: white; padding: 12px 28px; border-radius: 20px; font-weight: 800; cursor: pointer; margin-top: 10px; transition: transform 0.1s;
+        }
+        .broadcast-close-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -778,6 +823,21 @@
 
     <audio id="audio-core" crossorigin="anonymous"></audio>
 
+    <div id="suspended-screen">
+        <span class="material-symbols-rounded suspended-icon">gpp_bad</span>
+        <div class="suspended-title">Account Suspended</div>
+        <div class="suspended-text">Your account is suspended due to security reasons or a violation of our terms. Please contact support to appeal this decision.</div>
+        <button class="suspended-contact-btn" onclick="window.location.href='mailto:support@quanic.com'">Contact Support</button>
+    </div>
+
+    <div id="broadcast-modal">
+        <div class="broadcast-header">
+            <span class="material-symbols-rounded">campaign</span> Global Notice
+        </div>
+        <div class="broadcast-body" id="broadcast-message-text"></div>
+        <button class="broadcast-close-btn" onclick="closeBroadcastModal()">Acknowledge</button>
+    </div>
+
     <script type="module">
         // 1. FIREBASE SETUP & ROUTING (MOVED TO TOP TO FIX FATAL SYNTAX ERROR)
         import { getApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -785,6 +845,7 @@
         import { auth, db } from '../config.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, orderBy, limit, startAfter, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"; // NEW FEATURE IMPORTS
 
         // Initialize RTDB natively 
         let rtdb;
@@ -1070,6 +1131,43 @@
                     
                     fetchUserPlaylists(); // Live sync from Firebase
                     fetchTrendingFeed(); // Fetch the new trending data on load
+
+                    // LIVE SUSPENSION LISTENER (NEW FEATURE)
+                    onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
+                        if(docSnap.exists() && docSnap.data().suspended) {
+                            document.getElementById('suspended-screen').classList.add('active');
+                            if(audio && !audio.paused) audio.pause();
+                        } else {
+                            document.getElementById('suspended-screen').classList.remove('active');
+                        }
+                    });
+
+                    // LIVE SYSTEM BROADCAST LISTENER (NEW FEATURE)
+                    onSnapshot(doc(db, 'system', 'global_notification'), (docSnap) => {
+                        if(docSnap.exists() && docSnap.data().active) {
+                            const data = docSnap.data();
+                            const msg = data.message;
+                            const timeStr = data.timestamp ? (data.timestamp.seconds || JSON.stringify(data.timestamp)) : Date.now();
+                            const versionKey = 'quanic_broadcast_seen_' + btoa(unescape(encodeURIComponent(msg))).substring(0,15) + '_' + timeStr;
+                            
+                            if(!localStorage.getItem(versionKey)) {
+                                document.getElementById('broadcast-message-text').innerText = msg;
+                                window.currentBroadcastKey = versionKey;
+                                openBroadcastModal();
+                            }
+                        }
+                    });
+
+                    window.openBroadcastModal = function() {
+                        const modal = document.getElementById('broadcast-modal');
+                        if(modal) modal.classList.add('open');
+                        history.pushState({ modal: 'broadcast' }, '', '#notice');
+                    };
+
+                    window.closeBroadcastModal = function() {
+                        if(window.currentBroadcastKey) localStorage.setItem(window.currentBroadcastKey, 'true');
+                        history.back();
+                    };
 
                     // NEW FEATURE: CLOUD HISTORY RESTORE ON LOGIN
                     try {
@@ -1950,6 +2048,8 @@
                 document.getElementById('queue-modal').classList.add('open');
             } else if (state === 'create_playlist') {
                 document.getElementById('create-playlist-modal').classList.add('open');
+            } else if (state === 'broadcast') {
+                document.getElementById('broadcast-modal').classList.add('open');
             }
         });
 
@@ -2390,6 +2490,10 @@
                 if (state !== 'create_playlist') {
                     const cm = document.getElementById('create-playlist-modal');
                     if (cm) cm.classList.remove('open');
+                }
+                if (state !== 'broadcast') {
+                    const bm = document.getElementById('broadcast-modal');
+                    if (bm) bm.classList.remove('open');
                 }
 
                 const openSheets = document.querySelectorAll('.bottom-sheet.open');
