@@ -289,6 +289,34 @@
             transform: scale(1.03);
         }
 
+        /* ==========================================================================
+           8. NEW FEATURE: USERNAME VALIDATION STYLES
+           ========================================================================== */
+        .username-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .username-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 22px;
+            transition: color 0.3s;
+        }
+        .icon-success { color: #27c93f; }
+        .icon-error { color: #ff4444; }
+        .icon-loading { color: #A7A7A7; animation: spin 1s linear infinite; }
+        
+        @keyframes spin { 
+            100% { transform: translateY(-50%) rotate(360deg); } 
+        }
+
+        /* SAFELY HIDE THE OLD GENRE/INTEREST GRID WITHOUT DELETING ANY LINES */
+        .input-group:has(#genre-grid) {
+            display: none !important;
+        }
+
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -319,6 +347,15 @@
             <div class="input-group">
                 <label for="user-name">Full Name</label>
                 <input type="text" id="user-name" class="premium-input" placeholder="e.g. Siva Manihandan" required autocomplete="name">
+            </div>
+
+            <div class="input-group">
+                <label for="user-username">Username</label>
+                <div class="username-wrapper">
+                    <input type="text" id="user-username" class="premium-input" placeholder="choose_a_username" required autocomplete="off">
+                    <span class="material-symbols-rounded username-icon" id="username-status-icon"></span>
+                </div>
+                <small id="username-msg" style="color: #ff4444; font-size: 0.75rem; margin-top: 4px; display: none;">Username taken</small>
             </div>
 
             <div class="input-group">
@@ -399,6 +436,88 @@
         import { auth, db } from '../config.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        // NEW FEATURE: Added imports for username uniqueness checking
+        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // ==========================================================================
+        // NEW FEATURE: REAL-TIME USERNAME VALIDATION ENGINE
+        // ==========================================================================
+        const usernameInput = document.getElementById('user-username');
+        const usernameIcon = document.getElementById('username-status-icon');
+        const usernameMsg = document.getElementById('username-msg');
+        let usernameTimeout = null;
+        let isUsernameValid = false;
+
+        // Force initial state overrides old logic silently
+        const theSaveBtn = document.getElementById('save-btn');
+        if(theSaveBtn) {
+            theSaveBtn.disabled = true;
+            theSaveBtn.innerText = 'Enter Username';
+        }
+
+        if(usernameInput) {
+            usernameInput.addEventListener('input', () => {
+                // Enforce strictly lowercase alphanumeric and underscores
+                const val = usernameInput.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+                usernameInput.value = val;
+                
+                isUsernameValid = false;
+                theSaveBtn.disabled = true;
+                theSaveBtn.style.background = 'rgba(255, 255, 255, 0.05)';
+                theSaveBtn.innerText = 'Checking...';
+                
+                usernameIcon.className = 'material-symbols-rounded username-icon icon-loading';
+                usernameIcon.innerText = 'sync';
+                usernameMsg.style.display = 'none';
+
+                clearTimeout(usernameTimeout);
+                
+                if (val.length < 3) {
+                    usernameIcon.className = 'material-symbols-rounded username-icon icon-error';
+                    usernameIcon.innerText = 'close';
+                    usernameMsg.innerText = 'Minimum 3 characters';
+                    usernameMsg.style.display = 'block';
+                    theSaveBtn.innerText = 'Invalid Username';
+                    return;
+                }
+
+                // Debounce to prevent spamming Firestore
+                usernameTimeout = setTimeout(() => {
+                    checkUsernameUniqueness(val);
+                }, 600);
+            });
+        }
+
+        async function checkUsernameUniqueness(username) {
+            try {
+                const q = query(collection(db, "users"), where("username", "==", username));
+                const snap = await getDocs(q);
+                
+                if (!snap.empty) {
+                    // Taken
+                    isUsernameValid = false;
+                    usernameIcon.className = 'material-symbols-rounded username-icon icon-error';
+                    usernameIcon.innerText = 'close';
+                    usernameMsg.innerText = 'Username is already taken';
+                    usernameMsg.style.display = 'block';
+                    theSaveBtn.disabled = true;
+                    theSaveBtn.innerText = 'Username Taken';
+                } else {
+                    // Available
+                    isUsernameValid = true;
+                    usernameIcon.className = 'material-symbols-rounded username-icon icon-success';
+                    usernameIcon.innerText = 'check_circle';
+                    theSaveBtn.disabled = false;
+                    theSaveBtn.style.background = 'linear-gradient(90deg, #E1306C, #FF7A00)';
+                    theSaveBtn.innerText = 'Initialize Quanic';
+                }
+            } catch(e) {
+                console.error("[Quanic] Username validation failed:", e);
+                usernameIcon.className = 'material-symbols-rounded username-icon icon-error';
+                usernameIcon.innerText = 'error';
+            }
+        }
+
 
         // DOM Elements
         const profileForm = document.getElementById('profile-form');
@@ -456,6 +575,13 @@
         profileForm.addEventListener('submit', async (e) => {
             e.preventDefault(); // Prevent page refresh
 
+            // Additional safeguard in case they manage to submit while still validating
+            if(!isUsernameValid) {
+                saveBtn.innerText = 'Wait for username check...';
+                saveBtn.disabled = true;
+                return;
+            }
+
             // Double check user exists before writing to database
             if (!currentUser) {
                 alert("Authentication error. Please log in again.");
@@ -492,6 +618,12 @@
                     account_created: serverTimestamp(),
                     is_profile_complete: true
                 };
+
+                // ====== NEW FEATURE: INJECT UNIQUE USERNAME INTO PAYLOAD ======
+                const finalUsername = document.getElementById('user-username').value.trim().toLowerCase();
+                userData.username = finalUsername;
+                localStorage.setItem('quanic_user_username', finalUsername);
+                // ==============================================================
 
                 // 4. Database Write: Save to the 'users' collection using their UID as the document ID
                 const userRef = doc(db, "users", currentUser.uid);
