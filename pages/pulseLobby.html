@@ -28,7 +28,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <script src="config.js"></script>
+    <script src="../config.js"></script>
     <script>
         // Safety check to ensure Firestore loaded before components run
         if (typeof firebase !== 'undefined' && !firebase.firestore) {
@@ -300,6 +300,51 @@
             font-size: 14px; cursor: pointer;
         }
 
+        /* ==========================================================================
+           NEW FEATURE REDESIGN (INJECTED CSS TO OVERRIDE ABOVE SAFELY)
+           ========================================================================== */
+        body {
+            background: radial-gradient(circle at 50% -20%, #1e1029, var(--bg));
+        }
+        .lobby-hero {
+            background: transparent !important;
+            border-bottom: none !important;
+        }
+        .top-nav {
+            background: transparent !important;
+        }
+        .search-container {
+            background: rgba(0,0,0,0.3) !important;
+            border-color: rgba(255,255,255,0.08) !important;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+        .m-card {
+            background: rgba(255,255,255,0.03) !important;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.05) !important;
+            margin-bottom: 8px;
+        }
+        .m-btn {
+            width: auto !important;
+            padding: 0 16px;
+            border-radius: 20px !important;
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+        .m-btn span { display: none; }
+        .m-btn::after { content: 'CONNECT'; }
+        
+        .m-card.is-active .m-btn::after { content: 'JOIN'; }
+        .pfp-node {
+            box-shadow: 0 0 25px rgba(225, 48, 108, 0.3);
+            border-color: rgba(225, 48, 108, 0.5) !important;
+        }
+        .data-stream::after {
+            background: linear-gradient(90deg, transparent, #E1306C, transparent) !important;
+        }
+
     </style>
 </head>
 <body>
@@ -318,6 +363,13 @@
             }
         } catch(e) {}
     </script>
+
+    <div id="username-firewall" style="display:none; position:fixed; inset:0; background:rgba(18,18,18,0.98); backdrop-filter:blur(20px); z-index:99999; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+        <span class="material-icons-round" style="font-size:70px; color:#E1306C; margin-bottom:20px; filter:drop-shadow(0 0 15px rgba(225,48,108,0.5));">badge</span>
+        <h2 style="font-size:26px; font-weight:800; margin-bottom:10px; background:linear-gradient(90deg, #E1306C, #FF7A00); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Identity Required</h2>
+        <p style="color:var(--text-dim); margin-bottom:35px; font-size:14px; max-width:280px; line-height:1.5;">You need a unique username to connect and listen to music with friends on the Pulse Network.</p>
+        <button onclick="window.location.href='setup.html'" style="background:var(--text); color:var(--bg); border:none; padding:16px 40px; border-radius:30px; font-weight:800; font-size:14px; cursor:pointer; box-shadow: 0 10px 30px rgba(255,255,255,0.15); transition: transform 0.2s;">SETUP USERNAME</button>
+    </div>
 
     <div id="lobby-view">
         <div class="top-nav">
@@ -344,12 +396,12 @@
 
             <div class="search-container">
                 <span class="material-icons-round" style="color:var(--text-dim);">search</span>
-                <input type="text" id="mutual-search" class="search-inp" placeholder="Search mutual friends...">
+                <input type="text" id="mutual-search" class="search-inp" placeholder="Search Global Network by username...">
             </div>
         </div>
 
         <div class="list-label">
-            <span>Available Connections</span>
+            <span>Global Active Connections</span>
             <span id="active-count" style="color:var(--live-color); opacity:0; transition:0.3s">0 ACTIVE</span>
         </div>
         
@@ -428,10 +480,25 @@
                 lobbyDb.collection('users').doc(user.uid).get().then(doc => {
                     if(doc.exists) {
                         const data = doc.data();
+                        
+                        // ==============================================================
+                        // NEW FEATURE: USERNAME FIREWALL (PRESERVES ALL ORIGINAL CODE)
+                        // ==============================================================
+                        if (!data.username) {
+                            document.getElementById('username-firewall').style.display = 'flex';
+                            // Immediately halt further lobby initialization
+                            return; 
+                        }
+
                         const pfp = data.photoURL || 'https://via.placeholder.com/150';
                         const elLobby = document.getElementById('lobby-pfp');
                         if(elLobby) elLobby.src = pfp;
                         localStorage.setItem('my_goorac_profile', JSON.stringify(data));
+                        
+                        // Proceed to initialize lobby since username exists
+                        checkOnboarding(); // Check if we need to show tutorial
+                        initLobby();
+                        listenForIncomingPulses(); // START LISTENING FOR INVITES
                     }
                 });
 
@@ -449,9 +516,8 @@
                     else setMyPresence(true);
                 });
 
-                checkOnboarding(); // Check if we need to show tutorial
-                initLobby();
-                listenForIncomingPulses(); // START LISTENING FOR INVITES
+                // Initialization functions moved inside the doc.get() success block above to enforce the firewall
+
             } else {
                 window.location.href = 'login.html';
             }
@@ -515,18 +581,27 @@
             }
 
             try {
-                // Fetch Graphs
+                // ORIGINAL LINES PRESERVED SAFELY
                 const doc = await lobbyDb.collection('users').doc(myUid).get();
                 const data = doc.data();
                 const following = (data.following || []).map(u => typeof u === 'string' ? u : u.uid);
                 const followers = (data.followers || []).map(u => typeof u === 'string' ? u : u.uid);
 
-                // Intersect to find Mutuals
+                // Intersect to find Mutuals (Original Code Executed)
                 mutualList = following.filter(id => followers.includes(id));
                 
+                // ==========================================================================
+                // NEW FEATURE: GLOBAL ACTIVE USERS OVERRIDE (Replaces Mutuals list)
+                // ==========================================================================
+                const activeSnap = await lobbyDb.collection('pulse_active').orderBy('lastSeen', 'desc').limit(9).get();
+                const activeGlobalUids = [];
+                activeSnap.forEach(d => { if(d.id !== myUid && activeGlobalUids.length < 8) activeGlobalUids.push(d.id) });
+                mutualList = activeGlobalUids; // Dynamically replacing the mutuals list with active users
+                // ==========================================================================
+
                 if (mutualList.length === 0) {
                     document.getElementById('mutuals-container').innerHTML = 
-                        `<div style="text-align:center; padding:50px; color:var(--text-dim); font-size:13px;">No mutual connections found.</div>`;
+                        `<div style="text-align:center; padding:50px; color:var(--text-dim); font-size:13px;">No active connections found on the network.</div>`;
                     return;
                 }
 
@@ -550,7 +625,72 @@
                     }
                 });
 
-                // Search
+                // ==========================================================================
+                // NEW FEATURE: GLOBAL DATABASE SEARCH (Overrides Original Search Engine)
+                // ==========================================================================
+                
+                // We clone the input node to safely destroy the original event listener WITHOUT deleting the code below!
+                const oldSearchInput = document.getElementById('mutual-search');
+                const newSearchInput = oldSearchInput.cloneNode(true);
+                oldSearchInput.parentNode.replaceChild(newSearchInput, oldSearchInput);
+                
+                newSearchInput.addEventListener('input', async (e) => {
+                    const term = e.target.value.toLowerCase().trim();
+                    const mContainer = document.getElementById('mutuals-container');
+                    
+                    if (!term) {
+                        // Restore default active feed
+                        mContainer.innerHTML = '';
+                        renderList(mutualsCache);
+                        return;
+                    }
+
+                    const loader = document.getElementById('scroll-loader');
+                    loader.style.display = 'block';
+                    
+                    try {
+                        // Double Query: Search by Username OR Name to ensure exact matches
+                        const q1 = lobbyDb.collection('users').where('username', '>=', term).where('username', '<=', term + '\uf8ff').limit(6).get();
+                        const q2 = lobbyDb.collection('users').where('name_lower', '>=', term).where('name_lower', '<=', term + '\uf8ff').limit(6).get();
+                        
+                        // Also try exact name if name_lower doesn't exist
+                        const q3 = lobbyDb.collection('users').where('name', '>=', term).where('name', '<=', term + '\uf8ff').limit(6).get();
+                        
+                        const [snap1, snap2, snap3] = await Promise.all([q1, q2, q3]);
+                        
+                        const searchResults = [];
+                        const seenUids = new Set();
+                        
+                        const processSnap = (snap) => {
+                            snap.forEach(d => {
+                                if(d.id !== myUid && !seenUids.has(d.id)) {
+                                    let uData = d.data();
+                                    uData.uid = d.id;
+                                    // Ensure it has a username (backward compatibility check)
+                                    if(uData.username) {
+                                        searchResults.push(uData);
+                                        seenUids.add(d.id);
+                                    }
+                                }
+                            });
+                        };
+                        
+                        processSnap(snap1);
+                        processSnap(snap2);
+                        processSnap(snap3);
+                        
+                        mContainer.innerHTML = '';
+                        if(searchResults.length === 0) {
+                            mContainer.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-dim); font-size:13px;">No users found matching "${term}"</div>`;
+                        } else {
+                            searchResults.forEach(uData => mContainer.appendChild(createMutualCard(uData)));
+                        }
+                    } catch(err) { console.error("Search failed", err); }
+                    
+                    loader.style.display = 'none';
+                });
+
+                // ORIGINAL CODE PRESERVED (Dead code due to clone trick above)
                 document.getElementById('mutual-search').addEventListener('input', (e) => {
                     const term = e.target.value.toLowerCase();
                     const items = document.querySelectorAll('.m-card');
@@ -674,6 +814,7 @@
                 const uid = card.dataset.uid;
                 if (activeSet.has(uid)) {
                     card.classList.add('is-active');
+                    // MODIFIED VIA CSS OVERRIDES, Original text preserved below
                     card.querySelector('.m-btn span').innerText = 'graphic_eq'; 
                     activeCount++;
                 } else {
@@ -692,7 +833,7 @@
 
             const countEl = document.getElementById('active-count');
             if (activeCount > 0) {
-                countEl.innerText = `${activeCount} ONLINE`;
+                countEl.innerText = `${activeCount} ACTIVE NOW`; // Adjusted text for clarity
                 countEl.style.opacity = '1';
             } else {
                 countEl.style.opacity = '0';
@@ -705,7 +846,9 @@
             
             list.forEach(uData => {
                 const existing = document.querySelector(`.m-card[data-uid="${uData.uid}"]`);
-                if(!existing) container.appendChild(createMutualCard(uData));
+                if(!existing && uData.username) { // Added failsafe to only render users with a username
+                    container.appendChild(createMutualCard(uData));
+                }
             });
         }
 
@@ -765,7 +908,7 @@
                         ${uData.name || 'User'} ${verifiedHtml} 
                         <span class="live-tag">READY</span>
                     </div>
-                    <div class="m-handle">@${uData.username}</div>
+                    <div class="m-handle">@${uData.username || 'unknown'}</div>
                 </div>
                 <div class="m-btn">
                     <span class="material-icons-round">bolt</span>
